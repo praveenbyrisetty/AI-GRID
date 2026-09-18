@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-GRID: AI-Powered GRC Framework & Trust Audit</title>
+  <meta name="description" content="AI-GRID is an AI-Powered Governance, Risk, and Compliance (GRC) framework for cybersecurity risk assessment of trustworthy AI systems. Supports MCP live audit and questionnaire-based assessment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="glow-bg"></div>
+
+  <!-- ================================================================= -->
+  <!-- LEFT SIDEBAR                                                      -->
+  <!-- ================================================================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo">
+        <div class="logo-badge"><span class="logo-icon">🛡️</span></div>
+        <div>
+          <div class="logo-title">AI-GRID</div>
+          <div class="logo-version">v2.0 <span class="badge-mcp">Dual-Mode</span></div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Setup</div>
+        <a class="nav-item active" onclick="showPage('page-setup', this)" id="nav-setup">
+          <span class="nav-icon">🚀</span><span>Project Setup</span>
+        </a>
+
+        <div class="nav-section-label">Dashboard</div>
+        <a class="nav-item" onclick="showPage('page-profile', this)" id="nav-profile">
+          <span class="nav-icon">📋</span><span>System Profile</span>
+        </a>
+        <a class="nav-item" onclick="showPage('page-audit', this)" id="nav-audit">
+          <span class="nav-icon">⚡</span><span>Audit Log</span>
+        </a>
+        <a class="nav-item" onclick="showPage('page-scores', this)" id="nav-scores">
+          <span class="nav-icon">📊</span><span>Trust Scores</span>
+        </a>
+
+        <div class="nav-section-label">Compliance</div>
+        <a class="nav-item" onclick="showPage('page-compliance', this)" id="nav-compliance">
+          <span class="nav-icon">🏛️</span><span>Regulatory</span>
+        </a>
+        <a class="nav-item" onclick="showPage('page-simulation', this)" id="nav-simulation">
+          <span class="nav-icon">🔮</span><span>What-If Simulator</span>
+        </a>
+        <a class="nav-item" onclick="showPage('page-remediation', this)" id="nav-remediation">
+          <span class="nav-icon">🛠️</span><span>Remediation</span>
+        </a>
+
+        <div class="nav-section-label">Tools</div>
+        <a class="nav-item" onclick="showPage('page-manual', this)" id="nav-manual">
+          <span class="nav-icon">✏️</span><span>Manual Assessment</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="mcp-status-pill" id="mcpStatusPill">
+        <span class="pulse-dot"></span>
+        <span id="mcpStatusText">No Project Loaded</span>
+      </div>
+      <button class="sidebar-export-btn" onclick="window.print()">🖨️ Export Report</button>
+    </div>
+  </aside>
+
+  <!-- ================================================================= -->
+  <!-- MAIN CONTENT                                                      -->
+  <!-- ================================================================= -->
+  <div class="content-area" id="contentArea">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">☰</button>
+        <h1 class="page-title" id="pageTitle">Project Setup</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-status">
+          <span class="status-label">Target:</span>
+          <span class="status-value" id="topbarTarget">Not Configured</span>
+        </div>
+        <button id="btnRunAudit" class="btn-primary" onclick="submitAudit()" style="display:none;">
+          <span class="btn-icon">⚡</span> Run Audit
+        </button>
+      </div>
+    </header>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Project Setup (Mode Selection + Wizard)                 -->
+    <!-- ============================================================= -->
+    <div class="page active" id="page-setup">
+      <div class="page-inner">
+
+        <!-- MODE SELECTION -->
+        <section class="card" id="modeSelectionCard">
+          <div class="mode-header">
+            <h2>🚀 Configure Your AI Project</h2>
+            <p>Choose how you'd like to assess your AI system's trustworthiness, security, and compliance.</p>
+          </div>
+          <div class="mode-grid">
+            <div class="mode-card" onclick="selectMode('questionnaire')" id="modeQuestionnaireCard">
+              <div class="mode-icon">📋</div>
+              <h3>Answer Questions</h3>
+              <p>No MCP connection needed. Answer structured questions about your AI system and get a full governance audit.</p>
+              <div class="mode-tag recommended">Recommended</div>
+            </div>
+            <div class="mode-card" onclick="selectMode('mcp')" id="modeMcpCard">
+              <div class="mode-icon">🔌</div>
+              <h3>Connect via MCP</h3>
+              <p>Connect to your AI's MCP server for live automated probing of tools, guardrails, and metadata.</p>
+              <div class="mode-tag">Requires MCP Server</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MCP CONNECTION FORM (hidden by default) -->
+        <section class="card" id="mcpConnectionCard" style="display:none;">
+          <div class="card-header">
+            <h3>🔌 Connect to MCP Server</h3>
+            <button class="btn-secondary" onclick="backToModeSelection()">← Back</button>
+          </div>
+          <div class="mcp-form">
+            <div class="form-group">
+              <label for="mcpTransport">Transport Type:</label>
+              <select id="mcpTransport" class="form-select">
+                <option value="stdio">STDIO (Local Process)</option>
+                <option value="sse">SSE (Server-Sent Events)</option>
+                <option value="http">HTTP (Streamable HTTP)</option>
+              </select>
+            </div>
+            <div class="form-group" id="mcpUrlGroup">
+              <label for="mcpUrlInput">Server URL:</label>
+              <input type="text" id="mcpUrlInput" class="form-input" placeholder="e.g., http://localhost:3000/mcp">
+            </div>
+            <div class="form-group" id="mcpCommandGroup" style="display:none;">
+              <label for="mcpCommandInput">Server Command:</label>
+              <input type="text" id="mcpCommandInput" class="form-input" placeholder="e.g., python my_mcp_server.py">
+            </div>
+            <button class="btn-primary" onclick="connectMcp()">
+              <span class="btn-icon">⚡</span> Connect & Run Live Audit
+            </button>
+          </div>
+        </section>
+
+        <!-- QUESTIONNAIRE WIZARD (hidden by default) -->
+        <section class="card wizard-card" id="wizardCard" style="display:none;">
+          <div class="wizard-header">
+            <div>
+              <h2 id="wizardStepTitle">Step 1: Model Identity</h2>
+              <p id="wizardStepDesc">Tell us about your AI model</p>
+            </div>
+            <button class="btn-secondary" onclick="backToModeSelection()">← Back</button>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="wizard-progress">
+            <div class="progress-track">
+              <div class="progress-fill" id="wizardProgressFill" style="width: 16.66%;"></div>
+            </div>
+            <div class="progress-steps">
+              <span class="step-dot active" data-step="1">1</span>
+              <span class="step-dot" data-step="2">2</span>
+              <span class="step-dot" data-step="3">3</span>
+              <span class="step-dot" data-step="4">4</span>
+              <span class="step-dot" data-step="5">5</span>
+              <span class="step-dot" data-step="6">6</span>
+            </div>
+          </div>
+
+          <!-- Wizard Steps Container -->
+          <div class="wizard-body" id="wizardBody">
+            <!-- Steps are dynamically rendered by JS -->
+          </div>
+
+          <!-- Wizard Navigation -->
+          <div class="wizard-footer">
+            <button class="btn-secondary" id="wizardBackBtn" onclick="wizardPrev()" style="display:none;">← Previous</button>
+            <div style="flex:1;"></div>
+            <button class="btn-primary" id="wizardNextBtn" onclick="wizardNext()">Next Step →</button>
+            <button class="btn-primary btn-success" id="wizardSubmitBtn" onclick="submitQuestionnaire()" style="display:none;">
+              <span class="btn-icon">🚀</span> Generate Audit Report
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: System Profile                                          -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-profile">
+      <div class="page-inner">
+        <section class="card profile-card">
+          <div class="profile-header">
+            <div class="profile-tag">TARGET SYSTEM UNDER AUDIT</div>
+            <div class="model-id" id="profModelName">—</div>
+          </div>
+          <div class="profile-grid">
+            <div class="profile-item">
+              <span class="label">DOMAIN</span>
+              <span class="val" id="profDomain">—</span>
+            </div>
+            <div class="profile-item">
+              <span class="label">MODEL ARCHITECTURE</span>
+              <span class="val" id="profArch">—</span>
+            </div>
+            <div class="profile-item">
+              <span class="label">AUDIT MODE</span>
+              <span class="val highlight" id="profAuditMode">—</span>
+            </div>
+            <div class="profile-item">
+              <span class="label">TRAINING DATASET</span>
+              <span class="val" id="profDataSize">—</span>
+            </div>
+            <div class="profile-item">
+              <span class="label">AUTONOMY LEVEL</span>
+              <span class="val" id="profAutonomy">—</span>
+            </div>
+            <div class="profile-item">
+              <span class="label">VERSION</span>
+              <span class="val" id="profVersion">—</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card info-card">
+          <h3>📊 Audit Complete</h3>
+          <p>Your AI system has been assessed. Navigate to <strong>Trust Scores</strong> to see the 7-dimension breakdown, or <strong>Regulatory</strong> for EU AI Act & NIST compliance status.</p>
+          <div class="steps-grid">
+            <div class="step-item" onclick="showPage('page-scores')">
+              <div class="step-num">1</div>
+              <div><strong>Trust Scores</strong><br><span class="text-muted">View the 7-dimension radar chart & AAS score</span></div>
+            </div>
+            <div class="step-item" onclick="showPage('page-compliance')">
+              <div class="step-num">2</div>
+              <div><strong>Regulatory</strong><br><span class="text-muted">EU AI Act tier & NIST RMF compliance</span></div>
+            </div>
+            <div class="step-item" onclick="showPage('page-simulation')">
+              <div class="step-num">3</div>
+              <div><strong>Simulator</strong><br><span class="text-muted">What-if scenarios across domains</span></div>
+            </div>
+            <div class="step-item" onclick="showPage('page-remediation')">
+              <div class="step-num">4</div>
+              <div><strong>Remediation</strong><br><span class="text-muted">Prioritized fixes & action items</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Audit Log                                               -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-audit">
+      <div class="page-inner">
+        <section class="card mcp-control-panel">
+          <div class="panel-header">
+            <div class="title-with-desc">
+              <h2>Audit Probe Log</h2>
+              <p>Detailed log of all probes executed during the assessment — whether via MCP tools or questionnaire analysis.</p>
+            </div>
+            <button id="btnRunAudit2" class="btn-primary" onclick="rerunAudit()" style="display:none;">
+              <span class="btn-icon">⚡</span> Re-Run Audit
+            </button>
+          </div>
+
+          <div class="terminal-window">
+            <div class="terminal-bar">
+              <div class="terminal-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <div class="terminal-title">Audit Probe Stream</div>
+              <div class="terminal-badge" id="terminalStatus">READY</div>
+            </div>
+            <div class="terminal-body" id="terminalLog">
+              <div class="log-line info"><span class="timestamp">[SYSTEM]</span> Ready. Configure your AI project to begin audit.</div>
+              <div class="log-line hint"><span class="timestamp">[HINT]</span> Go to "Project Setup" to choose MCP or Questionnaire mode...</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="probeSummaryCard" style="display:none;">
+          <h3>Audit Probe Summary</h3>
+          <div class="probe-stats" id="probeStats"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Trust Scores                                            -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-scores">
+      <div class="page-inner">
+        <div class="results-grid">
+          <!-- AAS Score Card -->
+          <div class="card score-card">
+            <div class="card-header">
+              <h3>Assurance Adequacy Score (AAS)</h3>
+              <span class="info-tooltip" title="0.6 × Average + 0.4 × Weakest Dimension">ℹ️</span>
+            </div>
+            <div class="score-display">
+              <div class="grade-badge" id="gradeBadge">—</div>
+              <div class="score-meta">
+                <div class="score-value"><span id="aasScore">—</span><small>/100</small></div>
+                <div class="score-label" id="scoreLabel">Run audit to see results</div>
+              </div>
+            </div>
+            <div class="bottleneck-banner" id="bottleneckBanner">
+              <div class="banner-icon">⚠️</div>
+              <div class="banner-text">
+                <strong>BOTTLENECK:</strong>
+                <div id="bottleneckDesc">Run an audit to identify the weakest dimension.</div>
+              </div>
+            </div>
+            <div class="math-breakdown">
+              <div class="math-item"><span>Weighted Avg:</span><strong id="mathAvg">—</strong></div>
+              <div class="math-item"><span>Bottleneck (MIN):</span><strong id="mathMin">—</strong></div>
+              <div class="math-item"><span>Sensitivity (α):</span><strong>0.60</strong></div>
+            </div>
+          </div>
+
+          <!-- Radar Chart -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>7 Trustworthiness Dimensions</h3>
+              <span class="subtext">IEEE P8000.1 & QB4AIRA</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="radarChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Regulatory Compliance                                   -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-compliance">
+      <div class="page-inner">
+        <div class="compliance-grid-2col">
+          <section class="card">
+            <div class="card-header">
+              <h3>🇪🇺 EU AI Act (Regulation 2024/1689)</h3>
+              <span class="subtext">Technical Pre-Audit (Articles 9, 10, 13, 14, 15)</span>
+            </div>
+            <div class="comp-desc" id="euDesc">Run an audit to classify the risk tier.</div>
+            <div class="comp-badge badge-warning" id="euBadge" style="margin-top:0.75rem;">PENDING AUDIT</div>
+          </section>
+
+          <section class="card">
+            <div class="card-header">
+              <h3>🇺🇸 NIST AI RMF 1.0</h3>
+              <span class="subtext">Core Risk Management Lifecycle</span>
+            </div>
+            <div class="nist-grid">
+              <div class="nist-item">
+                <div class="nist-label">GOVERN</div>
+                <div class="nist-badge warning" id="nistGovern">—</div>
+              </div>
+              <div class="nist-item">
+                <div class="nist-label">MAP</div>
+                <div class="nist-badge warning" id="nistMap">—</div>
+              </div>
+              <div class="nist-item">
+                <div class="nist-label">MEASURE</div>
+                <div class="nist-badge warning" id="nistMeasure">—</div>
+              </div>
+              <div class="nist-item">
+                <div class="nist-label">MANAGE</div>
+                <div class="nist-badge warning" id="nistManage">—</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: What-If Simulator                                       -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-simulation">
+      <div class="page-inner">
+        <section class="card simulation-card">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h3>What-If Scenario Simulation Engine</h3>
+              <p>Predicts risk recalculations if this AI is deployed in different sectors or scaled to millions of users.</p>
+            </div>
+            <span class="badge-mcp">ALGORITHM 5</span>
+          </div>
+
+          <div class="simulation-controls">
+            <div class="sim-group">
+              <label for="simDomainSelect">Target Domain:</label>
+              <select id="simDomainSelect" class="form-select" onchange="runSimulation()">
+                <option value="Healthcare / Medical">Healthcare (1.5×)</option>
+                <option value="Finance / Banking">Finance (1.3×)</option>
+                <option value="Autonomous Vehicles / Robotics">Autonomous Vehicles (1.5×)</option>
+                <option value="Criminal Justice / Law Enforcement">Criminal Justice (1.5×)</option>
+                <option value="Commercial Agriculture">Agriculture (1.4×)</option>
+                <option value="Manufacturing / Industrial">Manufacturing (1.2×)</option>
+                <option value="Education / EdTech">Education (1.1×)</option>
+                <option value="E-Commerce / Retail">E-Commerce (1.1×)</option>
+                <option value="Entertainment / Media">Entertainment (0.8×)</option>
+                <option value="Cybersecurity / Threat Detection">Cybersecurity (1.3×)</option>
+                <option value="General Purpose AI" selected>General Purpose (1.0×)</option>
+              </select>
+            </div>
+            <div class="sim-group">
+              <label for="simUserSlider">Scale: <span id="userCountLabel" class="highlight">50,000</span> Users</label>
+              <input type="range" id="simUserSlider" min="500" max="1000000" step="5000" value="50000" oninput="updateUserScale(this.value)">
+            </div>
+            <div class="sim-result-box">
+              <div class="sim-result-item"><span class="sim-lbl">Simulated AAS:</span><strong id="simScore" class="sim-val">—</strong></div>
+              <div class="sim-result-item"><span class="sim-lbl">Simulated Tier:</span><strong id="simTier" class="sim-tier">—</strong></div>
+              <div class="sim-result-item"><span class="sim-lbl">Score Shift:</span><strong id="simDelta" class="sim-delta neutral">—</strong></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Remediation Roadmap                                     -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-remediation">
+      <div class="page-inner">
+        <section class="card roadmap-card">
+          <div class="card-header">
+            <h3>Prioritized Governance Remediation Roadmap</h3>
+            <span class="subtext">Actionable fixes derived from the audit</span>
+          </div>
+          <div class="roadmap-table-container">
+            <table class="roadmap-table">
+              <thead>
+                <tr>
+                  <th>Priority</th>
+                  <th>Trust Dimension</th>
+                  <th>Identified Vulnerability</th>
+                  <th>Remediation Requirement</th>
+                </tr>
+              </thead>
+              <tbody id="remediationBody">
+                <tr><td colspan="4" class="empty-state">Run an audit to generate the remediation plan.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Manual Assessment                                       -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-manual">
+      <div class="page-inner">
+        <section class="card">
+          <div class="card-header">
+            <h3>Interactive 7-Dimension Governance Questionnaire</h3>
+            <span class="subtext">QB4AIRA Question Bank — Manual Override</span>
+          </div>
+          <div class="manual-questions-grid">
+            <div class="question-group">
+              <h4>1. Fairness & Bias Mitigation</h4>
+              <p>Has the model training dataset been validated across all targeted demographics?</p>
+              <select class="form-select" id="q_fairness" onchange="recalculateManual()">
+                <option value="0.5" selected>Partially (Limited demographic coverage)</option>
+                <option value="1.0">Yes (All target demographics validated)</option>
+                <option value="0.0">No (Single-demographic training data)</option>
+              </select>
+            </div>
+            <div class="question-group">
+              <h4>2. Transparency & Explainability</h4>
+              <p>Does the prediction API provide feature attributions (SHAP/LIME/Grad-CAM)?</p>
+              <select class="form-select" id="q_transparency" onchange="recalculateManual()">
+                <option value="1.0" selected>Yes (Full XAI attributions available)</option>
+                <option value="0.5">Partial (Feature list only)</option>
+                <option value="0.0">No (Black box)</option>
+              </select>
+            </div>
+            <div class="question-group">
+              <h4>3. Safety & Fallback Controls</h4>
+              <p>Are corrupted inputs safely rejected before inference?</p>
+              <select class="form-select" id="q_safety" onchange="recalculateManual()">
+                <option value="1.0" selected>Yes (Validators active)</option>
+                <option value="0.5">Partial (Range checking only)</option>
+                <option value="0.0">No (Always attempts prediction)</option>
+              </select>
+            </div>
+            <div class="question-group">
+              <h4>4. Accountability & Human Oversight</h4>
+              <p>Is human review mandatory for high-risk outputs?</p>
+              <select class="form-select" id="q_accountability" onchange="recalculateManual()">
+                <option value="0.0" selected>No (Direct delivery without review)</option>
+                <option value="0.5">Partial (Post-output notice)</option>
+                <option value="1.0">Yes (Human sign-off required)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:1.25rem; text-align:right;">
+            <button class="btn-primary" onclick="showPage('page-scores')">→ View Updated Scores</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>AI-GRID v2.0 • IEEE P8000.1 • NIST AI RMF • EU AI Act • Dual-Mode Audit (MCP + Questionnaire)</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

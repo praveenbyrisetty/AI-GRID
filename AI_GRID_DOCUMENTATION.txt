@@ -1,0 +1,936 @@
+================================================================================
+     AI-GRID v2.0: AN EMPIRICAL GRC & SECURITY ASSURANCE FRAMEWORK FOR 
+         TOOL-AUGMENTED AI SYSTEMS AND AGENTIC MCP INTERFACES
+               (DUAL-MODE: QUESTIONNAIRE + MCP LIVE AUDIT)
+================================================================================
+
+
+================================================================================
+SECTION 1: BASE PAPERS, STANDARDS & ARCHITECTURAL FOUNDATIONS
+================================================================================
+
+1. MAIN BASE PAPER:
+   Title    : "QB4AIRA: A Question Bank for Responsible AI Risk Assessment"
+   Authors  : Sung Une Lee, Qinghua Lu, Liming Zhu, Xiwei Xu, et al.
+   Institute: CSIRO Data61, Australia
+   Journal  : IEEE Software, Volume 42, Issue 3, Pages 115-124, 2024
+   DOI      : https://doi.org/10.1109/MS.2024.3512577
+   Free ArXiv: https://arxiv.org/abs/2305.09300
+
+   SIMPLE EXPLANATION:
+   This is the main research paper our project is built on. A team of 
+   researchers from Australia created a "Question Bank" — basically a 
+   structured list of important questions you should ask before deploying 
+   any AI system. These questions cover things like: Is the AI fair? Is it 
+   safe? Can people understand how it makes decisions? Our AI-GRID tool 
+   takes these questions and turns them into an automated scoring system.
+
+2. SUPPORTING PAPER 1 (AI Governance & Taxonomy):
+   Title    : "An AI Harms and Governance Framework for Trustworthy AI"
+   Authors  : Jeremy Peckham
+   Journal  : IEEE Computer, Volume 57, Issue 3, Pages 59-68, March 2024
+   DOI      : https://doi.org/10.1109/MC.2024.3354040
+
+   SIMPLE EXPLANATION:
+   This paper classifies the different types of harm AI can cause (privacy 
+   violations, discrimination, physical harm, etc.) and proposes governance 
+   frameworks to prevent them. We use it to structure our 7 trust dimensions.
+
+3. SUPPORTING PAPER 2 (Bottleneck & Assurance Adequacy):
+   Title    : "Risk-Based AI Assurance Framework (RBAAF)"
+   Authors  : Aoun E. Muhammad, Kin-Choong Yow
+   Institute: University of Regina, Canada
+   Journal  : MDPI Information, 2024
+
+   SIMPLE EXPLANATION:
+   This paper introduces the idea that an AI system is only as trustworthy 
+   as its WEAKEST dimension. For example, if an AI scores 95% on transparency 
+   but only 20% on safety, it's still dangerous. This "bottleneck principle" 
+   is the foundation of our scoring algorithm — the weakest dimension drags 
+   down the overall trust score.
+
+4. CORE REGULATORY & TECHNICAL STANDARDS:
+   - Model Context Protocol (MCP) 2.0 Specification (Anthropic / Linux Foundation, 2024-2026)
+   - EU AI Act: Regulation (EU) 2024/1689 of the European Parliament and Council
+     * Focused Articles: 9 (Risk Management), 10 (Data Governance), 
+       13 (Transparency), 14 (Human Oversight), 15 (Cybersecurity & Robustness)
+   - NIST AI Risk Management Framework (AI RMF 1.0, NIST SP 1270)
+     * 4 Core Lifecycle Functions: GOVERN, MAP, MEASURE, MANAGE
+   - FAIR Model: Factor Analysis of Information Risk (Open Group Standard)
+   - IEEE P8000.1: Standard for Method & Criteria to Assess Trustworthiness of AI
+
+   SIMPLE EXPLANATION:
+   These are the laws and standards we check AI systems against:
+   - EU AI Act = Europe's law that classifies AI into risk tiers (Minimal, 
+     Limited, High, Unacceptable) and bans the most dangerous ones.
+   - NIST AI RMF = America's framework for managing AI risks through 4 steps: 
+     Govern, Map, Measure, Manage.
+   - MCP = The protocol that modern AI agents use to connect to external tools 
+     (databases, APIs, sensors). AI-GRID probes this connection for security holes.
+
+
+================================================================================
+SECTION 2: EXECUTIVE SUMMARY & PRECISE PROJECT SCOPE
+================================================================================
+
+PROJECT TITLE:
+AI-GRID v2.0: Automated Security Scanner, Empirical Trust Evaluator, and 
+Regulatory Compliance Pre-Audit Engine for Tool-Augmented AI and Agentic 
+MCP Systems — with Dual-Mode Assessment (Questionnaire + MCP Live Audit)
+
+WHAT IS AI-GRID? (SIMPLE EXPLANATION):
+Imagine you build an AI system — maybe a medical diagnosis tool, a loan 
+approval system, or a self-driving car component. Before deploying it to 
+real users, you need to answer critical questions:
+  - Is it fair to all demographics? (Fairness)
+  - Can people understand its decisions? (Transparency)
+  - Does it handle bad inputs safely? (Safety)
+  - Does it protect user data? (Privacy)
+  - Is a human reviewing its critical decisions? (Accountability)
+  - Can hackers trick it with fake data? (Security)
+  - Could it cause harm to society or the environment? (Societal Impact)
+
+AI-GRID automatically evaluates ALL 7 of these dimensions, gives you a 
+trust score (0-100), tells you which EU law category your AI falls into, 
+and generates a prioritized fix-it list.
+
+DUAL-MODE ARCHITECTURE (NEW IN v2.0):
+AI-GRID v2.0 supports TWO ways to assess any AI system:
+
+  MODE 1: QUESTIONNAIRE-BASED ASSESSMENT (No MCP Required)
+  ─────────────────────────────────────────────────────────
+  - The user answers 25 structured questions about their AI system across 
+    6 categories (Model Identity, Training Data, Safety, Transparency, 
+    Privacy, Accountability).
+  - AI-GRID computes all 7 trust dimension scores from these answers.
+  - This mode works for ANY AI system — no technical connection needed.
+  - Perfect for: early-stage projects, legacy models, AI systems without 
+    MCP interfaces, quick risk assessments.
+
+  MODE 2: MCP LIVE AUDIT (Requires Running MCP Server)
+  ─────────────────────────────────────────────────────
+  - AI-GRID connects to the target AI's MCP server over JSON-RPC.
+  - It automatically discovers registered tools, probes safety guardrails, 
+    tests adversarial robustness, inspects metadata, and extracts evidence.
+  - This mode provides deeper, evidence-based assessment.
+  - Perfect for: production-deployed AI agents, MCP-compliant systems, 
+    agentic AI architectures.
+
+  Both modes produce IDENTICAL output:
+  → 7-dimension trust scores
+  → Composite AAS (Assurance Adequacy Score)
+  → EU AI Act risk tier classification
+  → NIST AI RMF compliance mapping
+  → Prioritized remediation roadmap
+  → What-If deployment scenario simulation
+
+WHAT "ANY AI SYSTEM" MEANS:
+- With Questionnaire Mode: literally any AI system in any domain — you 
+  just answer questions about it.
+- With MCP Mode: any AI system that exposes its capabilities via the 
+  Model Context Protocol (MCP). For legacy models (scikit-learn, PyTorch, 
+  XGBoost), the "MCP Adapter Pattern" wraps the model inference as an 
+  MCP tool declaration.
+
+
+================================================================================
+SECTION 3: SYSTEM ARCHITECTURE & DATA FLOW
+================================================================================
+
+HIGH-LEVEL ARCHITECTURE:
+
+    ┌───────────────────────────────────────────────────────────────┐
+    │                   USER / EXAMINER                            │
+    │          Opens browser at http://localhost:8000               │
+    └───────────────────────────┬───────────────────────────────────┘
+                                │
+                                ▼
+    ┌───────────────────────────────────────────────────────────────┐
+    │              AI-GRID WEB DASHBOARD (SPA)                     │
+    │   - Mode Selection: "Answer Questions" or "Connect via MCP"  │
+    │   - 6-Step Question Wizard with Progress Bar                 │
+    │   - MCP Connection Form (URL / STDIO command)                │
+    │   - 7-Dimension Radar Chart (Chart.js)                       │
+    │   - Audit Log Terminal with Streaming                        │
+    │   - What-If Simulator & Remediation Table                    │
+    └───────────────────────────┬───────────────────────────────────┘
+                                │ REST API Calls
+                                ▼
+    ┌───────────────────────────────────────────────────────────────┐
+    │              AI-GRID FLASK SERVER (server.py)                 │
+    │                                                               │
+    │   ENDPOINTS:                                                  │
+    │   GET  /api/questions           → Returns 25 wizard questions │
+    │   POST /api/audit/questionnaire → Runs questionnaire audit    │
+    │   POST /api/audit/mcp           → Runs MCP live audit         │
+    │   POST /api/simulate            → What-If simulation          │
+    │   GET  /api/status              → Health check                │
+    └────────────┬─────────────────────────────┬────────────────────┘
+                 │                             │
+        ┌────────▼─────────┐          ┌────────▼──────────┐
+        │  QUESTIONNAIRE   │          │   MCP LIVE AUDIT   │
+        │      ENGINE      │          │      ENGINE        │
+        │                  │          │                    │
+        │ ai_profile_      │          │ aigrid_auditor.py  │
+        │ engine.py        │          │                    │
+        │                  │          │ Connects to any    │
+        │ Takes 25 answers │          │ MCP server via     │
+        │ Computes scores  │          │ JSON-RPC, probes   │
+        │ using penalty    │          │ tools, extracts    │
+        │ formulas         │          │ evidence           │
+        └────────┬─────────┘          └────────┬──────────┘
+                 │                             │
+                 └──────────┬──────────────────┘
+                            │
+                            ▼ IDENTICAL OUTPUT FORMAT
+        ┌───────────────────────────────────────────────────┐
+        │            SCORING & COMPLIANCE ENGINE            │
+        │                                                   │
+        │  Algorithm 2: Bottleneck AAS Composite Score      │
+        │  Algorithm 3: EU AI Act Risk Classification       │
+        │  Algorithm 4: NIST AI RMF 4-Function Mapping      │
+        │  Algorithm 5: What-If Scenario Simulation         │
+        │                                                   │
+        │  OUTPUT:                                          │
+        │  • 7 Dimension Scores (0-100 each)                │
+        │  • AAS Score + Letter Grade (A+ to F)             │
+        │  • EU Tier (Minimal/Limited/High/Unacceptable)    │
+        │  • NIST Status (Compliant/Partial/Non-Compliant)  │
+        │  • Prioritized Remediation Plan                   │
+        │  • Audit Log Trail                                │
+        └───────────────────────────────────────────────────┘
+
+
+================================================================================
+SECTION 4: THE 25-QUESTION WIZARD (QUESTIONNAIRE MODE)
+================================================================================
+
+When the user selects "Answer Questions" mode, AI-GRID presents a 6-step 
+wizard with 25 structured questions. Each question maps to one or more of 
+the 7 trust dimensions. Here is the complete question breakdown:
+
+STEP 1: MODEL IDENTITY (5 questions)
+─────────────────────────────────────
+These questions identify WHAT the AI system is.
+
+  Q1.  "What is the name of your AI model/system?"
+       → Type: Text input
+       → Example: "Customer Churn Predictor", "Medical Imaging Classifier"
+       → Purpose: Labels the audit report
+
+  Q2.  "What is the current version?"
+       → Type: Text input
+       → Example: "1.0.0", "2.3.1"
+       → Purpose: Tracks which version was assessed
+
+  Q3.  "What domain does this AI operate in?"
+       → Type: Dropdown selection
+       → Options: Healthcare, Finance, Agriculture, Education, Autonomous 
+         Vehicles, Criminal Justice, Entertainment, E-Commerce, Manufacturing, 
+         Cybersecurity, Other
+       → Purpose: Domain determines the What-If simulation multiplier and 
+         contextual risk level
+
+  Q4.  "What is the model architecture?"
+       → Type: Text input
+       → Example: "Transformer (GPT-4)", "CNN (ResNet-50)", "Random Forest"
+       → Purpose: Documents technical architecture for the audit report
+
+  Q5.  "What is the autonomy level of this AI?"
+       → Type: Dropdown selection
+       → Options:
+         - Advisory Only (human makes the final decision)
+         - Semi-Autonomous (AI acts, human can override)
+         - Fully Autonomous (AI acts independently)
+       → Maps to: Accountability & Oversight dimension
+       → Impact: Fully autonomous + no human oversight = severe penalty
+
+STEP 2: TRAINING DATA (5 questions)
+────────────────────────────────────
+These questions assess HOW the model was trained.
+
+  Q6.  "How large is the training dataset? (number of samples)"
+       → Type: Number input
+       → Maps to: Societal Impact dimension
+       → Impact: < 2,000 samples = -25 points, < 5,000 = -8 points
+
+  Q7.  "How many output classes/categories does the model have?"
+       → Type: Number input
+       → Purpose: Used to construct class distribution for metadata
+
+  Q8.  "How balanced is the class distribution in training data?"
+       → Type: Dropdown selection
+       → Options: Well-Balanced / Moderately Imbalanced / Severely Imbalanced
+       → Maps to: Fairness & Bias dimension
+       → Impact: Severe imbalance (>5:1 ratio) = -18 points
+
+  Q9.  "What percentage of target demographics/regions does the 
+        training data cover?"
+       → Type: Dropdown selection
+       → Options: Full (>80%) / Partial (40-80%) / Limited (<40%)
+       → Maps to: Fairness & Bias dimension
+       → Impact: Limited coverage = -40 points
+
+  Q10. "Are there known demographic or geographic gaps in training data?"
+       → Type: Dropdown selection
+       → Options: No gaps / Minor (1-2 groups) / Significant (3+ groups)
+       → Maps to: Fairness & Bias dimension
+       → Impact: Significant gaps = -12 points
+
+STEP 3: SAFETY & RELIABILITY (4 questions)
+──────────────────────────────────────────
+These questions assess WHAT HAPPENS when things go wrong.
+
+  Q11. "Does the model validate and reject corrupted/malformed inputs?"
+       → Type: Dropdown selection
+       → Options: Comprehensive / Basic range checking / No validation
+       → Maps to: Safety & Reliability dimension
+       → Impact: No validation = -30 points (CRITICAL finding)
+
+  Q12. "How many safety guardrails are implemented?"
+       → Type: Dropdown selection
+       → Options: 3+ guardrails / 1-2 guardrails / No guardrails
+       → Maps to: Safety & Reliability dimension
+       → Impact: Zero guardrails = -30 points (CRITICAL finding)
+
+  Q13. "Does the model clamp or limit dangerous outputs?"
+       → Type: Dropdown selection
+       → Options: Yes (outputs clamped) / Partial / No (raw outputs)
+       → Maps to: Safety & Reliability dimension
+       → Impact: No clamping = -18 points
+
+  Q14. "Does the system provide environmental or contextual safety 
+        advisories with predictions?"
+       → Type: Dropdown selection
+       → Options: Yes / No
+       → Maps to: Societal Impact dimension
+       → Impact: No advisory = -15 points
+
+STEP 4: TRANSPARENCY & EXPLAINABILITY (3 questions)
+───────────────────────────────────────────────────
+These questions assess WHETHER users can understand the AI's decisions.
+
+  Q15. "Does the model have an explainability engine (SHAP, LIME, Grad-CAM)?"
+       → Type: Dropdown selection
+       → Options: Full XAI engine / Feature importance only / Black box
+       → Maps to: Transparency dimension
+       → Impact: Black box = -45 points (CRITICAL finding)
+
+  Q16. "How many feature attributions are provided per prediction?"
+       → Type: Dropdown selection
+       → Options: 4+ features / 1-3 features / None
+       → Maps to: Transparency dimension
+       → Impact: No attributions = -30 points
+
+  Q17. "Does the model provide human-readable reasoning summaries?"
+       → Type: Dropdown selection
+       → Options: Yes / No
+       → Maps to: Transparency dimension
+       → Impact: No reasoning = -10 points
+
+STEP 5: PRIVACY & SECURITY (5 questions)
+────────────────────────────────────────
+These questions assess HOW data is protected and HOW robust the model is.
+
+  Q18. "Is stored data encrypted at rest?"
+       → Type: Dropdown selection
+       → Options: Yes (AES-256 or equivalent) / No
+       → Maps to: Privacy & Governance dimension
+       → Impact: No encryption = -30 points (HIGH finding)
+
+  Q19. "Is data encrypted in transit (TLS/HTTPS)?"
+       → Type: Dropdown selection
+       → Options: Yes (TLS 1.2+) / No
+       → Maps to: Privacy & Governance dimension
+       → Impact: No TLS = -20 points (CRITICAL finding)
+
+  Q20. "What is the data retention period?"
+       → Type: Dropdown selection
+       → Options: Short (≤90 days) / Medium (91-180 days) / Long (>180 days)
+       → Maps to: Privacy & Governance dimension
+       → Impact: >180 days = -15 points
+
+  Q21. "Has the model been tested against adversarial attacks?"
+       → Type: Dropdown selection
+       → Options: Comprehensive testing / Basic testing / Not tested
+       → Maps to: Security & Robustness dimension
+       → Impact: Not tested = -30 points (HIGH finding)
+
+  Q22. "Is model drift monitoring configured?"
+       → Type: Dropdown selection
+       → Options: Automated detection / Manual review / None
+       → Maps to: Security & Robustness dimension
+       → Impact: No monitoring = -15 points
+
+STEP 6: ACCOUNTABILITY & IMPACT (3 questions)
+─────────────────────────────────────────────
+These questions assess WHO is responsible and WHAT could go wrong.
+
+  Q23. "Is human oversight/review required before the AI's output 
+        is acted upon?"
+       → Type: Dropdown selection
+       → Options: Mandatory / Optional / No human review
+       → Maps to: Accountability & Oversight dimension
+       → Impact: No oversight = -45 points (CRITICAL finding)
+
+  Q24. "Is there a defined incident escalation protocol?"
+       → Type: Dropdown selection
+       → Options: Yes / No
+       → Maps to: Accountability & Oversight dimension
+       → Impact: No protocol = -20 points (HIGH finding)
+
+  Q25. "What is the potential societal risk if the model produces 
+        incorrect results?"
+       → Type: Dropdown selection
+       → Options: Low (inconvenience) / Medium (financial) / High (physical harm)
+       → Maps to: Societal Impact dimension
+       → Impact: High risk = -10 points
+
+
+================================================================================
+SECTION 5: ALGORITHM SPECIFICATIONS (HOW SCORES ARE CALCULATED)
+================================================================================
+
+ALGORITHM 1: QUESTIONNAIRE-BASED SCORING ENGINE
+────────────────────────────────────────────────
+SIMPLE EXPLANATION:
+Each of the 7 trust dimensions starts at 100 points (perfect score). 
+For every question where the user selects a weak or missing capability, 
+points are deducted. The deduction amount depends on how critical that 
+capability is. After all deductions, each dimension is clamped to a 
+minimum of 10 (you can't score below 10).
+
+HOW IT WORKS:
+  Input : User's 25 questionnaire answers (JSON dictionary)
+  Output: 7 dimension scores, each between 10.0 and 100.0
+
+  For each dimension:
+    1. Start with base_score = 100.0
+    2. For each relevant question:
+       - If answer is the "worst" option: apply LARGE penalty (15-45 points)
+       - If answer is the "middle" option: apply MODERATE penalty (5-20 points)
+       - If answer is the "best" option: no penalty (0 points)
+    3. Final_Score = clamp(base_score - total_penalties, 10.0, 100.0)
+
+  PENALTY EXAMPLES:
+    - No human oversight for a fully autonomous system → -45 points
+    - No explainability engine (black box model) → -45 points
+    - No input validation → -30 points
+    - No encryption at rest → -30 points
+    - Severe class imbalance in training data → -18 points
+    - No human-readable reasoning → -10 points
+
+ALGORITHM 1B: MCP-BASED LIVE PROBING ENGINE
+───────────────────────────────────────────
+SIMPLE EXPLANATION:
+When the user has a real MCP server running, AI-GRID connects to it and 
+runs automated tests. It discovers what tools the AI has, calls each 
+tool with normal and adversarial inputs, and scores the AI based on 
+what actually happens (not just what the user says).
+
+HOW IT WORKS:
+  Input : MCP Server connection (URL or STDIO command)
+  Output: Same 7 dimension scores (10.0 - 100.0)
+
+  Process:
+    1. Connect to MCP server via JSON-RPC.
+    2. Call `list_tools()` to discover registered capabilities.
+    3. Call metadata tool to extract model info, encryption flags, 
+       retention policies, oversight requirements.
+    4. Call prediction tools with normal inputs vs. adversarial inputs 
+       to test fairness, safety guardrails, confidence disparity.
+    5. Call explainability tools to verify feature attributions exist 
+       and sum correctly.
+    6. Call adversarial testing tools to measure robustness.
+    7. Compute dimension scores from actual probe observations.
+
+ALGORITHM 2: BOTTLENECK ASSURANCE ADEQUACY SCORE (AAS)
+──────────────────────────────────────────────────────
+SIMPLE EXPLANATION:
+The AAS is the OVERALL trust score for the AI system. It uses a special 
+formula that prevents one really high score from hiding a dangerous low 
+score. This is called the "Bottleneck Principle" — the overall score is 
+dragged down by the weakest dimension.
+
+FORMULA:
+  Weighted_Average = (1/7) × sum(all 7 dimension scores)
+  Bottleneck_Score = min(all 7 dimension scores)  ← the weakest one
+  
+  AAS = (0.60 × Weighted_Average) + (0.40 × Bottleneck_Score)
+
+WHY 0.60 AND 0.40?
+  - 60% weight on the average means the overall profile still matters.
+  - 40% weight on the weakest dimension means you CAN'T hide a critical 
+    failure. If one dimension is terrible (say 20/100), it drags the 
+    entire AAS down significantly, even if all other dimensions are 95+.
+
+LETTER GRADES:
+  AAS >= 90.0 → Grade A+ (Exceptional Assurance)
+  AAS >= 80.0 → Grade A  (Robust Assurance)
+  AAS >= 70.0 → Grade B  (Adequate Assurance)
+  AAS >= 60.0 → Grade C  (Moderate Risk — Governance Deficits Present)
+  AAS >= 50.0 → Grade D  (Elevated Risk — Deployment Should Be Gated)
+  AAS <  50.0 → Grade F  (Critical Risk — Unacceptable for Production)
+
+EXAMPLE CALCULATION:
+  Suppose scores are: Fairness=67, Transparency=100, Safety=100, 
+  Privacy=55, Accountability=35, Security=80, Societal=78
+
+  Weighted_Average = (67+100+100+55+35+80+78) / 7 = 73.6
+  Bottleneck_Score = min(35) = 35.0  ← Accountability is the bottleneck
+  
+  AAS = (0.60 × 73.6) + (0.40 × 35.0) = 44.2 + 14.0 = 58.1
+  
+  Grade: D (Elevated Risk) — even though 4 dimensions scored 78+, the 
+  weak Accountability dimension dragged the overall score to 58.1.
+
+ALGORITHM 3: EU AI ACT RISK TIER CLASSIFICATION
+────────────────────────────────────────────────
+SIMPLE EXPLANATION:
+The EU AI Act (Europe's AI law) classifies AI systems into 4 risk tiers. 
+AI-GRID maps the AAS score directly to these tiers so you can see where 
+your AI would fall under European law.
+
+MAPPING:
+  AAS >= 76.0 → MINIMAL RISK
+    Meaning: Low regulatory burden. The AI is considered safe enough 
+    that only voluntary codes of conduct apply.
+
+  51.0 <= AAS < 76.0 → LIMITED RISK
+    Meaning: Transparency obligations apply. You must disclose to users 
+    that they are interacting with AI and show confidence levels.
+
+  26.0 <= AAS < 51.0 → HIGH RISK
+    Meaning: Strict regulatory requirements. You need a conformity 
+    assessment, risk management system, and mandatory human oversight 
+    (Article 14). This is where medical, financial, and criminal justice 
+    AI typically falls.
+
+  AAS < 26.0 → UNACCEPTABLE RISK
+    Meaning: PROHIBITED from deployment under Article 5. Examples include 
+    social scoring systems and real-time biometric surveillance.
+
+ALGORITHM 4: NIST AI RMF 4-FUNCTION LIFECYCLE MAPPING
+─────────────────────────────────────────────────────
+SIMPLE EXPLANATION:
+The US government's NIST framework organizes AI risk management into 
+4 lifecycle functions: GOVERN, MAP, MEASURE, MANAGE. AI-GRID translates 
+the 7 trust dimensions into these 4 functions so you can see compliance 
+with American standards too.
+
+MAPPING:
+  GOVERN  = (Accountability & Oversight + Privacy & Governance) / 2
+            → "Are the right governance structures in place?"
+  
+  MAP     = (Societal Impact + Fairness & Bias) / 2
+            → "Do we understand who is affected and how?"
+  
+  MEASURE = (Fairness & Bias + Transparency + Safety & Reliability) / 3
+            → "Can we quantify the AI's trustworthiness?"
+  
+  MANAGE  = (Security & Robustness + Safety & Reliability) / 2
+            → "Can we control and mitigate ongoing risks?"
+
+STATUS THRESHOLDS:
+  Score >= 70.0 → COMPLIANT (green badge)
+  Score 45.0 - 69.9 → PARTIALLY COMPLIANT (yellow badge)
+  Score < 45.0 → NON-COMPLIANT (red badge)
+
+ALGORITHM 5: WHAT-IF SCENARIO SIMULATION ENGINE
+────────────────────────────────────────────────
+SIMPLE EXPLANATION:
+The same AI system has different risk levels depending on WHERE it's 
+deployed and HOW MANY people it affects. A chatbot recommending movies 
+is low risk; the same AI making medical diagnoses is high risk. This 
+engine lets you simulate: "What if we deployed this AI in healthcare 
+instead of entertainment? What if we scaled from 5,000 to 500,000 users?"
+
+FORMULA:
+  Base_Risk = 100.0 - Base_AAS
+
+  Domain Multipliers (how much riskier is this domain?):
+    - Entertainment / Hobby: 0.8× (lower risk)
+    - Education: 1.1×
+    - E-Commerce / Retail: 1.1×
+    - Manufacturing: 1.2×
+    - Finance / Banking: 1.3×
+    - Cybersecurity: 1.3×
+    - Agriculture: 1.4×
+    - Healthcare: 1.5× (higher risk — lives at stake)
+    - Autonomous Vehicles: 1.5×
+    - Criminal Justice: 1.5×
+    - General Purpose: 1.0× (baseline)
+
+  Scale Factor = 1.0 + (min(Users, 1,000,000) / 2,000,000)
+    → More users = more exposure = more risk
+
+  Adjusted_Risk = clamp(Base_Risk × Domain_Multiplier × Scale_Factor, 5.0, 99.0)
+  Simulated_AAS = 100.0 - Adjusted_Risk
+
+EXAMPLE:
+  An AI with AAS = 70.0 (Grade B) is deployed in Healthcare (1.5×) with 
+  500,000 users:
+    Base_Risk = 100 - 70 = 30
+    Scale_Factor = 1.0 + (500000 / 2000000) = 1.25
+    Adjusted_Risk = 30 × 1.5 × 1.25 = 56.25
+    Simulated_AAS = 100 - 56.25 = 43.75 → HIGH RISK
+  
+  The same AI that was "Grade B" in a low-risk domain becomes 
+  "HIGH RISK" when deployed in healthcare at scale!
+
+
+================================================================================
+SECTION 6: EU AI ACT TECHNICAL PRE-AUDIT SPECIFICATION
+================================================================================
+
+IMPORTANT DISCLAIMER:
+AI-GRID does NOT legally certify AI systems. No software tool can do that —
+EU AI Act compliance requires human audits, organizational documentation, 
+and review by a Notified Body. AI-GRID acts as an "Automated Technical 
+Pre-Audit & Evidence Harvester" that identifies vulnerabilities BEFORE 
+formal compliance review.
+
+STRUCTURE: Requirement → Evidence → Test → Result → Risk → Remediation
+
+1. ARTICLE 9 (Risk Management System):
+   - Requirement: Continuous identification and mitigation of foreseeable risks.
+   - How AI-GRID Tests It: Adversarial robustness testing — probes the model 
+     with adversarial noise and corrupted inputs to see if risks are managed.
+   - Questionnaire Mapping: Questions about guardrails, adversarial testing, 
+     drift monitoring.
+   - Score Contribution: Security & Robustness dimension.
+
+2. ARTICLE 10 (Data & Data Governance):
+   - Requirement: Training data must be representative across target populations.
+   - How AI-GRID Tests It: Checks geographic/demographic coverage ratio, 
+     class balance, and known data gaps.
+   - Questionnaire Mapping: Questions about dataset size, class balance, 
+     coverage percentage, known gaps.
+   - Score Contribution: Fairness & Bias dimension.
+
+3. ARTICLE 13 (Transparency & Provision of Information):
+   - Requirement: System must provide interpretable explanations and confidence.
+   - How AI-GRID Tests It: Checks for explainability engine, feature 
+     attributions, human-readable reasoning summaries.
+   - Questionnaire Mapping: Questions about SHAP/LIME/Grad-CAM availability, 
+     attribution count, reasoning presence.
+   - Score Contribution: Transparency dimension.
+
+4. ARTICLE 14 (Human Oversight):
+   - Requirement: Enable humans to oversee operation and override decisions.
+   - How AI-GRID Tests It: Checks if human-in-the-loop is mandatory, 
+     whether incident escalation protocols exist.
+   - Questionnaire Mapping: Questions about human oversight level, 
+     incident escalation protocol.
+   - Score Contribution: Accountability & Oversight dimension.
+
+5. ARTICLE 15 (Accuracy, Robustness, and Cybersecurity):
+   - Requirement: Resilience against errors, faults, and adversarial attacks.
+   - How AI-GRID Tests It: Input validation coverage, adversarial testing 
+     status, encryption protocols, drift monitoring.
+   - Questionnaire Mapping: Questions about input validation, encryption 
+     at rest/in transit, adversarial testing, drift monitoring.
+   - Score Contribution: Safety & Reliability + Security & Robustness.
+
+
+================================================================================
+SECTION 7: CODEBASE ARCHITECTURE & FILE MANIFEST
+================================================================================
+
+PROJECT DIRECTORY: t:\Main\
+
+1. ai_profile_engine.py (NEW IN v2.0)
+   ──────────────────────
+   Role: Questionnaire-Based Scoring Engine.
+   
+   SIMPLE EXPLANATION:
+   This is the brain of the questionnaire mode. It contains all 25 questions 
+   and the scoring logic that converts answers into the 7 trust dimension 
+   scores. When a user fills out the wizard and clicks "Generate Audit 
+   Report", this file processes their answers.
+
+   Key Functions:
+   • get_questions() → Returns the complete list of 25 questions organized 
+     into 6 steps for the frontend wizard to render.
+   • generate_audit_from_questionnaire(answers) → Takes a dictionary of 
+     user answers, computes all 7 dimension scores using penalty formulas, 
+     generates the AAS composite score, EU AI Act classification, NIST RMF 
+     mapping, audit logs, and remediation findings. Returns the exact same 
+     data structure as the MCP-based audit.
+
+   Data Structures:
+   • QUESTIONS: List of 25 question dictionaries, each containing:
+     id, step, step_title, label, type, options, required, dimension
+   • DOMAIN_LABELS: Maps domain codes to display names.
+
+2. aigrid_auditor.py (MODIFIED)
+   ──────────────────
+   Role: Core Audit Engine — Supports Both Modes.
+   
+   SIMPLE EXPLANATION:
+   This is the main auditor class. In v1.0 it was hardcoded to the soil AI 
+   MCP server. In v2.0 it's completely generic — it can audit ANY MCP server 
+   (you pass the connection dynamically) AND it can run a questionnaire-based 
+   audit (by delegating to ai_profile_engine.py).
+
+   Class: AIGRIDMCPAuditor
+   Methods:
+   • run_live_audit(mcp_server) → Connects to a real MCP server, discovers 
+     tools, probes each one, and computes scores from actual observations.
+   • run_questionnaire_audit(answers) → Delegates to ai_profile_engine to 
+     generate scores from user answers.
+   • simulate_scenario(base_aas, domain, scale_users) → Runs the What-If 
+     simulation engine (Algorithm 5).
+
+3. server.py (MODIFIED)
+   ──────────
+   Role: Flask REST API & Web Server.
+   
+   SIMPLE EXPLANATION:
+   This is the web server that serves the dashboard and handles API requests. 
+   It exposes endpoints that the frontend calls when the user interacts 
+   with the dashboard.
+
+   Endpoints:
+   • GET  /                       → Serves the dashboard HTML page
+   • GET  /api/status             → Health check ("is the server running?")
+   • GET  /api/questions          → Returns the 25 questions for the wizard
+   • POST /api/audit/questionnaire → Accepts user answers, returns full audit
+   • POST /api/audit/mcp          → Accepts MCP server config, runs live audit
+   • POST /api/simulate           → Runs What-If simulation with given params
+
+4. public/index.html (MODIFIED)
+   ──────────────────
+   Role: Single-Page Application (SPA) — the entire dashboard UI.
+   
+   SIMPLE EXPLANATION:
+   This is the main HTML page that users see. It contains all the different 
+   "pages" (tabs) of the dashboard, with only one visible at a time.
+
+   Pages:
+   • #page-setup       → Mode selection (Questionnaire vs MCP) + Question 
+                          wizard with 6-step progress bar
+   • #page-profile     → Shows the AI system's identity after audit
+   • #page-audit       → Audit log terminal showing probe-by-probe results
+   • #page-scores      → AAS score card + 7-dimension Radar Chart
+   • #page-compliance  → EU AI Act badge + NIST RMF 4-function matrix
+   • #page-simulation  → What-If slider with domain and user scaling
+   • #page-remediation → Prioritized remediation table with action items
+   • #page-manual      → Interactive QB4AIRA questionnaire for score override
+
+5. public/app.js (MODIFIED)
+   ──────────────
+   Role: Client-side JavaScript controller.
+   
+   SIMPLE EXPLANATION:
+   This handles all the interactive behavior: page navigation, wizard step 
+   progression, form validation, API calls, chart rendering, and data display.
+
+   Key Functions:
+   • selectMode(mode)         → Shows Questionnaire wizard or MCP form
+   • wizardNext() / wizardPrev() → Navigate between wizard steps
+   • renderWizardStep()        → Dynamically renders questions for current step
+   • submitQuestionnaire()     → Collects all answers, sends to API, displays results
+   • connectMcp()              → Sends MCP config to API for live audit
+   • applyAuditDataToUI(data)  → Populates ALL dashboard pages with audit results
+   • initRadarChart() / updateRadarChart() → Chart.js radar visualization
+   • streamLogsToTerminal()    → Animated log line display
+   • runSimulation()           → Calls What-If API when user changes domain/scale
+
+6. public/styles.css (MODIFIED)
+   ──────────────────
+   Role: Modern White + Violet design system.
+   
+   SIMPLE EXPLANATION:
+   All the visual styling — colors, layouts, animations, responsive design.
+
+   Key Style Sections:
+   • CSS Variables → Color palette, fonts, spacing, border radius
+   • Sidebar Navigation → Collapsible left panel with navigation links
+   • Mode Selection Cards → Glassmorphism hover cards for choosing audit mode
+   • Question Wizard → Progress bar, step dots, animated transitions, 
+     question groups with focus states, error shake animation
+   • Radar Chart → Chart container with proper sizing
+   • Terminal Window → Dark terminal with colored log lines
+   • Buttons → Primary (violet), Secondary (outline), Success (green)
+   • Responsive → Mobile sidebar overlay, grid adjustments
+
+
+================================================================================
+SECTION 8: VIVA / PANEL DEFENSE SCRIPT (TOP 12 EXAMINER QUESTIONS)
+================================================================================
+
+Q1: "Your project claims to audit 'any AI system.' How is that possible?"
+A1: "AI-GRID v2.0 supports two modes. In Questionnaire Mode, the user 
+     answers 25 structured questions about any AI system — regardless of 
+     its architecture, framework, or deployment type. The system computes 
+     trust scores from these answers using penalty-based formulas. No 
+     technical connection is needed. In MCP Mode, AI-GRID connects to a 
+     real MCP server and probes its tools directly. For non-MCP models, 
+     we use the 'MCP Adapter Pattern' — a lightweight wrapper that 
+     exposes any model's inference as an MCP tool."
+
+Q2: "Where do the scores come from? Are they arbitrary numbers?"
+A2: "No. Every score starts at 100 (perfect) and is reduced by 
+     deterministic penalty formulas based on concrete evidence. For 
+     example, if the user says their model has no human oversight, the 
+     Accountability dimension loses exactly 45 points. If data is not 
+     encrypted at rest, Privacy loses exactly 30 points. These penalties 
+     are derived from the severity weights in the QB4AIRA question bank 
+     and the RBAAF assurance framework."
+
+Q3: "What is the difference between Questionnaire Mode and MCP Mode?"
+A3: "Questionnaire Mode is based on self-reported answers — the user 
+     describes their AI system's characteristics. MCP Mode is evidence-based 
+     — AI-GRID actually connects to the AI system and tests it. Both 
+     produce the same output format, but MCP Mode provides harder evidence 
+     because it observes actual behavior rather than relying on the user's 
+     claims. Questionnaire Mode is ideal for early-stage assessment or 
+     when MCP is not available."
+
+Q4: "Can AI-GRID legally certify that an AI system is EU AI Act compliant?"
+A4: "No software tool can legally certify an AI system, as EU AI Act conformity 
+     assessment requires human audits, organizational documentation, and 
+     review by a Notified Body. AI-GRID acts as an 'Automated Technical 
+     Pre-Audit and Evidence Harvester.' It identifies which risk tier the 
+     AI falls into and flags specific Article violations so organizations 
+     know what to fix BEFORE the formal audit."
+
+Q5: "Explain the Bottleneck Principle in your scoring algorithm."
+A5: "In high-stakes AI governance, a simple arithmetic average is dangerous. 
+     A medical AI with 95% transparency and 95% privacy would average 95%, 
+     masking a catastrophic 20% safety score. Our formula is:
+     AAS = 0.6 × Average + 0.4 × Min(all dimensions). 
+     The 40% weight on the weakest dimension means one critical failure 
+     drags the entire score down. The overall trust is mathematically 
+     constrained by the system's weakest link."
+
+Q6: "Why did you choose the Model Context Protocol (MCP) instead of REST?"
+A6: "A REST API tests simple text-in, text-out behavior. MCP standardizes 
+     how AI agents declare tools, pass arguments, and handle responses. 
+     In autonomous systems, the primary attack surface is at this tool 
+     boundary — tool poisoning, argument manipulation, privilege escalation. 
+     MCP lets AI-GRID probe these protocol-level vulnerabilities."
+
+Q7: "What is the difference between AI-GRID and tools like IBM AI Fairness 360?"
+A7: "IBM AIF360, Google Model Cards, and Microsoft RAI Toolkit are siloed — 
+     they address bias, documentation, or interpretability in isolation. 
+     AI-GRID is a unified GRC platform that evaluates all 7 trustworthiness 
+     dimensions simultaneously, maps them to both EU and US regulations, 
+     and provides What-If simulation and remediation roadmaps."
+
+Q8: "How does the What-If Simulation Engine work?"
+A8: "It models how risk changes when the same AI is deployed in different 
+     contexts. A model with AAS 70 (Grade B) deployed in entertainment is 
+     low risk. The same model deployed in healthcare (1.5× multiplier) 
+     with 500,000 users (scale factor 1.25) becomes HIGH RISK:
+     Adjusted_Risk = 30 × 1.5 × 1.25 = 56.25, Simulated_AAS = 43.75."
+
+Q9: "How do the remediation recommendations work?"
+A9: "For every finding, AI-GRID generates: the severity (CRITICAL/HIGH/
+     MEDIUM/LOW), which trust dimension is affected, a description of the 
+     vulnerability, and a specific, actionable remediation requirement. 
+     Findings are sorted by severity so teams fix the most dangerous 
+     issues first."
+
+Q10: "Why 25 questions? Why not more or fewer?"
+A10: "The 25 questions are mapped directly to the 7 IEEE/QB4AIRA trust 
+      dimensions. Each question probes a specific, measurable aspect that 
+      has a concrete impact on trust scores. Fewer questions would miss 
+      critical dimensions. More would add redundancy without improving 
+      scoring accuracy. The 6-step wizard groups questions logically so 
+      users understand what each section assesses."
+
+Q11: "What are the limitations of AI-GRID?"
+A11: "First, Questionnaire Mode relies on self-reported answers — if the 
+      user provides inaccurate information, scores will be wrong. Second, 
+      AI-GRID conducts black-box behavioral probing; it does not inspect 
+      internal neural network weights. Third, it tests technical and 
+      operational controls but cannot evaluate organizational governance 
+      policies (such as whistleblower protections). Fourth, the MCP Mode 
+      currently requires a running MCP server."
+
+Q12: "How does the system handle edge cases in scoring?"
+A12: "All dimension scores are clamped to the range [10.0, 100.0] — you 
+      cannot score below 10 even with all worst answers. The AAS formula 
+      uses alpha=0.60 as the sensitivity parameter, balancing average 
+      performance with bottleneck severity. EU AI Act tiers have clear, 
+      non-overlapping boundaries. The simulation engine clamps adjusted 
+      risk to [5.0, 99.0] to prevent mathematical impossibilities."
+
+
+================================================================================
+SECTION 9: HOW TO RUN AND DEMONSTRATE THE SYSTEM
+================================================================================
+
+PREREQUISITES:
+  - Python 3.10+
+  - Dependencies: flask, flask-cors
+
+INSTALLATION:
+  pip install flask flask-cors
+
+EXECUTION STEPS:
+  1. Open a terminal in the project directory:
+     cd t:\Main
+  
+  2. Launch the AI-GRID Web Server:
+     python server.py
+  
+  3. Access the Dashboard:
+     Open any browser and navigate to: http://localhost:8000
+
+DEMONSTRATION WALKTHROUGH FOR EXAMINERS:
+
+  Step 1: MODE SELECTION
+          Show the landing page with two mode cards: "Answer Questions" 
+          and "Connect via MCP". Explain that this supports any AI system.
+          Click "Answer Questions" to enter the wizard.
+
+  Step 2: FILL THE WIZARD
+          Walk through all 6 steps. For a compelling demo, use a realistic 
+          AI system (e.g., "Medical Imaging Classifier" in Healthcare domain 
+          with some deliberate weaknesses — no encryption at rest, no human 
+          oversight). This produces an interesting audit with findings.
+
+  Step 3: VIEW AUDIT LOG
+          After submitting, show the Audit Log page. Point out how each 
+          probe stage appears with SUCCESS/WARNING/DANGER status badges. 
+          Explain that these same log entries would appear during a live 
+          MCP probe.
+
+  Step 4: TRUST SCORES
+          Navigate to "Trust Scores". Show the AAS score, the letter grade, 
+          and the Bottleneck Principle in action. Explain which dimension 
+          is the weakest and why it drags down the score.
+
+  Step 5: RADAR CHART
+          Point out the 7-dimension radar chart. Show how some dimensions 
+          are high (e.g., Transparency = 100) while others are low (e.g., 
+          Accountability = 35). This visually demonstrates the bottleneck.
+
+  Step 6: REGULATORY COMPLIANCE
+          Navigate to "Regulatory". Show the EU AI Act risk tier badge and 
+          the NIST AI RMF 4-function compliance matrix (GOVERN, MAP, 
+          MEASURE, MANAGE).
+
+  Step 7: WHAT-IF SIMULATOR
+          Switch to "What-If Simulator". Change the domain to "Healthcare" 
+          and increase the user slider to 500,000. Show how the risk tier 
+          dynamically escalates (e.g., from LIMITED RISK to HIGH RISK).
+
+  Step 8: REMEDIATION ROADMAP
+          Navigate to "Remediation". Show the prioritized table with 
+          CRITICAL and HIGH findings at the top, each with specific 
+          action items.
+
+QUICK DEMO SCRIPT (2 MINUTES):
+  1. "This is AI-GRID — it audits any AI system for trustworthiness."
+  2. Click "Answer Questions" → fill in a Healthcare AI with weak security.
+  3. Click "Generate Audit Report" → watch the probe log stream.
+  4. Jump to Trust Scores: "This AI scored 58/100, Grade D."
+  5. Show Radar Chart: "Accountability is the bottleneck at 35/100."
+  6. Show Regulatory: "Under EU AI Act, this is LIMITED RISK."
+  7. Show Simulator: "In Healthcare at 500K users, it becomes HIGH RISK."
+  8. Show Remediation: "Here are the 5 things to fix, prioritized."
+================================================================================
