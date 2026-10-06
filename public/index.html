@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI-GRID: AI-Powered GRC Framework & Trust Audit</title>
-  <meta name="description" content="AI-GRID is an AI-Powered Governance, Risk, and Compliance (GRC) framework for cybersecurity risk assessment of trustworthy AI systems. Supports MCP live audit and questionnaire-based assessment.">
+  <title>AI-GRID | Enterprise AI Governance, Risk &amp; Compliance Operating System</title>
+  <meta name="description" content="AI-GRID is an automated AI Governance, Risk &amp; Compliance (GRC) Operating System evaluating agentic and tool-augmented AI systems across 7 empirical trust pillars, EU AI Act, NIST AI RMF, and MCP security protocols.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,44 +20,76 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-logo">
-        <div class="logo-badge"><span class="logo-icon">🛡️</span></div>
+        <div class="logo-badge">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
         <div>
           <div class="logo-title">AI-GRID</div>
-          <div class="logo-version">v2.0 <span class="badge-mcp">Dual-Mode</span></div>
+          <div class="logo-version">v2.5 <span class="badge-mcp">Control Plane</span></div>
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-section-label">Setup</div>
+        <div class="nav-section-label">Configuration</div>
         <a class="nav-item active" onclick="showPage('page-setup', this)" id="nav-setup">
-          <span class="nav-icon">🚀</span><span>Project Setup</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </span>
+          <span>Project Setup</span>
         </a>
 
-        <div class="nav-section-label">Dashboard</div>
+        <div class="nav-section-label">Control Dashboard</div>
         <a class="nav-item" onclick="showPage('page-profile', this)" id="nav-profile">
-          <span class="nav-icon">📋</span><span>System Profile</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+          </span>
+          <span>System Profile</span>
         </a>
         <a class="nav-item" onclick="showPage('page-audit', this)" id="nav-audit">
-          <span class="nav-icon">⚡</span><span>Audit Log</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          </span>
+          <span>Live Telemetry &amp; Log</span>
         </a>
         <a class="nav-item" onclick="showPage('page-scores', this)" id="nav-scores">
-          <span class="nav-icon">📊</span><span>Trust Scores</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </span>
+          <span>7 Pillars &amp; Scores</span>
         </a>
 
-        <div class="nav-section-label">Compliance</div>
+        <div class="nav-section-label">Compliance &amp; Evidence</div>
         <a class="nav-item" onclick="showPage('page-compliance', this)" id="nav-compliance">
-          <span class="nav-icon">🏛️</span><span>Regulatory</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+          </span>
+          <span>Regulatory Alignment</span>
+        </a>
+        <a class="nav-item" onclick="showPage('page-modelcard', this)" id="nav-modelcard">
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </span>
+          <span>Google Model Card</span>
         </a>
         <a class="nav-item" onclick="showPage('page-simulation', this)" id="nav-simulation">
-          <span class="nav-icon">🔮</span><span>What-If Simulator</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          </span>
+          <span>What-If Simulator</span>
         </a>
         <a class="nav-item" onclick="showPage('page-remediation', this)" id="nav-remediation">
-          <span class="nav-icon">🛠️</span><span>Remediation</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </span>
+          <span>Remediation Roadmap</span>
         </a>
 
-        <div class="nav-section-label">Tools</div>
+        <div class="nav-section-label">Auditor Tools</div>
         <a class="nav-item" onclick="showPage('page-manual', this)" id="nav-manual">
-          <span class="nav-icon">✏️</span><span>Manual Assessment</span>
+          <span class="nav-icon-wrap">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </span>
+          <span>Manual Assessment</span>
         </a>
       </nav>
     </div>
@@ -65,9 +97,12 @@
     <div class="sidebar-bottom">
       <div class="mcp-status-pill" id="mcpStatusPill">
         <span class="pulse-dot"></span>
-        <span id="mcpStatusText">No Project Loaded</span>
+        <span id="mcpStatusText">System Idle</span>
       </div>
-      <button class="sidebar-export-btn" onclick="window.print()">🖨️ Export Report</button>
+      <button class="sidebar-export-btn" onclick="window.print()">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Export Audit Dossier</span>
+      </button>
     </div>
   </aside>
 
@@ -78,16 +113,19 @@
 
     <header class="topbar">
       <div class="topbar-left">
-        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">☰</button>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle" aria-label="Toggle Sidebar">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <h1 class="page-title" id="pageTitle">Project Setup</h1>
       </div>
       <div class="topbar-right">
         <div class="topbar-status">
-          <span class="status-label">Target:</span>
+          <span class="status-label">Target System:</span>
           <span class="status-value" id="topbarTarget">Not Configured</span>
         </div>
         <button id="btnRunAudit" class="btn-primary" onclick="submitAudit()" style="display:none;">
-          <span class="btn-icon">⚡</span> Run Audit
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Run Live Audit</span>
         </button>
       </div>
     </header>
@@ -101,62 +139,73 @@
         <!-- MODE SELECTION -->
         <section class="card" id="modeSelectionCard">
           <div class="mode-header">
-            <h2>🚀 Configure Your AI Project</h2>
-            <p>Choose how you'd like to assess your AI system's trustworthiness, security, and compliance.</p>
+            <h2>Configure Target AI System</h2>
+            <p>Select an assessment vector to initialize the 7-pillar trustworthiness evaluation and regulatory crosswalk.</p>
           </div>
           <div class="mode-grid">
             <div class="mode-card" onclick="selectMode('questionnaire')" id="modeQuestionnaireCard">
-              <div class="mode-icon">📋</div>
-              <h3>Answer Questions</h3>
-              <p>No MCP connection needed. Answer structured questions about your AI system and get a full governance audit.</p>
-              <div class="mode-tag recommended">Recommended</div>
+              <div class="mode-icon-box">
+                <svg class="svg-icon lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <h3>Structured Questionnaire Audit</h3>
+              <p>Execute empirical pre-audit using standardized questions across model identity, training data provenance, guardrails, and human agency.</p>
+              <div class="mode-tag recommended">Standalone / Recommended</div>
             </div>
             <div class="mode-card" onclick="selectMode('mcp')" id="modeMcpCard">
-              <div class="mode-icon">🔌</div>
-              <h3>Connect via MCP</h3>
-              <p>Connect to your AI's MCP server for live automated probing of tools, guardrails, and metadata.</p>
-              <div class="mode-tag">Requires MCP Server</div>
+              <div class="mode-icon-box">
+                <svg class="svg-icon lg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              </div>
+              <h3>Live Model Context Protocol (MCP) Probe</h3>
+              <p>Connect directly to an active agentic MCP server for real-time security probing of tools, parameter validation, and prompt boundaries.</p>
+              <div class="mode-tag">Automated Runtime Protocol</div>
             </div>
           </div>
         </section>
 
-        <!-- MCP CONNECTION FORM (hidden by default) -->
+        <!-- MCP CONNECTION FORM -->
         <section class="card" id="mcpConnectionCard" style="display:none;">
           <div class="card-header">
-            <h3>🔌 Connect to MCP Server</h3>
-            <button class="btn-secondary" onclick="backToModeSelection()">← Back</button>
+            <h3>Connect to MCP Server</h3>
+            <button class="btn-secondary" onclick="backToModeSelection()">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Back</span>
+            </button>
           </div>
           <div class="mcp-form">
             <div class="form-group">
-              <label for="mcpTransport">Transport Type:</label>
+              <label for="mcpTransport">Transport Protocol:</label>
               <select id="mcpTransport" class="form-select">
-                <option value="stdio">STDIO (Local Process)</option>
+                <option value="stdio">STDIO (Local Subprocess)</option>
                 <option value="sse">SSE (Server-Sent Events)</option>
-                <option value="http">HTTP (Streamable HTTP)</option>
+                <option value="http">Streamable HTTP</option>
               </select>
             </div>
             <div class="form-group" id="mcpUrlGroup">
-              <label for="mcpUrlInput">Server URL:</label>
+              <label for="mcpUrlInput">Target Endpoint URL:</label>
               <input type="text" id="mcpUrlInput" class="form-input" placeholder="e.g., http://localhost:3000/mcp">
             </div>
             <div class="form-group" id="mcpCommandGroup" style="display:none;">
-              <label for="mcpCommandInput">Server Command:</label>
-              <input type="text" id="mcpCommandInput" class="form-input" placeholder="e.g., python my_mcp_server.py">
+              <label for="mcpCommandInput">Process Execution Command:</label>
+              <input type="text" id="mcpCommandInput" class="form-input" placeholder="e.g., python mcp_server_soil_ai.py">
             </div>
             <button class="btn-primary" onclick="connectMcp()">
-              <span class="btn-icon">⚡</span> Connect & Run Live Audit
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>Connect &amp; Initiate Live Probe</span>
             </button>
           </div>
         </section>
 
-        <!-- QUESTIONNAIRE WIZARD (hidden by default) -->
+        <!-- QUESTIONNAIRE WIZARD -->
         <section class="card wizard-card" id="wizardCard" style="display:none;">
           <div class="wizard-header">
             <div>
               <h2 id="wizardStepTitle">Step 1: Model Identity</h2>
-              <p id="wizardStepDesc">Tell us about your AI model</p>
+              <p id="wizardStepDesc">Specification of system architecture and autonomy parameters</p>
             </div>
-            <button class="btn-secondary" onclick="backToModeSelection()">← Back</button>
+            <button class="btn-secondary" onclick="backToModeSelection()">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Back</span>
+            </button>
           </div>
 
           <!-- Progress bar -->
@@ -175,17 +224,22 @@
           </div>
 
           <!-- Wizard Steps Container -->
-          <div class="wizard-body" id="wizardBody">
-            <!-- Steps are dynamically rendered by JS -->
-          </div>
+          <div class="wizard-body" id="wizardBody"></div>
 
           <!-- Wizard Navigation -->
           <div class="wizard-footer">
-            <button class="btn-secondary" id="wizardBackBtn" onclick="wizardPrev()" style="display:none;">← Previous</button>
+            <button class="btn-secondary" id="wizardBackBtn" onclick="wizardPrev()" style="display:none;">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <span>Previous</span>
+            </button>
             <div style="flex:1;"></div>
-            <button class="btn-primary" id="wizardNextBtn" onclick="wizardNext()">Next Step →</button>
+            <button class="btn-primary" id="wizardNextBtn" onclick="wizardNext()">
+              <span>Next Step</span>
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
             <button class="btn-primary btn-success" id="wizardSubmitBtn" onclick="submitQuestionnaire()" style="display:none;">
-              <span class="btn-icon">🚀</span> Generate Audit Report
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Generate Audit Dossier</span>
             </button>
           </div>
         </section>
@@ -205,7 +259,7 @@
           </div>
           <div class="profile-grid">
             <div class="profile-item">
-              <span class="label">DOMAIN</span>
+              <span class="label">OPERATIONAL DOMAIN</span>
               <span class="val" id="profDomain">—</span>
             </div>
             <div class="profile-item">
@@ -213,43 +267,46 @@
               <span class="val" id="profArch">—</span>
             </div>
             <div class="profile-item">
-              <span class="label">AUDIT MODE</span>
+              <span class="label">AUDIT PROTOCOL</span>
               <span class="val highlight" id="profAuditMode">—</span>
             </div>
             <div class="profile-item">
-              <span class="label">TRAINING DATASET</span>
+              <span class="label">TRAINING DATASET VOLUME</span>
               <span class="val" id="profDataSize">—</span>
             </div>
             <div class="profile-item">
-              <span class="label">AUTONOMY LEVEL</span>
+              <span class="label">AUTONOMY CLASSIFICATION</span>
               <span class="val" id="profAutonomy">—</span>
             </div>
             <div class="profile-item">
-              <span class="label">VERSION</span>
+              <span class="label">ENGINEERING REVISION</span>
               <span class="val" id="profVersion">—</span>
             </div>
           </div>
         </section>
 
         <section class="card info-card">
-          <h3>📊 Audit Complete</h3>
-          <p>Your AI system has been assessed. Navigate to <strong>Trust Scores</strong> to see the 7-dimension breakdown, or <strong>Regulatory</strong> for EU AI Act & NIST compliance status.</p>
+          <div class="card-header">
+            <h3>Audit Execution Complete</h3>
+            <span class="badge-mcp">IEEE P8000.1 / EU AI ACT</span>
+          </div>
+          <p>The system profile has been compiled and validated. Review the 7-pillar trust analysis or explore regulatory compliance status below.</p>
           <div class="steps-grid">
             <div class="step-item" onclick="showPage('page-scores')">
               <div class="step-num">1</div>
-              <div><strong>Trust Scores</strong><br><span class="text-muted">View the 7-dimension radar chart & AAS score</span></div>
+              <div><strong>7 Trust Pillars</strong><br><span class="text-muted">AAS score, radar analysis &amp; bottleneck breakdown</span></div>
             </div>
             <div class="step-item" onclick="showPage('page-compliance')">
               <div class="step-num">2</div>
-              <div><strong>Regulatory</strong><br><span class="text-muted">EU AI Act tier & NIST RMF compliance</span></div>
+              <div><strong>Regulatory Frameworks</strong><br><span class="text-muted">EU AI Act classification &amp; NIST AI RMF crosswalk</span></div>
             </div>
             <div class="step-item" onclick="showPage('page-simulation')">
               <div class="step-num">3</div>
-              <div><strong>Simulator</strong><br><span class="text-muted">What-if scenarios across domains</span></div>
+              <div><strong>Risk Simulator</strong><br><span class="text-muted">Concurrency scale &amp; domain transfer stress-testing</span></div>
             </div>
             <div class="step-item" onclick="showPage('page-remediation')">
               <div class="step-num">4</div>
-              <div><strong>Remediation</strong><br><span class="text-muted">Prioritized fixes & action items</span></div>
+              <div><strong>Remediation Plan</strong><br><span class="text-muted">Actionable engineering fixes &amp; priority roadmap</span></div>
             </div>
           </div>
         </section>
@@ -257,18 +314,221 @@
     </div>
 
     <!-- ============================================================= -->
-    <!-- PAGE: Audit Log                                               -->
+    <!-- PAGE: Live Telemetry & Audit Log (With 7 Pillars Board)       -->
     <!-- ============================================================= -->
     <div class="page" id="page-audit">
       <div class="page-inner">
-        <section class="card mcp-control-panel">
-          <div class="panel-header">
+
+        <!-- REAL-TIME 7-PILLARS TELEMETRY BOARD -->
+        <section class="card pillars-board-card" id="pillarsLiveBoard">
+          <div class="card-header">
             <div class="title-with-desc">
-              <h2>Audit Probe Log</h2>
-              <p>Detailed log of all probes executed during the assessment — whether via MCP tools or questionnaire analysis.</p>
+              <h3>7 Trust Pillars &bull; Real-Time Assurance Telemetry</h3>
+              <p>Continuous mathematical verification across empirical trust pillars with live score resolution.</p>
+            </div>
+            <div class="pillars-header-status">
+              <span class="scan-pulse-badge" id="liveScanStatusBadge">
+                <span class="pulse-dot"></span>
+                <span id="liveScanStatusText">STANDBY</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="pillars-grid" id="pillarsLiveGrid">
+            <!-- Pillar 1: Robustness & Security -->
+            <div class="pillar-card" id="pillarCard_security" data-pillar="Security & Robustness">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Robustness &amp; Security</div>
+                    <div class="pillar-anchor">EU Art. 15 &bull; NIST MEASURE 2.7</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_security">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_security"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_security">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_security">Adversarial &amp; Injection Defense</span>
+              </div>
+            </div>
+
+            <!-- Pillar 2: Transparency & Explainability -->
+            <div class="pillar-card" id="pillarCard_transparency" data-pillar="Transparency">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Transparency &amp; Explainability</div>
+                    <div class="pillar-anchor">EU Art. 13 &bull; NIST MAP 1.5</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_transparency">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_transparency"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_transparency">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_transparency">SHAP / Feature Attributions</span>
+              </div>
+            </div>
+
+            <!-- Pillar 3: Fairness & Bias Mitigation -->
+            <div class="pillar-card" id="pillarCard_fairness" data-pillar="Fairness & Bias">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10M12 3v18M3 7h18"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Fairness &amp; Bias Mitigation</div>
+                    <div class="pillar-anchor">EU Art. 10 &bull; NIST MEASURE 2.11</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_fairness">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_fairness"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_fairness">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_fairness">Disparate Impact &bull; EEOC 80%</span>
+              </div>
+            </div>
+
+            <!-- Pillar 4: Privacy & Data Governance -->
+            <div class="pillar-card" id="pillarCard_privacy" data-pillar="Privacy & Governance">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Privacy &amp; Data Governance</div>
+                    <div class="pillar-anchor">GDPR Art. 25 &bull; NIST GOVERN 1.2</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_privacy">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_privacy"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_privacy">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_privacy">PII Scrubbing &bull; Encryption</span>
+              </div>
+            </div>
+
+            <!-- Pillar 5: Human Agency & Oversight -->
+            <div class="pillar-card" id="pillarCard_accountability" data-pillar="Accountability & Oversight">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Human Agency &amp; Oversight</div>
+                    <div class="pillar-anchor">EU Art. 14 &bull; NIST GOVERN 1.4</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_accountability">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_accountability"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_accountability">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_accountability">HITL Kill-Switch &bull; Fallback Gate</span>
+              </div>
+            </div>
+
+            <!-- Pillar 6: Safety & Reliability -->
+            <div class="pillar-card" id="pillarCard_safety" data-pillar="Safety & Reliability">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Safety &amp; Reliability</div>
+                    <div class="pillar-anchor">NIST MANAGE 2.2 &bull; IEEE P8000.1</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_safety">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_safety"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_safety">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_safety">Output Clamping &bull; Anomaly Traps</span>
+              </div>
+            </div>
+
+            <!-- Pillar 7: Societal & Environmental Impact -->
+            <div class="pillar-card" id="pillarCard_societal" data-pillar="Societal Impact">
+              <div class="pillar-top">
+                <div class="pillar-title-wrap">
+                  <div class="pillar-icon-box">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </div>
+                  <div>
+                    <div class="pillar-title">Societal &amp; Environmental Impact</div>
+                    <div class="pillar-anchor">EU Recital 27 &bull; NIST MAP 3.2</div>
+                  </div>
+                </div>
+                <div class="pillar-score-box">
+                  <div class="pillar-score-num" id="pillarScore_societal">—</div>
+                  <div class="pillar-score-denom">/ 100</div>
+                </div>
+              </div>
+              <div class="pillar-progress-track">
+                <div class="pillar-progress-fill" id="pillarFill_societal"></div>
+              </div>
+              <div class="pillar-footer-meta">
+                <span class="pillar-status-tag" id="pillarTag_societal">PENDING</span>
+                <span class="pillar-detail-note" id="pillarNote_societal">Externalities &bull; Footprint Monitor</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- AUDIT PROBE LOG TERMINAL -->
+        <section class="card mcp-control-panel">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h2>Audit Probe Stream &bull; Execution Log</h2>
+              <p>Cryptographic trace of runtime telemetry probes and evidence extraction.</p>
             </div>
             <button id="btnRunAudit2" class="btn-primary" onclick="rerunAudit()" style="display:none;">
-              <span class="btn-icon">⚡</span> Re-Run Audit
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Re-Execute Audit</span>
             </button>
           </div>
 
@@ -279,25 +539,27 @@
                 <span class="dot yellow"></span>
                 <span class="dot green"></span>
               </div>
-              <div class="terminal-title">Audit Probe Stream</div>
+              <div class="terminal-title">AI-GRID Execution Kernel &bull; Live Telemetry Feed</div>
               <div class="terminal-badge" id="terminalStatus">READY</div>
             </div>
             <div class="terminal-body" id="terminalLog">
-              <div class="log-line info"><span class="timestamp">[SYSTEM]</span> Ready. Configure your AI project to begin audit.</div>
-              <div class="log-line hint"><span class="timestamp">[HINT]</span> Go to "Project Setup" to choose MCP or Questionnaire mode...</div>
+              <div class="log-line info"><span class="timestamp">[KERNEL]</span> System initialized. Configure AI target to launch probe.</div>
+              <div class="log-line hint"><span class="timestamp">[SYSTEM]</span> Awaiting audit initiation from Project Setup...</div>
             </div>
           </div>
         </section>
 
-        <section class="card" id="probeSummaryCard" style="display:none;">
-          <h3>Audit Probe Summary</h3>
+        <section class="card" id="probeSummaryCard" style="display:none; margin-top:1.5rem;">
+          <div class="card-header">
+            <h3>Audit Execution Summary</h3>
+          </div>
           <div class="probe-stats" id="probeStats"></div>
         </section>
       </div>
     </div>
 
     <!-- ============================================================= -->
-    <!-- PAGE: Trust Scores                                            -->
+    <!-- PAGE: Trust Scores (AAS + Radar + Empirical Engines)          -->
     <!-- ============================================================= -->
     <div class="page" id="page-scores">
       <div class="page-inner">
@@ -306,26 +568,28 @@
           <div class="card score-card">
             <div class="card-header">
               <h3>Assurance Adequacy Score (AAS)</h3>
-              <span class="info-tooltip" title="0.6 × Average + 0.4 × Weakest Dimension">ℹ️</span>
+              <span class="subtext">0.60 &times; Mean + 0.40 &times; Bottleneck</span>
             </div>
             <div class="score-display">
               <div class="grade-badge" id="gradeBadge">—</div>
               <div class="score-meta">
                 <div class="score-value"><span id="aasScore">—</span><small>/100</small></div>
-                <div class="score-label" id="scoreLabel">Run audit to see results</div>
+                <div class="score-label" id="scoreLabel">Run audit to evaluate posture</div>
               </div>
             </div>
             <div class="bottleneck-banner" id="bottleneckBanner">
-              <div class="banner-icon">⚠️</div>
+              <div class="banner-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
               <div class="banner-text">
-                <strong>BOTTLENECK:</strong>
-                <div id="bottleneckDesc">Run an audit to identify the weakest dimension.</div>
+                <strong>CRITICAL GOVERNANCE BOTTLENECK</strong>
+                <div id="bottleneckDesc">Awaiting initial assessment to isolate the primary vulnerability constraint.</div>
               </div>
             </div>
             <div class="math-breakdown">
-              <div class="math-item"><span>Weighted Avg:</span><strong id="mathAvg">—</strong></div>
-              <div class="math-item"><span>Bottleneck (MIN):</span><strong id="mathMin">—</strong></div>
-              <div class="math-item"><span>Sensitivity (α):</span><strong>0.60</strong></div>
+              <div class="math-item"><span>Weighted Mean:</span><strong id="mathAvg">—</strong></div>
+              <div class="math-item"><span>Bottleneck Min:</span><strong id="mathMin">—</strong></div>
+              <div class="math-item"><span>Alpha Sensitivity:</span><strong>0.60</strong></div>
             </div>
           </div>
 
@@ -333,13 +597,146 @@
           <div class="card chart-card">
             <div class="card-header">
               <h3>7 Trustworthiness Dimensions</h3>
-              <span class="subtext">IEEE P8000.1 & QB4AIRA</span>
+              <span class="subtext">Empirical Risk Envelope (QB4AIRA)</span>
             </div>
             <div class="chart-container">
               <canvas id="radarChart"></canvas>
             </div>
           </div>
         </div>
+
+        <!-- IBM AI Fairness 360 (AIF360) Empirical Inspector -->
+        <section class="card aif360-card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h3>IBM AI Fairness 360 (AIF360) Metric Suite</h3>
+              <p>Algorithmic bias quantification, EEOC Four-Fifths (80%) Rule verification, and Kamiran &amp; Calders sample reweighing.</p>
+              <div class="aif-dataset-badge" id="aifDatasetBadge" style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.75rem; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); color:var(--indigo-400); padding:0.25rem 0.65rem; border-radius:6px; margin-top:0.4rem; font-weight:500;">
+                <span>Benchmark Corpus:</span>
+                <strong>UCI Statlog German Credit Data (1,000 empirical samples)</strong>
+                <span style="opacity:0.7;">| Protected: Gender | Label: Credit Default Risk</span>
+              </div>
+            </div>
+            <span class="badge-mcp">AIF360 ENGINE</span>
+          </div>
+
+          <div class="aif360-metrics-grid">
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Disparate Impact Ratio (DIR)</div>
+              <div class="aif-stat-value" id="aifDirVal">—</div>
+              <div class="aif-verdict-badge badge-warning" id="aifDirBadge">Pending Audit</div>
+              <div class="aif-stat-subtext" id="aifDirText">Statutory Target: 0.80 &ndash; 1.25</div>
+            </div>
+
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Statistical Parity Difference (SPD)</div>
+              <div class="aif-stat-value" id="aifSpdVal">—</div>
+              <div class="aif-verdict-badge badge-info" id="aifSpdBadge">Target |SPD| &le; 0.10</div>
+              <div class="aif-stat-subtext">P(Unprivileged) &minus; P(Privileged)</div>
+            </div>
+
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Privileged Selection Rate</div>
+              <div class="aif-stat-value" id="aifPrivRate">—</div>
+              <div class="aif-stat-subtext">Baseline Majority Demographic</div>
+            </div>
+
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Unprivileged Selection Rate</div>
+              <div class="aif-stat-value" id="aifUnprivRate">—</div>
+              <div class="aif-stat-subtext">Protected Subpopulation Group</div>
+            </div>
+          </div>
+
+          <div class="aif-reweighing-box" id="aifReweighingBox" style="margin-top:1.5rem;">
+            <div class="card-header" style="margin-bottom:0.5rem;">
+              <div>
+                <strong style="color:#fff; font-size:0.9rem;">Pre-Processing Mitigation: Sample Reweighing (Kamiran &amp; Calders)</strong>
+                <div class="subtext" id="aifMitigationRec" style="margin-top:0.2rem;">Run an audit to generate optimal training weight adjustments.</div>
+              </div>
+            </div>
+            <div class="reweighing-table-wrap">
+              <table class="reweighing-table">
+                <thead>
+                  <tr>
+                    <th>Subpopulation Slice</th>
+                    <th>Target Outcome (Y)</th>
+                    <th>Optimal Sample Weight (W)</th>
+                    <th>Corrective Impact</th>
+                  </tr>
+                </thead>
+                <tbody id="aifReweighingTbody">
+                  <tr><td colspan="4" class="empty-state">Complete an audit to generate empirical reweighing parameters.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cybersecurity & AI-BOM Scanner (CVSS + EPSS) -->
+        <section class="card cve-scanner-card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h3>Cybersecurity &amp; AI-BOM Vulnerability Scanner</h3>
+              <p>Supply-chain CVE scanning, CVSS v3.1 severity classification, and FIRST.org EPSS exploit prediction.</p>
+              <div class="aif-dataset-badge" id="cveDatasetBadge" style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.75rem; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); color:var(--danger); padding:0.25rem 0.65rem; border-radius:6px; margin-top:0.4rem; font-weight:500;">
+                <span>Security Registry:</span>
+                <strong>NIST National Vulnerability Database (NVD) &amp; FIRST.org EPSS</strong>
+                <span style="opacity:0.7;">| 48 Live AI/ML Threat Signatures</span>
+              </div>
+            </div>
+            <div class="card-controls-right" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+              <label for="cveCriticalitySelect" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Asset Criticality:</label>
+              <select id="cveCriticalitySelect" class="form-select" onchange="rescanVulnerabilities()" style="max-width:230px; font-size:0.8rem; padding:0.35rem 0.65rem;">
+                <option value="Mission-Critical / Life-Safety">Mission-Critical (1.5&times; Multiplier)</option>
+                <option value="Business-Critical">Business-Critical (1.25&times; Multiplier)</option>
+                <option value="Operational / Advisory" selected>Operational / Standard (1.0&times; Multiplier)</option>
+                <option value="Non-Critical / Sandbox">Sandbox / Low Impact (0.8&times; Multiplier)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cve-metrics-summary" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:1rem; margin-top:1rem;">
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Security Posture</div>
+              <div class="aif-stat-value" id="cvePostureVal" style="font-size:1.35rem;">—</div>
+              <div class="aif-verdict-badge badge-warning" id="cvePostureBadge">Pending Scan</div>
+            </div>
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Compound CVE Risk</div>
+              <div class="aif-stat-value" id="cveCompoundRiskVal">—<small>/100</small></div>
+              <div class="aif-stat-subtext">CVSS &times; EPSS &times; Criticality</div>
+            </div>
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Active Exploit Threats</div>
+              <div class="aif-stat-value" id="cveActiveThreatsVal" style="color:var(--danger);">—</div>
+              <div class="aif-stat-subtext">EPSS &ge; 15% (In The Wild)</div>
+            </div>
+            <div class="aif-stat-card">
+              <div class="aif-stat-label">Dependencies Scanned</div>
+              <div class="aif-stat-value" id="cveTotalScannedVal">—</div>
+              <div class="aif-stat-subtext">AI-BOM Inventory</div>
+            </div>
+          </div>
+
+          <div class="cve-table-container" style="margin-top:1.5rem;">
+            <table class="roadmap-table">
+              <thead>
+                <tr>
+                  <th>CVE Identifier</th>
+                  <th>Affected Component</th>
+                  <th>CVSS Severity</th>
+                  <th>EPSS Exploit Prob.</th>
+                  <th>Compound Risk</th>
+                  <th>Remediation Patch</th>
+                </tr>
+              </thead>
+              <tbody id="cveTableBody">
+                <tr><td colspan="6" class="empty-state">Run an audit to scan AI-BOM supply-chain vulnerabilities.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -351,33 +748,33 @@
         <div class="compliance-grid-2col">
           <section class="card">
             <div class="card-header">
-              <h3>🇪🇺 EU AI Act (Regulation 2024/1689)</h3>
-              <span class="subtext">Technical Pre-Audit (Articles 9, 10, 13, 14, 15)</span>
+              <h3>EU AI Act (Regulation 2024/1689)</h3>
+              <span class="subtext">Pre-Audit (Articles 9, 10, 13, 14, 15)</span>
             </div>
-            <div class="comp-desc" id="euDesc">Run an audit to classify the risk tier.</div>
-            <div class="comp-badge badge-warning" id="euBadge" style="margin-top:0.75rem;">PENDING AUDIT</div>
+            <div class="comp-desc" id="euDesc">Execute an audit to compute statutory risk classification.</div>
+            <div class="comp-badge badge-warning" id="euBadge" style="margin-top:1rem;">PENDING AUDIT</div>
           </section>
 
           <section class="card">
             <div class="card-header">
-              <h3>🇺🇸 NIST AI RMF 1.0</h3>
-              <span class="subtext">Core Risk Management Lifecycle</span>
+              <h3>NIST AI RMF 1.0</h3>
+              <span class="subtext">Core Risk Management Lifecycle Functions</span>
             </div>
             <div class="nist-grid">
               <div class="nist-item">
-                <div class="nist-label">GOVERN</div>
+                <div class="nist-label">GOVERN (Governance &amp; Accountability)</div>
                 <div class="nist-badge warning" id="nistGovern">—</div>
               </div>
               <div class="nist-item">
-                <div class="nist-label">MAP</div>
+                <div class="nist-label">MAP (Context &amp; Boundary Categorization)</div>
                 <div class="nist-badge warning" id="nistMap">—</div>
               </div>
               <div class="nist-item">
-                <div class="nist-label">MEASURE</div>
+                <div class="nist-label">MEASURE (Quantitative Risk Assessment)</div>
                 <div class="nist-badge warning" id="nistMeasure">—</div>
               </div>
               <div class="nist-item">
-                <div class="nist-label">MANAGE</div>
+                <div class="nist-label">MANAGE (Operational Safeguards)</div>
                 <div class="nist-badge warning" id="nistManage">—</div>
               </div>
             </div>
@@ -395,37 +792,132 @@
           <div class="card-header">
             <div class="title-with-desc">
               <h3>What-If Scenario Simulation Engine</h3>
-              <p>Predicts risk recalculations if this AI is deployed in different sectors or scaled to millions of users.</p>
+              <p>Simulates stress degradation if this system scales to high user concurrency or transfers to regulated sectors.</p>
             </div>
-            <span class="badge-mcp">ALGORITHM 5</span>
+            <span class="badge-mcp">STRESS TESTING</span>
           </div>
 
           <div class="simulation-controls">
             <div class="sim-group">
-              <label for="simDomainSelect">Target Domain:</label>
+              <label for="simDomainSelect">Target Deployment Domain:</label>
               <select id="simDomainSelect" class="form-select" onchange="runSimulation()">
-                <option value="Healthcare / Medical">Healthcare (1.5×)</option>
-                <option value="Finance / Banking">Finance (1.3×)</option>
-                <option value="Autonomous Vehicles / Robotics">Autonomous Vehicles (1.5×)</option>
-                <option value="Criminal Justice / Law Enforcement">Criminal Justice (1.5×)</option>
-                <option value="Commercial Agriculture">Agriculture (1.4×)</option>
-                <option value="Manufacturing / Industrial">Manufacturing (1.2×)</option>
-                <option value="Education / EdTech">Education (1.1×)</option>
-                <option value="E-Commerce / Retail">E-Commerce (1.1×)</option>
-                <option value="Entertainment / Media">Entertainment (0.8×)</option>
-                <option value="Cybersecurity / Threat Detection">Cybersecurity (1.3×)</option>
-                <option value="General Purpose AI" selected>General Purpose (1.0×)</option>
+                <option value="Healthcare / Medical">Healthcare / Medical (1.5&times; Exposure)</option>
+                <option value="Finance / Banking">Finance / Banking (1.3&times; Exposure)</option>
+                <option value="Autonomous Vehicles / Robotics">Autonomous Vehicles / Robotics (1.5&times; Exposure)</option>
+                <option value="Criminal Justice / Law Enforcement">Criminal Justice (1.5&times; Exposure)</option>
+                <option value="Commercial Agriculture">Commercial Agriculture (1.4&times; Exposure)</option>
+                <option value="Manufacturing / Industrial">Manufacturing (1.2&times; Exposure)</option>
+                <option value="Education / EdTech">Education / EdTech (1.1&times; Exposure)</option>
+                <option value="E-Commerce / Retail">E-Commerce / Retail (1.1&times; Exposure)</option>
+                <option value="Entertainment / Media">Entertainment / Media (0.8&times; Exposure)</option>
+                <option value="Cybersecurity / Threat Detection">Cybersecurity (1.3&times; Exposure)</option>
+                <option value="General Purpose AI" selected>General Purpose AI (1.0&times; Exposure)</option>
               </select>
             </div>
             <div class="sim-group">
-              <label for="simUserSlider">Scale: <span id="userCountLabel" class="highlight">50,000</span> Users</label>
+              <label for="simUserSlider">Concurrency Scale: <span id="userCountLabel" class="status-value">50,000</span> Users</label>
               <input type="range" id="simUserSlider" min="500" max="1000000" step="5000" value="50000" oninput="updateUserScale(this.value)">
             </div>
             <div class="sim-result-box">
               <div class="sim-result-item"><span class="sim-lbl">Simulated AAS:</span><strong id="simScore" class="sim-val">—</strong></div>
               <div class="sim-result-item"><span class="sim-lbl">Simulated Tier:</span><strong id="simTier" class="sim-tier">—</strong></div>
-              <div class="sim-result-item"><span class="sim-lbl">Score Shift:</span><strong id="simDelta" class="sim-delta neutral">—</strong></div>
+              <div class="sim-result-item"><span class="sim-lbl">Risk Delta:</span><strong id="simDelta" class="sim-delta neutral">—</strong></div>
             </div>
+          </div>
+        </section>
+
+        <!-- Microsoft RAI Toolkit: Cohort Risk Analyzer -->
+        <section class="card rai-cohort-card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h3>Microsoft RAI Toolkit &bull; Cohort Risk Slicing Tree</h3>
+              <p>Clustering system vulnerabilities into operational cohorts to identify subpopulation risk concentration.</p>
+            </div>
+            <span class="badge-mcp">MS RAI ERROR ANALYSIS</span>
+          </div>
+          <div class="cohort-grid" id="raiCohortGrid">
+            <div class="empty-state">Complete an audit to compute operational risk cohorts.</div>
+          </div>
+        </section>
+
+        <!-- Microsoft RAI Toolkit: Prescriptive Counterfactual Solver -->
+        <section class="card rai-dice-card" style="margin-top:1.5rem;">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h3>Microsoft RAI Prescriptive Counterfactual Solver (DiCE)</h3>
+              <p>Calculates the mathematically minimal set of engineering interventions required to cross target compliance thresholds.</p>
+            </div>
+            <span class="badge-mcp">COUNTERFACTUAL OPTIMIZATION</span>
+          </div>
+
+          <div class="counterfactual-controls">
+            <div class="cf-input-group">
+              <label for="cfTargetInput">Target Assurance Score (AAS Threshold):</label>
+              <div class="cf-input-row" style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+                <input type="number" id="cfTargetInput" class="form-input" value="76" min="50" max="100" step="1" style="max-width:130px;">
+                <span class="subtext">(76.0 = EU AI Act Minimal Statutory Risk Threshold)</span>
+                <button class="btn-primary" onclick="solveCustomCounterfactual()" style="margin-left:auto;">
+                  <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                  <span>Solve Minimal Path</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="cf-results-box" id="cfResultsBox" style="margin-top:1.25rem;">
+              <div class="empty-state">Run an audit or click 'Solve Minimal Path' to generate counterfactual recommendations.</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- PAGE: Google Model Card                                       -->
+    <!-- ============================================================= -->
+    <div class="page" id="page-modelcard">
+      <div class="page-inner">
+        <section class="card modelcard-card">
+          <div class="card-header">
+            <div class="title-with-desc">
+              <h3>Google Model Card (Mitchell et al., 2019)</h3>
+              <p>Standardized technical passport and verifiable evidence dossier for EU AI Act Article 13 &amp; IEEE P8000.1.</p>
+            </div>
+            <div class="card-actions" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn-secondary" onclick="copyModelCardMarkdown()" id="btnCopyModelCard">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy Markdown</span>
+              </button>
+              <button class="btn-secondary" onclick="downloadModelCard('md')">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export .md</span>
+              </button>
+              <button class="btn-primary" onclick="downloadModelCard('json')">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export JSON</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="modelcard-meta-bar" id="modelCardMetaBar">
+            <div class="mc-meta-item"><span>Target System:</span><strong id="mcModelName">—</strong></div>
+            <div class="mc-meta-item"><span>Version:</span><strong id="mcModelVersion">—</strong></div>
+            <div class="mc-meta-item"><span>Domain:</span><strong id="mcModelDomain">—</strong></div>
+            <div class="mc-meta-item"><span>Assurance Grade:</span><strong id="mcModelGrade">—</strong></div>
+            <div class="mc-meta-item"><span>Statutory Tier:</span><strong id="mcModelTier">—</strong></div>
+          </div>
+
+          <div class="modelcard-tabs" style="margin-top:1.25rem;">
+            <button class="mc-tab active" id="btnTabRendered" onclick="switchModelCardTab('rendered', this)">Rendered Document</button>
+            <button class="mc-tab" id="btnTabRaw" onclick="switchModelCardTab('raw', this)">Markdown Source</button>
+            <button class="mc-tab" id="btnTabJson" onclick="switchModelCardTab('json', this)">JSON Schema</button>
+          </div>
+
+          <div class="modelcard-content-area" style="margin-top:1.25rem;">
+            <div id="mcRenderedView" class="mc-rendered-doc">
+              <div class="empty-state">Complete an audit to generate the Google Model Card documentation.</div>
+            </div>
+            <textarea id="mcRawView" class="mc-raw-textarea" readonly style="display:none; width:100%; min-height:420px; font-family:var(--font-mono); font-size:12px; padding:1rem; border-radius:8px; border:1px solid var(--border-card); background:var(--bg-input); color:#e2e8f0;"></textarea>
+            <pre id="mcJsonView" class="mc-json-pre" style="display:none; max-height:450px; overflow:auto; background:#070b14; color:#38bdf8; padding:1rem; border-radius:8px; font-size:12px; border:1px solid var(--border-card);"><code></code></pre>
           </div>
         </section>
       </div>
@@ -439,20 +931,20 @@
         <section class="card roadmap-card">
           <div class="card-header">
             <h3>Prioritized Governance Remediation Roadmap</h3>
-            <span class="subtext">Actionable fixes derived from the audit</span>
+            <span class="subtext">Actionable engineering fixes ranked by risk severity</span>
           </div>
           <div class="roadmap-table-container">
             <table class="roadmap-table">
               <thead>
                 <tr>
                   <th>Priority</th>
-                  <th>Trust Dimension</th>
+                  <th>Trust Pillar</th>
                   <th>Identified Vulnerability</th>
                   <th>Remediation Requirement</th>
                 </tr>
               </thead>
               <tbody id="remediationBody">
-                <tr><td colspan="4" class="empty-state">Run an audit to generate the remediation plan.</td></tr>
+                <tr><td colspan="4" class="empty-state">Run an audit to compile the remediation roadmap.</td></tr>
               </tbody>
             </table>
           </div>
@@ -467,56 +959,59 @@
       <div class="page-inner">
         <section class="card">
           <div class="card-header">
-            <h3>Interactive 7-Dimension Governance Questionnaire</h3>
-            <span class="subtext">QB4AIRA Question Bank — Manual Override</span>
+            <h3>Interactive 7-Pillar Governance Controls</h3>
+            <span class="subtext">QB4AIRA Question Bank &bull; Auditor Overrides</span>
           </div>
-          <div class="manual-questions-grid">
-            <div class="question-group">
-              <h4>1. Fairness & Bias Mitigation</h4>
-              <p>Has the model training dataset been validated across all targeted demographics?</p>
+          <div class="wizard-questions-grid" style="margin-top:1.25rem;">
+            <div class="form-group">
+              <label for="q_fairness">Fairness &amp; Bias Mitigation</label>
+              <p class="subtext" style="margin-bottom:0.5rem;">Has training data demographic balance been empirically validated?</p>
               <select class="form-select" id="q_fairness" onchange="recalculateManual()">
-                <option value="0.5" selected>Partially (Limited demographic coverage)</option>
-                <option value="1.0">Yes (All target demographics validated)</option>
-                <option value="0.0">No (Single-demographic training data)</option>
+                <option value="0.5" selected>Partial Coverage (Limited demographic parity checks)</option>
+                <option value="1.0">Complete (All target protected attributes audited)</option>
+                <option value="0.0">Unmitigated (Single demographic baseline)</option>
               </select>
             </div>
-            <div class="question-group">
-              <h4>2. Transparency & Explainability</h4>
-              <p>Does the prediction API provide feature attributions (SHAP/LIME/Grad-CAM)?</p>
+            <div class="form-group">
+              <label for="q_transparency">Transparency &amp; Explainability</label>
+              <p class="subtext" style="margin-bottom:0.5rem;">Does the inference endpoint return local feature attributions (SHAP/LIME)?</p>
               <select class="form-select" id="q_transparency" onchange="recalculateManual()">
-                <option value="1.0" selected>Yes (Full XAI attributions available)</option>
-                <option value="0.5">Partial (Feature list only)</option>
-                <option value="0.0">No (Black box)</option>
+                <option value="1.0" selected>Full Attributions (SHAP local importance &plus; reasoning)</option>
+                <option value="0.5">Partial (Global feature list only)</option>
+                <option value="0.0">Black Box (No attributions returned)</option>
               </select>
             </div>
-            <div class="question-group">
-              <h4>3. Safety & Fallback Controls</h4>
-              <p>Are corrupted inputs safely rejected before inference?</p>
+            <div class="form-group">
+              <label for="q_safety">Safety &amp; Fallback Controls</label>
+              <p class="subtext" style="margin-bottom:0.5rem;">Are out-of-distribution inputs safely clamped or rejected?</p>
               <select class="form-select" id="q_safety" onchange="recalculateManual()">
-                <option value="1.0" selected>Yes (Validators active)</option>
-                <option value="0.5">Partial (Range checking only)</option>
-                <option value="0.0">No (Always attempts prediction)</option>
+                <option value="1.0" selected>Strict Validators Active (Output clamping enforced)</option>
+                <option value="0.5">Basic Range Validation</option>
+                <option value="0.0">Unclamped (Raw model output passed directly)</option>
               </select>
             </div>
-            <div class="question-group">
-              <h4>4. Accountability & Human Oversight</h4>
-              <p>Is human review mandatory for high-risk outputs?</p>
+            <div class="form-group">
+              <label for="q_accountability">Human Agency &amp; Oversight</label>
+              <p class="subtext" style="margin-bottom:0.5rem;">Is human-in-the-loop validation mandatory prior to critical tool execution?</p>
               <select class="form-select" id="q_accountability" onchange="recalculateManual()">
-                <option value="0.0" selected>No (Direct delivery without review)</option>
-                <option value="0.5">Partial (Post-output notice)</option>
-                <option value="1.0">Yes (Human sign-off required)</option>
+                <option value="0.0" selected>No Human Review (Autonomous execution)</option>
+                <option value="0.5">Discretionary Review (Human notified post-execution)</option>
+                <option value="1.0">Mandatory HITL Gate (Human sign-off required)</option>
               </select>
             </div>
           </div>
-          <div style="margin-top:1.25rem; text-align:right;">
-            <button class="btn-primary" onclick="showPage('page-scores')">→ View Updated Scores</button>
+          <div style="margin-top:1.5rem; text-align:right;">
+            <button class="btn-primary" onclick="showPage('page-scores')">
+              <span>View Updated Assurance Scores</span>
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
           </div>
         </section>
       </div>
     </div>
 
     <footer class="footer">
-      <p>AI-GRID v2.0 • IEEE P8000.1 • NIST AI RMF • EU AI Act • Dual-Mode Audit (MCP + Questionnaire)</p>
+      <p>AI-GRID v2.5 &bull; IEEE P8000.1 &bull; NIST AI RMF 1.0 &bull; EU AI Act (Regulation 2024/1689) &bull; Model Context Protocol (MCP)</p>
     </footer>
   </div>
 

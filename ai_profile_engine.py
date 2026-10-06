@@ -8,6 +8,13 @@ MCP-based live audit so the dashboard works identically.
 
 from datetime import datetime
 from typing import Any, Dict, List
+from rai_engines import (
+    compute_aif360_fairness,
+    analyze_risk_cohorts,
+    solve_prescriptive_counterfactual,
+    generate_google_model_card,
+    scan_ai_vulnerabilities,
+)
 
 
 # ======================================================================
@@ -874,7 +881,17 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any]) -> Dict[str, Any]
 
     log("COMPLETE", f"Questionnaire-based audit complete. AAS: {aas}/100 (Grade: {grade})", "SUCCESS")
 
-    return {
+    # Compute IBM AIF360 Fairness & Reweighing metrics
+    aif360_metrics = compute_aif360_fairness(answers=answers, metadata=metadata, fairness_score=fairness_score)
+
+    # Compute Microsoft RAI Risk Cohorts & Prescriptive Counterfactual
+    risk_cohorts = analyze_risk_cohorts(dimensions, findings, metadata)
+    counterfactual = solve_prescriptive_counterfactual(aas, dimensions, findings, target_score=76.0)
+
+    # Compute CVSS, EPSS & Asset Criticality Compound Vulnerability Scan
+    vulnerability_scan = scan_ai_vulnerabilities(domain=domain)
+
+    audit_payload = {
         "model_metadata": metadata,
         "dimensions": dimensions,
         "scoring": {
@@ -901,5 +918,14 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any]) -> Dict[str, Any]
             "adversarial_tests": 1 if adversarial_tested != "none" else 0,
             "findings_count": len(findings)
         },
-        "audit_mode": "questionnaire"
+        "audit_mode": "questionnaire",
+        "aif360": aif360_metrics,
+        "cohort_analysis": risk_cohorts,
+        "prescriptive_counterfactual": counterfactual,
+        "vulnerability_scan": vulnerability_scan
     }
+
+    # Generate Google Model Card (Mitchell et al., 2019 standard)
+    audit_payload["model_card"] = generate_google_model_card(audit_payload)
+
+    return audit_payload

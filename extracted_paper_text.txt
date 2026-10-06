@@ -1,0 +1,1946 @@
+--- PAGE 1 ---
+2560 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+Engineering Trustworthy AI: A Developer Guide
+for Empirical Risk Minimization
+Diana Pfau and Alexander Jung , Member, IEEE
+Abstract—AI systems are increasingly used for critical deci-
+sions that transcend all important ﬁelds of private and public life.
+These systems often use empiri cal risk minimization (ERM) to
+train powerful prediction models such as deep neural networks.
+The output of the predictive model runs the risk of unintentional
+bias, opacity, and other adverse effects. To ensure the safety of
+these systems, it is vital to consider these risks already in the
+design stage of the model. The EU acknowledged the potential
+sensitivity of the predictions/ decisions made about persons,
+which led to the formulation of the Ethics Guidelines for Trust-
+worthy AI laying down seven key requirements for trustworthy
+AI. So far, the design of ERM-based methods prioritises accuracy
+over trustworthiness. This article discusses how key requirements
+for trustworthy AI can be translated into design choices for ERM
+components. We map the design space of ML systems to the
+core objectives of trustworthy AI: fairness, privacy, robustness,
+and explainability. Our theory i s instrumental in the design of
+trustworthy ML systems that minimize privacy leakage and are
+robust against (intentional) perturbations during their operation,
+such as disseminating fake news. The operation of trustworthy
+ML systems should also be transparent or explainable to its
+users. Finally, ML systems must be fair and not discriminate
+against speciﬁc user groups. There is an urgent need for a
+more holistic approach to ML that includes key requirements for
+trustworthy AI.
+Impact Statement —AI systems are used to make predictions
+and decisions about people in many ﬁelds of public and private
+life, ranging from law enforcement to advertisement. It is vital
+that AI systems follow minimum requirements for robustness,
+safety, transparency, privac y and governance, human agency
+and oversight, and nondiscrimination, and do not cause harm
+to the persons they make decisions about. As the context in
+which AI systems are used changes and there are many different
+AI applications, it is important to have a wide variety of
+methods available to developers to make sensible design choices
+for trustworthy AI. Our contribution consists in proposing and
+showcasing different design choices for ERM components to fulﬁll
+the requirements of trustworthy AI. This is an important step
+to make AI systems safe and socially beneﬁcial and to meet
+Received 11 March 2025; revised 16 May 2025 and 4 August 2025;
+accepted 25 September 2025. Date of publication 13 October 2025; date of
+current version 30 April 2026. This work was supported by the Research
+Council of Finland under Grant 363624, Grant 349965, and Grant 331197.
+This article was recommended for pub lication by Associate Editor Chiara
+Gallese upon evaluation of the reviewers’ comments. (Corresponding author:
+Diana Pfau.)
+The authors are with the Depar tment of Computer Science, Aalto
+University, 00076 Espoo, Finland (e-m ail: diana.pfau@aalto.ﬁ; alexander.
+jung@aalto.ﬁ).
+Digital Object Identiﬁ er 10.1109/TAI.2025.3617936
+legislative requirements, such as the General Data Protection
+Regulation and the AI Act.
+Index Terms—AI ethics, empirical risk minimization (ERM),
+responsible AI design, trustworthy AI.
+I. I NTRODUCTION
+A
+RTIFICIAL intelligence (AI) has become an integral part
+of daily life, inﬂuencing areas such as job search, hous-
+ing, and ﬁnding new relationships [1], [2]. AI systems often
+employ machine learning (ML) to train personalized models for
+users. These trained models provide tailored predictions about
+interests such as job offers, dating, news, and music videos
+[3]. Personalized predictions are widely used and too many a
+matter of convenience. Importantly, the use of personalization
+in areas such as healthcare, providing suggestions for diagnosis
+and treatment, can signiﬁcantly improve people’s lives [4].
+A. Anecdotal AI Trust Concerns
+Despite the usefulness of ML applications, there is growing
+evidence of their potentially harmful effects.
+1) Impact on Democratic Processes: Democratic processes
+are the very foundation of working democracies. In recent
+years, there have been several concerns about undue inﬂu-
+ences on elections and overall political opinions, polari-
+sation, and radicalisation through social media platforms
+[5]. Social media platforms have become the center of
+discussion for the spread of (political) misinformation,
+propaganda, and hate speech. In particular recommender
+systems used on these platforms are problematic in this
+regard as these systems can select (or suppress) informa-
+tion presented to a user [6]. These recommender systems
+can be exploited to promote sensationalist and divisive
+content, which may, in turn, intensify polarisation and
+fragment the public sphere into isolated ﬁlter bubbles
+[7], [8]. Importantly, also public actors have deployed
+worrisome AI systems, such as COMPAS, a recidivism
+prediction algorithm used in the US until it was found
+that it disproportionally predicted African American and
+female defendants as higher risk than while males [9],
+[10]. Similar attempts were made in the EU when the
+police in the Netherlands deployed an algorithmic sys-
+tem called “ProKid” to predict whether juveniles would
+commit crimes in the future[11]. This kind of preemptive
+policing stands in clear contrast to the presumption of
+© 2025 The Authors. This work is licensed under a Creative Co mmons Attribution 4.0 Licen se. For more information,
+see https://creativecommons.org/licenses/by/4.0/
+--- PAGE 2 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2561
+innocence [12] and additionally might even harm the
+child in its development as the clear focus of police on
+individuals and preemptive measures could become a
+self-fulﬁlling prophecy.
+2) Autopilot Crashes: AI-based vehicle control has been
+associated with several notable accidents. In some cases,
+the system failed to detect a speciﬁc type of obstacle
+(such as emergency vehicles) or misinterpreted road con-
+ditions and trafﬁc signs [13], [14]. AI-based autopilots
+can also reduce driver engagement and, in turn, awareness
+of dangerous situations that require human intervention
+[15]. This case illustrates t he importance of requiring
+AI systems to be transparent about their operation and
+limitations [16].
+3) Uighur minority in China: Facial recognition has been
+used to identify members of the Muslim minority group
+of Uighurs [17], [18], [19]. The use of facial recognition
+technology to target a particular ethnic group highlights
+fundamental concerns about the harmful effects or misuse
+of AI systems. Trustworthy AI must adhere to ethical
+principles and respect human rights, including the right to
+privacy and well-being, at both the individual and societal
+levels.
+B. AI Regulation
+Due to the omnipresence of AI, the regulation and manage-
+ment of AI development and risks in all possible application
+domains is a major challenge. The use of AI has the potential to
+be harmful far beyond individual levels and can potentially put
+entire democracies into jeopardy. The EU reacted accordingly
+with its own AI strategy, aimed at guiding AI development and
+ultimately passed the AI Act. In the course of this strategy, the
+EU also published the nonbinding Guidelines on Trustworthy
+AI, which are examined in the following and lay down seven
+key requirements (KR1-KR7) for trustworthy AI [20].I ti si m -
+portant to note that while we base our proposals on the European
+Guidelines, other organizations and countries have proposed
+similar ethical standards, such as Australia [21] and the organ-
+isation for economic co-operation and development (OECD)
+[22]. Additionally, an analysis of 84 ethics guidelines from
+around the world revealed several recurring themes that are
+also reﬂected in the European Guidelines, such as transparency,
+justice, fairness and equity, nonmaleﬁcence, responsibility and
+accountability, and privacy[23]. Therefore, our suggestions can
+also be evaluated for their relevance to these guidelines beyond
+the EU.
+C. Connecting ERM to Trustworthy AI Requirements
+Empirical risk minimization (ERM) is the foundational opti-
+mization principle underlying most modern ML systems [24],
+[25]. The idea of ERM is intuitive: train a ML model by mini-
+mizing the average error (or loss) incurred by its predictions on
+a training set. Design choices within ERM, speciﬁcally the con-
+struction of the dataset, the selection of the model architecture,
+and the error measure (or loss), directly inﬂuence the ability of
+AI systems to meet key requirements for trustworthiness (see
+Fig. 1. Trustworthy AI adds new design criteria for ERM based methods.
+Besides small computational complexity and data requirements, these methods
+must be sufﬁciently explainable, priv acy-friendly, fair and robust.
+Fig. 1). In this article, we systematically map the design choices
+within ERM to the seven key requirements for trustworthy
+AI (KR1–KR7) outlined by the European Commission (see
+Table I). In the following, we will show that trustworthy AI
+can be engineered by rigorously designing ERM components
+to align with values such as human agency, technical robust-
+ness, privacy, fairness, transparency, societal well-being, and
+accountability. Importantly, achieving trustworthy AI goes be-
+yond good design choices and requires interdisciplinary teams
+of developers, lawyers, ethics specialists, and other experts in
+assessing the requirements considering the speciﬁc use-case.
+II. E MPIRICAL RISK MINIMIZATION AS AI ENGINE
+Many of today’s AI systems are based on ML techniques. The
+goal of ML is to predict some quantity of interest (its label) y
+from low-level measurements (its features)x=
+{
+x1,...,x d
+}T
+.
+The predictions are computed via a hypothesis map h which
+reads in the features of a data point and returns a prediction
+ˆy =h(x) for its label.
+A. Model
+The hypothesish is learnt or optimised based on the discrep-
+ancy between previous predictions and observed labels. The set
+of hypotheses that an ML method can choose from, is called the
+hypothesis space or model.
+B. Loss
+To select or learn a useful hypothesis from a model, we need
+a measure of the quality of the predictions obtained from a
+hypothesis. For this purpose, ML methods use loss functions
+L((x,y),h) to obtain a quantitative measure prediction errors.
+C. Risk
+The ultimate goal of ML is to learn a hypothesis ˆh∈H that
+incurs a small loss when predicting the label of any data point.
+--- PAGE 3 ---
+2562 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+TABLE I
+MAPPING ERM DESIGN COMPONENTS TO TRUSTWORTHY AI REQUIREMENTS (WITH REFERENCES TO
+SECTIONS)
+KR1 KR2 KR3 KR4 KR5 KR6 KR7
+Data Sec. IV-A Sec. V-B Sec. VI-A Sec. VII-B Sec. VIII-A Sec. IX Sec. X
+Model Sec. IV-B Sec. V-C Sec. VI-B Sec. VII-C Sec. VIII-B Sec. IX Sec. X
+Loss Sec. IV-C Sec. V-A Sec. VI-C Sec. VII-A Sec. VIII-C Sec. IX Sec. X
+We can make this informal requirement more precise by inter-
+preting data points as realisations of i.i.d. random variable (RV)
+with a common probability distribution p(x,y). This allows to
+deﬁne the expected loss or risk of a hypothesis
+¯L
+{
+h
+}
+:=E
+{
+L((x,y),h)
+}
+. (1)
+D. Data
+As the underlying probability distributionp(x,y) is typically
+unknown, we cannot directly optimise the risk ( 1). Instead,
+practical ML methods need to approximate the risk from a
+dataset
+D =
+{{
+x(1),y(1)
+}
+,...,
+{
+x(m),y(m)
+}}
+. (2)
+The dataset consists of data points, each characterized by fea-
+tures x and some label y. Empirical risk minimization (ERM)-
+based methods require a dataset to measure the usefulness of a
+hypothesis h∈H and, in turn, to train a model (learn a useful
+choice of model parameters).
+E. Empirical Risk
+Arguably, the most widely used approximation to risk ( 1)i s
+the average loss or empirical risk (see Fig. 2)
+ˆL
+{
+h|D
+}
+:=( 1/m)
+m∑
+r=1
+L
+{{
+x(r),y(r)
+}
+,h
+}
+. (3)
+Much of statistical learning theory revolves around the study of
+the approximation ˆL
+{
+h|D
+}
+≈ ¯L
+{
+h
+}
+. The approximation quality
+can be studied using various forms of the law of large numbers
+or concentration inequalities [25], [26], [27], [28].
+F . ERM
+ERM-based methods learn a hypothesis ˆh∈H from a hy-
+pothesis space (or model) H by minimizing the empirical risk
+ˆL
+{
+h|D
+}
+as a proxy for the risk
+ˆh:=argmin
+h∈H
+ˆL
+{
+h|D
+}
+=argmin
+h∈H
+∑
+(x,y)∈D
+L((x,y),h). (4)
+We obtain practical ML systems by applying optimisation
+methods to solve (4). Different ML methods are obtained from
+different design choices for the data points (their features and
+labels), the hypothesis space (or model), and the loss function
+[24, Ch. 3].
+Fig. 2. ERM uses the average loss incurred on a training set to approximate
+the risk (or expected loss).
+G. Design Choices
+From a ML engineering perspective, the design choices in
+ERM are mainly guided by computational aspects and statis-
+tical aspects of the resulting optimisation problem ( 4). Com-
+putational aspects include the number of arithmetic operations
+required by a ML method. Statistical aspects include the gen-
+eralization error ¯L
+{ˆh
+}
+− ˆL
+{ˆh|D
+}
+of the learnt hypothesis and
+its robustness against the pres ence of outliers in the training
+set (2).
+H. Generalization
+While measuring the computational complexity by counting
+arithmetic operations is quite straightforward [29], measuring
+the generalization error is more challenging. Indeed, since we
+typically do not know the underly ing probability distribution
+of the data points, we can only estimate the generalization
+performance using a validation set. The validation set consists
+of data points that were not used for the training set D in
+ERM (4) (see Fig. 3).
+Ensuring trustworthy AI with {erm} requires not only
+statistical and computational optimisation but also care-
+ful design of the training data, the ML {model}, and
+the {lossfunc}. This article examines how deliberate
+choices in each of these components can help satisfy
+the key requirements for trustworthy AI.
+--- PAGE 4 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2563
+Fig. 3. We can diagnose a ML method by comparing its training error
+with its validation error. Ideally both are on the same level as a baseline (or
+benchmark error level).
+Fig. 4. Equivalence between data augmentation and loss penalization.
+I. Regularization
+Consider an ERM-based ML method using a hypothesis
+space H and a dataset D (we assume all data points are used
+for training). A key parameter for such ML methods is the ratio
+deﬀ (H)/|D| between the (effective) model size deﬀ (H) and
+the number|D| of data points.1 The tendency of the ML method
+to overﬁt increases with the ratio deﬀ (H)/|D|.
+Regularization techniques reduce the ratio deﬀ (H)/|D|
+through three (essentially equivalent) approaches
+1) obtaining more data points, possibly via data augmenta-
+tion,
+2) adding a penalty term αR
+{
+h
+}
+to the average loss in ERM
+(3),
+3) shrinking the hypothesis space, e.g., by adding constraints
+on model parameters such as ‖w‖2 ≤ 10.
+It can be shown that these three perspectives (corresponding to
+the three components data, model, and loss) on regularization
+are closely related [ 24, Ch. 7]. For example, the addition of a
+penalty termαR
+{
+h
+}
+in ERM (3) is equivalent to ERM (3) with
+a pruned hypothesis spaceH(α) ⊆H . Using a largerα typically
+results in a smaller H(α) [24, Ch. 7]. Furthermore, adding the
+penalty term αR
+{
+h
+}
+is equivalent to augmenting the original
+training set with perturbations of its data points (see Fig. 4).
+1Arguably, the most widely used measure for the effective size of a ML
+model is the Vapnik–Chervonenkis (VC) dimension [25]. However, the precise
+deﬁnition of the model size is not relevant for our discussion.
+Fig. 5. ERM-based methods are deﬁned by design choices for data, model
+and loss. This article disc usses design choices that facilitate KRs for trust-
+worthy AI.
+III. D ESIGN CHOICES AND TRUSTWORTHY AI
+In the design of an AI application, there are many different
+design choices that can be made (see Fig.4). While traditionally
+computational and statistical aspects are the most prominent
+guiding principles, it is crucial for the further development
+of AI to take into account requirements of trustworthiness to
+ensure that AI applications are also socially beneﬁcial and save.
+The European Union has identiﬁed seven key requirements
+for trustworthy artiﬁcial intelligence [20]. Even though these
+requirements are not legally bi nding, their ultimate legal basis
+lies in the EU Charter of Fundamental Rights and, therefore, in
+the EU’s core democratic values. To create trustworthy AI it is
+essential to develop an understanding of these norms. Hence, in
+the following, we will propose different design choices in the
+context of the key requirements and provide more information
+about their relationship to core values of the European Union
+(see Fig. 5). However, it is important to note that technical
+design choices repres ent only one pillar of trustworthy AI.
+Especially oftentimes required balancing tests of rights assess-
+ments will have to be conducted by legal experts in cooperation
+with the AI experts. Additionally , organizational, contractual
+and educational factors must be considered to ensure that AI
+applications are truly trustworthy.
+IV . KR1 - HUMAN AGENCY AND OVERSIGHT
+The basic idea of human agency and oversight [ 20, p.15]
+relates to human autonomy as the right to live one’s life as
+one wishes (liberty) [30, Article 6], and human dignity, the fact
+that all persons, by virtue of being human, have an inherent,
+equal, and inalienable value regardless of any other factors
+[30, Article 1]. Human agency and oversight implement these
+values by requiring that ultim ately a person be meaningfully
+involved in the process of decision-making; an AI system shall
+not be able to make uncontrolled decisions about people. To
+ensure feasibility of this oversi ght, AI systems need to pro-
+vide for transparency, whic h could be seen as precondition
+--- PAGE 5 ---
+2564 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+for agency and oversight. Transparency, however, is a separate
+requirement within the guidelines and will be treated separately
+in the following.
+ERM-based methods must be designed to support user
+agency, ensure human oversight, and protect fundamental
+rights. The predictions delivered by a trained model must
+not result in any manipulation or undue inﬂuence that would
+deprive the person subjected to decisions of meaningful de-
+cision making. We must ensure safeguards to maintain hu-
+man control and to prevent harmful outcomes. KR1 is closely
+related to fundamental rights such as dignity, freedom, and
+nondiscrimination [30].
+A. Human Agency
+Users should be able to understand, interact with, and chal-
+lenge decisions based on predictionsˆh(x) delivered by a trained
+modelˆh∈H . Human agency is facilitated by using transparent
+models and comprehensive documentation of the training pro-
+cess [e.g. optimization method used to solve ( 3)]. The ERM
+design choices for data points (their features and label) and
+loss function must ensure that the trained model avoids any
+manipulation or deception of users, all of which may threaten
+individual autonomy [31], [32], [33].
+B. Human Oversight
+We must design ERM-based methods that do not compromise
+autonomy or cause harm. This can be implemented through
+various governance models that allow for varying degrees of
+human intervention, from direct involvement in learning cycles
+(monitoring gradient bases methods to solve ( 3)) to greater
+oversight of the social and ethical impacts resulting from pre-
+dictions h(x).
+Next, we discuss how KR1 guides the design choice for data
+(training set), model and loss used in ERM ( 4).
+C. Data
+1) Freedom of the Individual: Guaranteeing individual free-
+dom requires that individuals, especially those at risk of ex-
+clusion, have equal access to the beneﬁts and opportunities
+that AI can offer. In this regard, KR1 requires that the train-
+ing set in ( 3) is curated with diversity and inclusion in mind.
+Biases in data collection or labeling may disproportionately
+affect certain groups , potentially limiting their autonomy or
+reinforcing discriminatory patterns. Unbiased representation of
+subpopulations in the datasetD used by ERM (4) is essential to
+avoid manipulation, deception, or discrimination of individuals
+and to protect their autonomy and freedom of choice.
+2) Respect for Human Dignity: Learning personalized
+model parameters for recommender systems allows supplying
+customised suggestions to users, referred to as microtargeting.
+This can be useful as it can help users to ﬁnd suitable contents or
+products. However, microtargeting can also increase addictive
+user behavior or even emotional manipulation of larger user
+groups [17], [34], [35], [36]. KR1 rules out certain design
+choices for the labels of data points to defuse microtargeting. In
+particular, we must avoid using the mental and psychological
+characteristics of a user as the label. KR1 also rules out loss
+functions that can be used to train predictors of psychological
+characteristics.
+3) Continuous Monitoring: In their simplest form, ERM-
+based methods involve a single training phase, i.e. they solve (3)
+using some numerical optimisation method [37], [38]. The use
+of a single training phase is only useful if the data generation
+is stationary, e.g., if it can be well approximated by an i.i.d.
+assumption. For many ML applications, this assumption is only
+realistic if the training set is limited to a sufﬁciently short
+time period [39], [40]. It is crucial to continuously compute a
+validation error on a current validation set used to diagnose the
+whole ML system (see [24, Sec. 6.6]). Based on the diagnosis,
+the model parameters can be updated (retrained) by using a
+fresh training set for ERM.
+D. Model
+Human agency and oversight can be facilitated by relying on
+simple models such as linear models with few features or deci-
+sion trees with small depth. Deﬁning what makes a model “sim-
+ple” is challenging. However, a more rigorous understanding of
+model simplicity can be developed through quantitative mea-
+sures of their explainability (o r interpretability). Section VII
+constructs measures of the subjective explainability of a trained
+modelˆh∈H . Generally speaking, we refer to a model as simple
+if a nonexpert can (to some degree) understand how the features
+of a data point relate to the prediction h(x).
+While the internal logic of simple models (such as linear
+classiﬁers) may be transparent, malicious actors may repurpose
+them in harmful or unintended ways. These attacks on simple
+models are difﬁcult to foresee at design time. Thus, while the
+use of simple (or interpretable) models supports oversight and
+auditing, it must be complemented by broader socio-technical
+assessments and usage controls [41], [42].
+E. Loss
+The choice of the loss function in ERM ( 4) should favour
+hypothesis maps h∈H that are consistent with fundamental
+rights. For example, including a penalty term in the loss func-
+tion can force the trained model to yield predictions that are
+invariant across different mental states of the same user, as
+even though those woul d not be included in the initial data
+collection, it is still possibl e that those could be accidentially
+inferred from user behaviour. Wecan also explicitly incorporate
+domain expertise of psychologists to penalize predictions that
+would recommend harmful content to social media users [43].
+1) Interpretable Loss Function: To facilitate human over-
+sight, we should use a loss functio n that is intelligible to the
+user. For example, consider a user without formal training or
+education in ML. Here, using, the 0/1 loss might enable human
+oversight more efﬁciently compared with using the logistic loss
+[24, Sec. 2.3.2].
+--- PAGE 6 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2565
+2) Incorporate Human-Centric Objectives: We can choose
+a loss function that includes penalty terms that reﬂect human-
+centric values such as fairness (see Section VIII) or trans-
+parency (see Section VII). The idea is to penalize a hypothesis
+h that delivers predictions h(x) that contradict these goals.
+3) Penalizing Unethical Outcomes: The loss function in
+ERM can be tailored to penalize a prediction h(x) that is
+considered to be unethical. For instance, we could assign a very
+large loss value to a prediction that results in presenting fake
+n e w st oau s e r .
+V. K R 2- TECHNICAL ROBUSTNESS AND SAFETY
+ERM-based ML methods should work reliably even when
+things go wrong. They must be safe in real-world conditions
+where data might be messy, models might be slightly wrong,
+and computing systems might fail. This is the idea behind Key
+Requirement 2 (KR2) [20, p.16], which supports important
+rights in the EU Charter such as the right to life [30, Article 2],
+protection of health [ 30, Article 3], and protection of personal
+data [30, Article 8].
+In this section, we look at what can go wrong in ERM-based
+systems and how to design them to stay safe and reliable.
+Where Do Problems Come From?To solve an ERM problem
+like ( 3), we run optimization algorithms on real computers.
+These computers are not perfect [44], [45]
+1) The code might have bugs.
+2) Hardware can crash or lose power.
+3) Communication links might fail.
+4) There is always some rounding error in ﬂoating-point
+calculations.
+Even if the computation works ﬁne, the training data D might
+be noisy or tampered with
+1) Sensors deliver noisy measurements [46].
+2) Attackers can inject fake or misleading data [47], [48].
+In practice, the data used for training is typically a random
+sample drawn from an unknown underlying distribution [24],
+[25]. As a result, each training set may differ slightly. A robust
+model should maintain strong performance despite such vari-
+ability in the training data.
+A. Stability Helps Generalization
+A central concept in learning theory is that if a learning
+algorithm exhibits only minor changes in its output when the
+training set is perturbed slightly, it is likely to generalize well
+to unseen data [49], [50], [51]. In other words, stable methods
+often perform well on new, unseen data.
+While many forms of data variation are small and random,
+real-world datasets often contain more severe forms of contam-
+ination. In particular, the presence of even a small number of
+extreme outliers—arising from s ensor malfunctions, data entry
+errors, or adversarial manipulation—can severely compromise
+the reliability of a learning algorithm. This vulnerability poses
+a critical challenge in safety-sensitive domains such as medical
+diagnostics or autonomous systems.
+Robust statistics offers a principled framework for address-
+ing this issue. A key concept in this ﬁeld is the breakdown
+point, which serves as a formal robustness metric for statistical
+estimators. Speciﬁcally, the breakdown point quantiﬁes the
+largest proportion of contaminated data an estimator can tol-
+erate before it yields arbitrarily incorrect results. For example.
+1) The sample mean has a breakdown point of zero; a single
+outlier can render it invalid.
+2) The sample median, by contrast, has a breakdown point
+of 50%, making it substantially more robust [52].
+What Can Go Wrong? Robustness means the model still
+performs well when things go slightly wrong. These problems
+can happen in three places.
+1) Data: Noise, adversarial samples, or changes in the data
+distribution.
+2) Model: Changes in architecture, unstable parameters, or
+software updates.
+3) Loss Function: Poorly chosen objective, or adversarial
+manipulation of the loss.
+We describe this by allowing changes to the training set,
+model class, and loss function
+{⇑D, ⇑H, ⇑L
+}
+∈U .
+This leads to a modiﬁed ERM objective
+˜h=argmin
+h∈ ⇑H
+1
+|⇑D|
+∑
+(x,y)∈⇑D
+⇑L
+{
+(x,y),h
+}
+. (5)
+We can then ask: how different is the model we get from (3)
+compared with the one from (5)? This gives us a way to measure
+robustness.
+What Can Go Wrong (KR2)
+To make learning systems safe and robust, we need to
+consider.
+• Data problems: sensor noise, data poisoning, dis-
+tribution shift
+• Model problems: unstable architectures, numeri-
+cal errors
+• Loss problems: poor objectives, adversarial ma-
+nipulations
+B. Loss
+This section discusses speciﬁc choices (constructions) for the
+loss function in ERM ( 4) so that its solutions are close to the
+perturbed ERM (5). In particular, we consider uncertainty sets
+that contain a single choice of modelH and loss functionL but
+different perturbed datasets ⇑D. Thus, throughout this section,
+we assume that ( 4) and (5)u s et h es a m eH and L.
+1) Robust Statistics: A well-known example of a loss func-
+tion that improves the robustness of ERM is the Huber loss. Us-
+ing the Huber loss instead of the squared error loss in (4) makes
+the resulting method signiﬁcantly more robust (or insensitive)
+against the presence of outliers in the training setD [24, Ch. 3].
+In fact, in the special case of learning a constant predictor (that
+is, estimating the mean of a sample), minimizing the empirical
+risk under the squared error loss yields the sample mean. In
+--- PAGE 7 ---
+2566 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+Fig. 6. Effect of using either square d error or Huber loss on learning the
+parameters of a linear model. The model parameters learnt by minimizing the
+average Huber loss seem to be more robu st against the presence of an outlier.
+contrast, minimizing the empirical risk under the Huber loss
+results in a value closer to the sample median, particularly as
+the Huber threshold parameter tends to zero. Fig.6 depicts a toy
+dataset along with two linear models, one trained by minimizing
+the average squared error loss and another one by minimizing
+the average Huber loss.
+2) Adversarial Loss: A principled construction of robust
+loss functions is based on replacing ERM (4) with an adversarial
+(or worst-case) variant [53], [54]
+ˆh=argmin
+h∈H
+sup
+⇑D∈U
+∑
+(x,y)∈⇑D
+L((x,y),h). (6)
+A rapidly growing body of work examines various instances of
+(6) obtained for different constructions of the uncertainty set U
+[55], [56], [57], [58]. In the following, we show how a special
+case of ( 6) is equivalent to ( 4) for a suitable choice L′for the
+loss function.
+A common construction of the uncertainty set in ( 6)i st o
+perturb separately the features and labels of the data points in
+D [55], [57]. Thus, the uncertainty set is decomposed into a
+separate sets U(x,y), one for each data point (x,y) in D.T h e
+adversarial ERM (6) then becomes [57]
+ˆh=argmin
+h∈H
+m∑
+r=1
+sup
+(⇑x,˜y)∈U(x(r),y(r))
+L((⇑x,˜y),h)
+\ˆ√∐ˆ~[√]√u√⌈~~√\ˆ√∐ˆ~[√]√ˆ}w{√]~[√\ˆ√∐ˆ~[√]√ˆ}w{⌈~~√\ˆ√∐ˆ~[√]√u√√]~[√
+robust loss L′
+{
+(x(r),y(r)),h
+}
+. (7)
+Note that the robust loss function L′in ( 7) depends both on
+the original choice for the loss function in ( 4), as well as the
+uncertainty set U in (7).
+Next, consider a modiﬁcation of ( 7) where we perturb only
+the features of the data points but leave their labels untouched
+[59]. This modiﬁcation uses an uncertainty set U(η) which
+is parametrized by a perturbation strength η and consists of
+datasets ⇑D =
+{
+⇑X,y
+}
+with feature matrix
+⇑X\ˆ√∐ˆ~[√]√u√⌈~~√\ˆ√∐ˆ~[√]√ˆ}w{√]~[√\ˆ√∐ˆ~[√]√ˆ}w{⌈~~√\ˆ√∐ˆ~[√]√u√√]~[√
+:=
+{
+⇑x(1),...,⇑x(m)
+}T
+= X\ˆ√∐ˆ~[√]√u√⌈~~√\ˆ√∐ˆ~[√]√ˆ}w{√]~[√\ˆ√∐ˆ~[√]√ˆ}w{⌈~~√\ˆ√∐ˆ~[√]√u√√]~[√
+:=
+{
+x(1),...,x(m)
+}T
++
+{
+u(1),..., u(d)}
+with
+‖‖‖u(j)
+‖‖‖
+1
+≤η. (8)
+Note that, unlike in (7), the construction (8) couples the fea-
+tures of different data points inD. Thus, instead of maximizing
+separately over possible perturbations for each data point as in
+(7), we need to study the worst-case perturbation of the entire
+dataset
+ˆh=argmin
+h∈H
+sup
+⇑D∈U
+m∑
+r=1
+L
+{{
+⇑x(r),y
+}
+,h
+}
+. (9)
+Consider ERM obtained for a linear model and the absolute er-
+ror loss. Here, it can be shown that (9) is equivalent to ERM with
+the robust loss L′=
+⏐⏐y −h(x)
+⏐⏐+η‖w‖1 [59, Thm. 14.9.].
+Recent work also studies uncertainty sets U consisting of
+perturbed datasets ⇑D with an empirical distribution ⇑P close to
+the empirical distribution P of D
+U(η) :=
+{ ⇑D:W
+{⇑P,P
+}
+≤η
+}
+. (10)
+Here,W
+{⇑P,P
+}
+denotes the Wasserstein distance between⇑P and
+P [58].
+Consider an adversarial ERM ( 6) with uncertainty set ( 10)
+and a loss functionL that is Lipschitz continuous with modulus
+α. It can then be shown that ( 6) is equivalent to ERM with a
+certain robust loss function [ 58, Theorem 4].
+For a binary classiﬁcation, the authors of [60] study a robust
+loss of the form
+L((x,y),h)=
+{
+1i f h(x′)⁄=y for some x′∈Ux
+0 otherwise. (11)
+Here, Ux is some robustness region. Note that ( 11) reduces to
+the basic 0/1 loss for the choice Ux ={x} [24].
+C. Data
+Instead of choosing a robust loss function L in ERM (4), we
+can construct the training set in ( 4) to make its solutions more
+robust. A widely studied approach is adversarial training, i.e.,
+including adversarially perturbed data points in the training set
+D [54], [61], [62].
+An opposite approach to adversarial training is to prune a
+given dataset using some form of outlier detection [63].T h e
+training set is then obtained by the remaining data points that
+have not been declared as outliers.
+However, it can be challenging to distinguish outliers from
+natural perturbations due to the sampling from a true underlying
+probability distribution [64], [65].
+The fundamental limits for outlier removal techniques can be
+studied using a malicious noise model [66]
+z(r) =
+{
+⇑z(r) if b(r) = 1
+e(r) otherwise, (12)
+with b(r) i.i.d.
+∼B (pe),˜z(r) i.i.d.
+∼ p(x,y). (13)
+Here, the outlier e(r) can be chosen arbitrarily (maliciously),
+even taking into account the current state of the optimisation
+method used to solve (4). Consider an ERM method for binary
+classiﬁcation, that returns a hypothesisˆh with expected 0/1l o s s
+--- PAGE 8 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2567
+E
+{
+L
+{
+z,ˆh
+} }
+. To allow for the existence of an ERM method
+achievingE
+{
+L
+{
+z,ˆh
+} }
+<ε , the maximum fraction of outliers
+that can be tolerated is upper bounded by ε/(1+ε) [66].
+D. Model
+We can deﬁne and measure the robustness of ML using differ-
+ent notions of continuity of the learnt hypothesisˆh. Besides the
+basic qualitative notion of continuity, we can also use Lipschitz
+continuity to obtain a quantitati ve measure of r obustness [67].
+Note that Lipschitz continuity requires both the domain and the
+range of the hypothesis map ˆh, to be a metric space.
+An obvious way to ensure the robustness of ERM is to use
+a model H that contains only Lipschitz continuous hypothesis
+mapsH. Recent work has shown that ERM provides a Lipschitz
+continuous hypothesis if the model H is sufﬁciently large [68].
+Instead of Lipschitz continuity, the authors of [69] use
+the concept of local and global robustness for multiclass
+classiﬁcation problems. Here, data points have a label y ∈
+Y :={1,...,K } and the goal is to learn a classiﬁer h(x)={
+h1(x),...,h k(x)
+}T
+which is used to classify a data point as
+ˆy =argmaxc∈{1,...,K}hc(x).
+A classiﬁer h(x) is then deﬁned asε-locally robust at feature
+vectorx if it classiﬁes ˆy =ˆy′for every data point with features
+x′such that ‖x−x′‖2 ≤ε [69]. Note that if we require this
+to hold for every x, the classiﬁer must be trivial (providing the
+same label value for each data point). To obtain a useful notion
+of global robustness, the authors of [69] introduce an auxiliary
+label value that signals when the classiﬁer is not locally robust.
+VI. KR3 - PRIVACY AND DATA GOVERNANCE
+ERM-based methods must ensure protection against unau-
+thorised access to and misuse of personal data. Such protection
+is critical in the face of concrete threats such as membership
+inference attacks, which attempt to infer whether a particular
+individual’s data were used in training [70]. Data protection
+and privacy protection are typically implemented as part of a
+broader data governance framework [71], designed to ensure
+the quality, integrity, and lawful processing of personal data.
+A. Data Governance
+Many applications of ERM use data points that represent
+individuals, often capturing behavioral patterns, preferences,
+or sensitive medical information. Especially for such personal
+data, data governance must cover the entire AI lifecycle, from
+collection and training to model deployment and secure dele-
+tion. Effective governance includes data lineage, model vali-
+dation (e.g., verifying factual accuracy), and documenting data
+sources [72].
+Legal frameworks such as the General Data Protection Reg-
+ulation mandate safeguards such as data protection impact as-
+sessments (DPIAs) and, in some cases, the appointment of a
+Data Protection Ofﬁcer. These mechanisms help anticipate and
+mitigate privacy risks throughout the system’s operation [73].
+1) Measuring Privacy Leakage: A fundamental question is
+how much private information can leak from the output of an
+ERM-based system. Formally, we can model such a system as a
+function A that maps a training set D to an output A(D), such
+as the trained parameters ˆw or a prediction ˆh(x). Membership
+inference attacksexploit this map to determine whether a partic-
+ular data point was used during training—potentially violating
+privacy even if the model output seems innocuous.
+2) Privacy Protection and Noninvertibility: To prevent such
+leakage, it must be computationally infeasible to infer sensitive
+components of any data point from A(D). Let each data point
+be represented by features x, a label y, and a sensitive attribute
+s (e.g., a medical diagnosis).
+Privacy Protection that the map A be sufﬁciently
+noninvertible—meaning not just that A(D) lacks an inverse
+(in a strict mathematical sense), but that even sophisticated
+inference attacks cannot reliably reconstruct s or deduce the
+presence of a speciﬁc data point. This notion is tightly linked
+to Plausible Seniability : a property whereby the inclusion of
+a speciﬁc data point in D cannot be conﬁrmed or denied with
+high conﬁdence based on the observed output.
+3) Differential Privacy (DP): A widely used approach to
+make an ERM-based method sufﬁciently noninvertible is to
+introduce some randomness or noise. Examples of such ran-
+domness include adding noise to the output and selecting a
+random subset of D.T h em a pA then becomes stochastic and,
+in turn, the output A(D) is then characterized by a probability
+distribution Prob
+{
+A(D)∈S} for all sets S within a well-
+deﬁned collection of measurable sets [74].
+DP measures the noninvertib ility of a stochastic algorithm
+A by the similarity of the probability distributions obtained for
+two datasetsD,D′that are considered neighbouring or adjacent
+[75], [76]. Typically, we considerD′to be adjacent to D if it is
+obtained by modifying the features or label of a single data point
+inD. In general, the notion of neighbouring datasets is a design
+choice used in the formal deﬁnitio n of differential privacy.
+Deﬁnition 1 (Adapted from [76]): An ERM-based method
+A is (ε,δ)- differential privacy if for any measurable setS and
+any two neighboring datasets D,D′
+Prob
+{
+A(D)∈S
+}
+≤exp(ε)Prob
+{
+A(D′)∈S
+}
++δ. (14)
+By limiting the inﬂuence of any single data point on the
+output, differential privacy ensures a robust defense against
+membership inference and suppor ts plausible deniability. This
+makes it a key enabler of KR3-compliant AI systems.
+B. Data
+A simple way to implement privacy protection in ERM-
+based methods is through careful selection of the features used
+to characterize data points [77], [78]. The goal is to select
+features that are relevant to the learning task while ensuring they
+do not reveal excessive information about sensitive attributes.
+Note that it is typically not sufﬁcient to just remove sensitive
+attributes from raw data points to ensure privacy protection.
+Indeed, these sensitive attributes might be recoverable from the
+other features of a data point.
+--- PAGE 9 ---
+2568 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+A straightforward approach to implementing privacy protec-
+tion within ERM-based methods involves the deliberate selec-
+tion of features used to characterize each data point [77], [78].
+The aim is to retain only those features that are relevant for the
+learning task, while minimizing the risk of disclosing sensitive
+information. However, it is typically insufﬁcient to ensure pri-
+vacy protection by merely excluding explicit sensitive attributes
+from the input data. This is because such attributes can often be
+inferred indirectly through other correlated features—known as
+proxy variables—that act as functional or statistical surrogates.
+Therefore, effective privacy protection requires a more holistic
+view that accounts for the interactions between features, and
+may involve additional techniques such as adversarial training,
+regularization, or differential privacy to mitigate leakage from
+correlated attributes.
+There is an inherent trade-off between privacy protection and
+the resulting statistical accuracy.In fact, we can trivially achieve
+perfect privacy protection by not using any property of a data
+point as a features. However, this extreme case of maximum
+privacy protection comes at the cost of a lower quality of the
+predictions delivered by (the hypothesis learnt from) ERM.
+1) Private Feature Learning: In many practical scenarios,
+it is challenging to manually select features that achieve an
+appropriate trade-off between privacy protection and predictive
+performance.2 A data-driven approach to this problem is to
+learn a feature map Φ:Rd →Rd′
+that transforms raw features
+into representations z=Φ(x) which preserve task-relevant in-
+formation while obscuring sensitive attributes.
+The goal is to learnΦ such that it enables accurate prediction
+of the label y, while simultaneously hindering inference of the
+private attributes. We now outline two approaches to this form
+of private feature learning, which differ primarily in how they
+quantify the predictability of s and y. Both approaches rely on
+a probabilistic model for the data points in D, treating them as
+realizations of i.i.d. r andom variables (RVs).
+2) Privacy Funnel: One principled approach is based on
+mutual information, a well-established information-theoretic
+quantity that captures the sta tistical dependence between ran-
+dom variables. The MI I(s;Φ(x)) measures how much infor-
+mation the transformed features Φ(x) reveal about the sensattr
+s. A small value ofI(s;Φ(x)) indicates strong privacy protec-
+tion, as it implies that s is difﬁcult to infer from Φ(x).3
+Similarly, the mutual information I(y;Φ(x)) quantiﬁes the
+extent to which the representation retains information relevant
+for predicting the labely. Ideally, one seeks a representation that
+minimizes I(s;Φ(x)) while maintaining a sufﬁciently large
+I(y;Φ(x)).
+This trade-off is formalized by the privacy funnel [ 80,( 2 ) ]
+min
+Φ(·)
+I(s;Φ(x)) subject to I(y;Φ(x))≥R (15)
+2For instance, consider data points represented by high-dimensional raw
+image data, where each pixel’s col or intensity constitutes a feature.
+3Connections between mutual informati on-based privacy metrics and dif-
+ferential privacy have been explored, e.g., in [79].
+Fig. 7. Solutions of the privacy funnel ( 15) trace out (for varying constraint
+R in ( 15)) a curve in the plane spanned by the values of I (s;Φ(x))
+(measuring the privacy leakage) and I (y;Φ(x)) (measuring the usefulness
+of the transformed features for predicting the label).
+whereR is a lower bound on the retained task-relevant informa-
+tion. Fig. 7 qualitatively illustrates solutions to (15) for different
+values of R.
+Note that the exact evaluation of mutual information is typi-
+cally impossible as this requires knowing the probability distri-
+bution underlying the data generation. In practice, we need to
+estimate mutual information from data using statistical infer-
+ence techniques. These techniques rest on different modeling
+assumptions and, in turn, introduce approximation errors that
+must be considered when designing practical systems based on
+the privacy funnel.
+3) Private Linear Feature Learning via Reconstruction
+Error: The privacy funnel ( 15) uses the mutual information
+I(s;Φ(x)) to quantify the privacy leakage of a feature map
+Φ(x). An alternative measure of privacy leakage is the min-
+imum reconstruction error s− ˆs. The reconstruction ˆs is ob-
+tained by applying a mapr(·) to the transformed featuresΦ(x).
+If the joint probability distribution p(s,x) is a multivariate
+normal distribution and the Φ(·) is a linear map (of the form
+Φ(x):= Fx with some matrixF), then the optimal reconstruc-
+tion map r(·) is again linear [81].
+We would like to ﬁnd the linear feature map Φ(x):= Fx
+such that for any linear reconstruction map r (resulting in ˆs:=
+rTFx) the expected squared error E{(s− ˆs)2} is large. The
+minimum expected squared error loss
+ε(F):=min
+r∈Rd′
+E{(s−rTFx)2} (16)
+measures the level of privacy protection offered by the new
+features z=Fx. The larger the value ε(F), the more privacy
+protection is offered. It can be shown thatε(F) is maximized by
+any matrixF whose rows are orthogonalto the cross-covariance
+vector cx,s :=E{xs}, i.e., whenever Fcx,s =0. A particular
+choice of F that satisﬁes this orthogonality condition is
+F=I−(1/‖cx,s‖2
+2)cx,scT
+x,s. (17)
+--- PAGE 10 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2569
+Fig. 8. Toy dataset D whose data points represent customers, each charac-
+terized by features x=(x1,x 2). These raw features carry information about
+a sensitive attribute s (gender) and the label y (food preference) of a person.
+The scatterplot suggests that we can ﬁn d a linear feature transformation
+F:=fT ∈R1×2 resulting in a new feature z :=Fx that does not allow to
+predicts, while still allowing to predict y.
+Fig. 8 illustrates a dataset for which we want to ﬁnd a linear fea-
+ture mapF such that the new featuresz=Fx do not accurately
+predict a sensitive attribute.
+4) Sufﬁcient Statistics: So far, we have discussed privacy
+protection in the sense of not allowing the prediction of sensitive
+attributes. In some applications, it may not be clear what a
+sensitive attribute is. Nevertheless, we want to minimize any po-
+tential privacy leakage. To implement such a data minimization
+principle, we can use the concept of a sufﬁcient statistic [82],
+[83]. For this purpose, we assume that data points are obtained
+as i.i.d. samples from a probability distribution p(x;w) which
+is parametrised by model parameters w.
+ERM-based methods can be interpreted as methods for es-
+timating the true underlying w of the probability distribution
+p(x;w). A statisticz=Φ(x), with some mapΦ(·), is sufﬁcient
+for the parameterw if the conditional probability distribution of
+x, given the statistic z=Φ(x), does not depend on the model
+parameters w.
+Whenever we have identiﬁed a sufﬁcient statistic for the
+probabilistic model p(x;w), we can safely discard the original
+raw features and instead use the sufﬁcient statisticz=Φ(x) as
+the new features. Of particular interest are sufﬁcient statistics
+which are minimal in the sense that any other sufﬁcient statistic
+is determined from the known value of a minimal sufﬁcient
+statistic [81].
+C. Model
+The feature learning techniques from SectionVI-A above can
+also be implemented as a design choice for the model used in
+ERM. In fact, we can think of the linear feature learning map
+as a preprocessing step within a hypothesis map.
+Recall that privacy protection of an ERM-based method
+A(D) is determined by its noninvertibility. Let us now illustrate
+the effect of the choice of the model H on the noninvertibility
+Fig. 9. Scatterplot of a dataset D along with the decision boundary of a
+decision tree ˆh trained via ERM on D. one of the decision regions contains
+a single data point from the training set which could allow an adversary to
+infer the label y(1) from the predictions ˆh(x) obtained for features near-by
+x(1)x{(1)}$.
+of A(D).F i g .9 depicts a toy along with the decision regions
+of the hypothesis ˆh learnt with ERM ( 4) using a decision tree
+model H [24, Ch. 3].
+Note that one of the decision regions depicted in Fig. 9 con-
+tains a single data point, denoted
+{
+x(1),y(1)}
+,f r o mD. Thus, if
+we have a sufﬁciently accurate estimate for the featuresx(1),w e
+can infer the label y(1) by observing the predictions delivered
+by ˆh for features near-byx(1). To avoid such a model inversion
+attack, we should use a more shallow decision tree model such
+that each resulting decision region contains at least a minimum
+number of data points from D.
+D. Loss
+We can also ensure privacy protection in ERM-based AI
+systems by appropriate design choices for the loss function L
+(4). As a (not very useful) extreme case, consider a constant loss
+functionL((x,y),w)= 0. Here, the hypothesis learnt by ERM
+(4) is completely unrelated to the data points in the training
+set D and, in turn, does not carry any information about them
+(in particular, their sensitive attributes). This maximal privacy
+protection comes at the cost of learning a generally useless
+hypothesis.
+A less trivial construction of a privacy-friendly loss function
+is studied in [84]. Given the loss function of a potentially
+nonprivate ERM-based method, we simply add a random linear
+function to the objective function in (4). The authors of[84] then
+study differential privacy guarantees ( 14) guaranteed by using
+the randomly perturbed ERM.
+VII. KR4 - TRANSPARENCY
+Transparency [20, p.18] is to enable a person to utilise their
+right to take action where they believe they have been treated
+--- PAGE 11 ---
+2570 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+unfairly. This is closely related to the right to data protection.
+To take actions against a potentially unlawful processing or an
+unjustiﬁed outcome of an ERM-based AI system, a user must
+have sufﬁcient information to understand how the processing
+took place or how a decision was reached.
+A. Traceability
+The design choices (and underlying business models) for
+ERM-based AI systems must be documented. This includes the
+source of the (data points in the) training set, the model, the loss
+f u n c t i o nu s e di n(3) [72], [85]. In addition, the documentation
+should also include details of the optimisation method used (3).
+This documentation could include records of the current model
+parameters with a time-stamp (“logging”).
+B. Explainability
+Explainability is a central pillar of trustworthy AI, grounded
+in the principle that individuals should be able to understand the
+decisions made about them, particularly so they can respond or
+seek redress in cases of unfair treatment. Various explainabil-
+ity techniques have been proposed in the literature, including
+LIME [86] and SHAP[87]. LIME approximates a model locally
+around one instance with a simple model and shows which
+features contributed most to that instance’s prediction. SHAP
+on the other hand computes a contribution score (SHAP value)
+for each feature of each instance, based on how much it changes
+the model output when included vs excluded in all possible
+combinations. One possible downside of both approaches could
+still be the intelligibility of suchfound explanations for the data
+subject.
+The recent court case C-203/22 [88] also highlighted the
+potential of counterfactual explanations to clarify automated
+decision-making. Counterfactual explanations were discussed
+by legal scholars early on[89] and can provide a clear picture of
+what would need to change in the circumstances of the person in
+order for a decision made about the person to change. However,
+there is no universally accepted metric for explanaibility so far
+and it is more than likely that several approaches can be used
+depending on the individual scenario.
+Our proposed explainability meas ure differs from these ap-
+proaches in so far as it provides a quantiﬁable metric for ex-
+plainability. This makes it especially valuable in domains such
+as healthcare, where expert users can interpret and compare
+their own predictions with those of the model.
+We adopt a deﬁnition based on the notion of simulatability
+[90], [91], [92], [93], [94].
+A trained ML model c is explainable to a user u if its
+predictions align with the users own predictions.
+We formalize this idea by measuring the (dis-)agreement be-
+tween model predictions and user expectations on an unlabeled
+test set D(test) ={x(1),..., x(mt)}
+E(u)(h):= 1
+mt
+∑
+x∈D(test)
+L′{
+(x,u(x)),h(x)
+}
+(18)
+where u(x) denotes the pseudolabel provided by user u for
+input x.4
+This explainability measure has several attractive properties.
+First, it is actionable: the term E(u)(h) can be incorporated
+directly as a regularizer during training [95]. Second, it is user-
+speciﬁc: different users may yield different values for E(u)(h)
+[96]. Third, by choosing an appropriate test set D(test),i ts u p -
+ports both local and global fo rms of explainability.
+C. Post-Hoc Versus Intrinsic Explainability
+Explainability-enhancing techniques can be broadly catego-
+rized into two types. Post-hoc methods aim to generate explana-
+tions after model training, such as feature importance scores or
+saliency maps. In contrast, intrinsically explainable models—
+such as sparse linear models or shallow decision trees—are
+designed to be transparent by construction [97]. A principled
+alternative is to incorporate the explainability loss (18) directly
+into training to regularize the learned model toward higher user
+agreement [95].
+D. Objectivity Versus Subjectivity
+A major challenge in satisfying KR4 is the inherently sub-
+jective nature of explainability [95], [96]. For example, a linear
+model trained to predict disease risk from medical features
+might be explainable to a clinician but unintelligible to a layper-
+son. This variability is captured by the user-speciﬁc labeling
+function u(x) in (18), which differs across users for the same
+input x.
+To accommodate group-level e xplainability—e.g., agree-
+ment with a panel of experts—we can generalize ( 18)
+as follows:
+E(u)(h):= 1
+mt
+∑
+x∈D(test)
+L′{
+(x,u(x)),h(x)
+}
+(19)
+where u(x)=
+{
+u(1)(x),...,u (n)(x)
+}
+collects pseudolabels
+from n different users (e.g., being expert panel members).
+For real-valued predictions, a natural choice of L′ is the
+squared deviation betweenh(x) and the average user label, i.e.,
+(1/n)∑n
+j=1 u(j)(x).
+E. Local Versus Global Explainability
+We can measure local or global explainability by how we
+choose the test set D(test) in (18). For local explainability, we
+use feature vectors that are close to a speciﬁc inputx. This helps
+check how well the model agrees with the user in a small neigh-
+borhood around x [98]. For global explainability, we choose a
+test set that covers the entire input space or a representative
+sample of it to assess model behavior more broadly.
+1) Loss: Consider an ERM-based method that learns a hy-
+pothesis ˆh via solving (4). We can ensure the explainability of
+ˆh by augmenting the original loss L in (4) by the measure (18)
+(or (18) for group-level explainability). Thus, we use ( 3) with
+a modiﬁed loss function
+L((x,y),h)+ αE(u)(h). (20)
+4The authors of [95] refer to this pseudolabel as a user signal.
+--- PAGE 12 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2571
+Fig. 10. We can improve simulatability (or subjective explainability) of
+ERM by augmenting the training set w ith pseudolabeled data points. These
+are obtained from having the user pr edict labels of data points in a test set.
+2) Data: Consider that we use identical loss functionsL and
+L′in ERM ( 4) and the explainability measure ( 18). We can
+then achieve the same effect as using the modiﬁed loss function
+(20) via augmenting the original training set (2). The augmented
+training set becomes
+D∪
+{
+(x,u(x)): x∈D (test)}
+. (21)
+The test set D(test) may be obtained by collecting new raw
+data or by systematic modiﬁcations of data points in the original
+training set (see Fig. 10). For example, the modiﬁcation may
+consist of constructing counterfactual examples by removing
+or changing important features [91].
+3) Model: “Simple” Models: A trivial way to ensure ex-
+plainability of ERM ( 3) is to choose a model H that contains
+only hypothesis maps incurring a small value of ( 18) (i.e.,
+high explainability). However, this choice must consider the
+speciﬁc user’s knowledge and the construction of the test set
+used to compare user predictions with model predictions. For
+instance, a linear model may be considered explainable only if
+the feature space has a small dimension and the users have a
+basic understanding of linear functions.
+Constructing Explanations: Methods for explainable AI dif-
+fer not only in how they measure explainability but also in the
+form of explanations[96]. A widely used form of explanation is
+to list the most important features of a data point [98]. Another
+form of explanation is to use heat-maps that indicate the relative
+importance of image pixels [99]. Case-based reasoning uses
+speciﬁc data points from the training set as an explanation[100].
+In general, an explanation is some functione(x) of the features
+of a data point. This explanation is delivered along with the
+prediction to the user. Formally, this corresponds to using a
+hypothesis map h with structured output h(x)=
+{
+e(x),ˆy
+}T
+(see Fig. 11).
+VIII. KR5 - DIVERSITY,N ONDISCRIMINATION,
+AND FAIRNESS
+KR5 [20, p.18] is aligned with [ 30, Article 21], which pro-
+hibits discrimination based on factors such as race, gender,
+and religion. AI systems must treat all individuals fairly and
+Fig. 11. We can ensure explainability of ERM-based methods by augment-
+ing the prediction delivered by the tr ained model with some explanation.
+inclusively, upholding their right to equality. Ensuring KR5
+includes quality control of the dataset D used in ERM as well
+as the usability of interfaces fo r different user groups. KR5 is
+ultimately rooted in the inali enable value of al l human beings
+(dignity). [20, p.18].
+Consider an AI application that uses data points representing
+human beings. Each data point is characterized by features
+x and a sensitive attribute s. The sensitive attribute typically
+depends on the raw features of a data point,s=s(x) with some
+map s(·). Examples of a sensitive attribute s are ethnicity, age,
+gender, or religion.5
+A. Individual Fairness (Disparate Treatment)
+Roughly speaking, a fair ERM-based method should learn a
+ˆh∈H that does not give undue weight to the sensitive attribute.
+To make this notion of fairness precise, we need a measure
+d
+{
+x,x′}
+for the similarity between data points, where features
+x,x′, that completely ignores their sensitive attributes [101],
+[102]. A fair classiﬁer should make the same predictions for
+sufﬁciently similar data points
+ˆh
+{
+x
+}
+=ˆh
+{
+x′}
+whenever d
+{
+x,x′}
+is sufﬁciently small. (22)
+Here, d
+{
+x,x′}
+is a quantitative measure of the similarity be-
+tween two data points with featuresx,x′, respectively. The fair-
+ness requirement (22) seems to be an intuitive way of preventing
+disparate treatment [103].
+B. Example: Job Platform
+Consider a job platform that uses ERM to learn a hypoth-
+esis ˆh for predicting whether a given user is suitable for a
+particular job opening. Each user is characterized by features
+x=
+{
+x1,...,x d
+}
+where the ﬁrst entry x1 is the age of the user.
+So the sensitive attribute is s=x1. Fairness might require that
+the prediction ˆh(x) does not depend on the age of the user
+at all [104]. We could ensure this by using a classiﬁer that
+satisﬁes ( 22)w i t ham e t r i cd
+{
+x,x′}
+that does not depend on
+x1. However, the requirement (22) is insufﬁcient if the sensitive
+attribute s=x1 can be inferred (predicted) from the values of
+the remaining features x2,...,x d [105], [106].
+In the ML literature, avariety of quantitative measures for the
+fairness of a trained model have been studied and proposedˆh∈
+H. In the following, we brieﬂy survey some of these measures in
+5The deﬁnition of the sensitive attribute s is a design choice that varies
+by application. For instance, religion mi ght be a sensitive attribute on a job
+application platform, but it could be a relevant feature in a diet planning app.
+--- PAGE 13 ---
+2572 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+Fig. 12. We can improve fairness of a ML method by augmenting the
+training set using perturbations of an i rrelevant feature. For example, in a
+credit scoring application, we might change the gender of a person while
+keeping the remaining features ﬁxed.
+the context of binary classiﬁcation where the learnt hypothesis
+is used to deliver a predicted label ˆy ∈{ 0, 1}.
+1) Group Fairness (Disparate Impact): Apart from the indi-
+vidual fairness constraint (22), another interpretation of fairness
+is to require that a trained model have similar performance
+across subpopulations [101], [105], [107], [108], [109], [110].
+For example, we might require identical conditional risk for
+subsets of data points with sensitive attribute values(1) ands(2),
+respectively
+E
+{
+L
+{
+(x,y),ˆh
+} ⏐⏐s=s(1)}
+=E
+{
+L
+{
+(x,y),ˆh
+} ⏐⏐s=s(2)}
+.
+(23)
+Imposing (23) requires the learnt hypothesis to have the same
+performance (expected loss) over subpopulations of data points
+that have a common sensitive attribute s (e.g., “males” and
+“females”). The fairness requirement (23) is closely related to
+the notion of disparate impact [103].
+A. Data
+The training set D used in ERM should be carefully chosen
+so as not to reinforce existing discrimination. In a healthcare
+application, there may be signiﬁcantly more training data for
+patients of a particular gender, resulting in models that perform
+best for that gender at the expense of poorer performance for
+the minority [75, Sec. 3.3.].
+Fairness is also important for ML methods used to determine
+creditworthiness and, therefore, whether or not a loan should
+be granted [111]. Here, we need to ensure that ML methods do
+not discriminate against customers on the basis of ethnicity or
+race. To do this, we could augment data points by modifying
+any features that primarily reﬂect a customer‘s ethnicity or race
+(see Fig. 12).
+Data augmentation to enforce the fairness of the ERM is
+also studied in [112]. The data augmentation strategy in that
+article involves replacing individuals in video frames with new
+individuals while preserving the original motion [113], [114].
+The two-step process involves: 1) tracking and segmenting the
+target person in the video; and 2) replacing the person with
+another individual by transforming key-points and poses.
+Fair Data Collection: The fairness of ERM-based methods
+includes the data collection process. The data points used in
+the training set D of ERM ( 4) must be collected in a way
+that is compliant with fundamental rights and regulations such
+as the General Data Protection Regulation [30], [115].D a t a
+collection should be transparent and representative, avoiding
+biased sampling and improper consent procedures[116], [117].
+B. Model
+We can ensure the fairness of the learnt hypothesis ˆh∈H
+by using a model H that contains only hypothesis maps sat-
+isfying fairness constraints such as (variations) of ( 22). One
+example for such a constraint is to require each hypothesis h
+to be Lipschitz continuous [101]. The idea is to require ˆh to
+deliver similar predictions for data points that are similar in
+a nondiscriminatory sense. A key challenge for the practical
+use of this requirement is to ﬁnd a useful choice for the metric
+underlying the Lipschitz condition [101].
+C. Loss
+1) Fairness Through Regularization: Fairness constraints
+of the form ( 23) can be included in the loss of ERM. Using
+Lagrangian duality [ 37, Ch. 5], the constraints can be trans-
+lated into a penalty term which is added to the ERM objective
+function [105], [107], [118], [119]. Adding such a fairness
+penalty term can be interpreted as a form of regularization (see
+Section II and Fig. 4).
+2) Fairness via Sample Weighting: Instead of adding a
+penalty term to the loss function in ERM, we can also ensure
+fairness through sample weighting [120]. The rationale is to
+scale the loss incurred on a data point based on the relative
+frequency of its sensitive attribute in the training setD. Magni-
+fying the loss incurred for data points from a minority ensures
+that underrepresented groups have a greater inﬂuence on the
+solution of (4).
+IX. KR6 - SOCIETAL AND ENVIRONMENTAL WELL-BEING
+KR6 [20, p.19] covers the impact of AI systems on environ-
+mental and social well-being [121],[ 30, Article 35]. The EU
+Charter of Fundamental rights in Article 37 mandates a duty of
+the EU to provide for a high level of environmental protection
+and commitment to sustainable development[30]. This require-
+ment therefore guides AI development to take environmental
+factors into account and thereby supports individual rights and
+collective welfare.
+So far, we have discussed KRs that focus on the impact
+of ERM-based methods on individual users. In contrast, KR6
+revolves around the broader impact of an ERM-based method
+at the societal and natural environment level.
+A. Society and Democracy
+Design choices for ERM should also consider the impact of
+(predictions delivered by) a trained model ˆh∈H on society as
+a whole. The predictions ˆh(x) could not only be detrimental
+--- PAGE 14 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2573
+to the mental health of individual users but also affect core
+democratic processes such as policy-making or elections. For
+example, social media apps train personalized models ˆh to rec-
+ommend (or select) content delivered to its users. The resulting
+tailored ﬁltering of content can boost polarisation and, in the
+extreme case, social unrest [122].
+B. Environment
+ERM-based AI systems need to solve the optimisation prob-
+lem ( 3) using some computational methods. Implementing
+these methods in physical hardware requires energy, which is
+typically provided in the form of electricity [123].G i v e nt h e
+increasing energy demand of AI systems, it is crucial to use
+environmentally friendly means of energy production [124].
+Design choices for ERM should minimize the energy and cool-
+ing water requirements [125], of the resulting AI system. These
+requirements depend not only on the computational effort re-
+quired to solve ERM (4) but also on the choice of data collection
+strategies [126].
+X. KR7 - ACCOUNTABILITY
+KR7 [20, p.19] supplements the other key requirements and
+is closely related to the key requirement of fairness (KR5).
+Accountability requires mechanism s to identify, explain, and
+address the potential harms of AI systems. Organizations op-
+erating an AI system are responsible for its direct and indirect
+effects on the user [127], [128]. Developers and deployers must
+take steps to explain the objectives, motivations, and reasons
+for the behaviour and outcome o f AI systems. Accountability
+includes the reporting of data b reaches and the possibility of
+redress [129].
+A. Policy and Governance Approaches
+Organizations such as the OECD have been working on gov-
+ernance structures for ERM-based AI systems. This includes
+formalising auditing procedures and ensuring that developers
+adhere to both ethical standards and legal requirements [130].
+B. Frameworks for Answerability
+AI developers and operators need to be able to justify their
+actions and decisions. This includes both transparency and over-
+sight mechanisms, which are particularly important in high-
+stakes domains [131]. The justiﬁcation of ERM design choices
+also requires a solid understanding of the inherent trade-offs
+between design criteria such as explainability and accuracy
+[95], [132].
+C. Regular Audits and Third-Party Reviews
+Periodic reviews of AI systems by independent auditors help
+ensure and validate account ability. To this end, independent
+external teams (“red teams”) should stress-test the ERM-based
+system for vulnerabilities and biases that could undermine ac-
+countability [130], [133].
+Overall, accountability requires a good understanding of the
+entire design process of the AI system, as well as proper doc-
+umentation and evaluation of the trade-offs during the design
+process and therefore can only be achieved if the other key
+requirements are taken seriously and well documented.
+XI. C ONCLUSION AND FUTURE WORK
+It is essential for the future development of AI systems that
+research focuses on the creating trustworthy AI to ensure that
+any development is beneﬁcial to individuals and society at
+large and is consistent with sustainability goals and democratic
+processes. AI systems pose an imminent risk of being harmful,
+biased, and opaque. To prevent negative impacts from the use of
+AI systems, it is also necessary to understand the core values we
+seek to protect to safeguard individuals and societies. Therefore,
+we structured our work by ﬁrst providing an overview over core
+principles of trustworthy AI and their basis in European fun-
+damental rights and second proposing different design choices
+that would allow us to realise those principles.
+We proposed different design choices using ERM methods
+to realise the requirements of human agency and oversight,
+technical robustness and safety, privacy and data governance,
+transparency, diversity, nondiscrimination and fairness, societal
+and environmental well-being, and accountability.
+Future work is needed to better understand potential trade-
+offs between these requirements and possible ways to mitigate
+their impact. While our contribution is to explore and propose
+different ways to address the key requirements proposed by the
+EU, more research is needed to gain a clearer understanding
+of speciﬁc use cases and potential harms that can be mitigated
+through design choices in the process of planning and building
+AI systems. Finally, more interdisciplinary research will be
+needed to examine the implementation of AI legislation and its
+limits.
+REFERENCES
+[1] Y . Wang, W. Ma, M. Zhang, Y . Liu, and S. Ma, “A survey on the
+fairness of recommender systems,” ACM Trans. Inf. Syst. , vol. 41,
+no. 3, p. 52, Jul. 2023.
+[2] L. L. Sharabi and E. Dorrance- Hall, “The online dating effect: Where
+a couple meets predicts the quality of their marriage,” Comput. Hum.
+Behav., vol. 150, 2024, Art. no. 107973. [Online]. Available: https://
+www.sciencedirect.com/science/article/pii/S0747563223003242
+[3] X. Qian, H. Feng, G. Zhao, and T. Mei, “Personalized recommendation
+combining user inter est and social circle,” IEEE Trans. Knowl. Data
+Eng., vol. 26, no. 7, pp. 1763–1777, Jul. 2014.
+[4] B. Srinivasaiah, “The power of pe rsonalized healthcare: Harnessing the
+potential of machine learni ng in precision medicine,” Int. J. Sci. Res.
+(IJSR), vol. 13, no. 5, pp. 426–429, May 2024.
+[5] J. Bayer, B. Holznagel, K. Lub ianiec, A. Pintea, J. Schmitt, and U. E.
+Skazakacs, “Disinformation and propaganda: Impact on the functioning
+of the rule of law and democratic processes in the EU and Its mem-
+ber states - 2021 Update.” European Pa rliament, Polic y Department,
+Directorate-General for External Policies, Rep. PE 653.633, Apr. 2021.
+[6] D. Pfau, The GDPR, surveillance capitalism, AI and the personalisation
+of information and advertisemen t – a clash of ideologies and pitfalls
+for democracy. [Online]. A vailable: https://helda.helsinki.ﬁ/server/api/
+core/bitstreams/fbf31942-fc11-413e-84ea-9590d9ce2a74/content
+[7] Y . Benkler, R. Faris, and H. Roberts, Network Propaganda: Ma-
+nipulation, Disinformation, and Radicalization in American Poli-
+tics. NewYork, NY , USA: Oxford Univ. Press, Nov. 2018, doi:
+10.1093/oso/9780190923624.001.0001.
+--- PAGE 15 ---
+2574 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+[8] C. R. Sunstein, # Republic: Divided Democracy in the Age of Social
+Media, Princeton, NJ, USA: Princeton Univ. Press, Sep. 2024. [Online].
+Available: http://www.jstor.org/stable/j.ctv8xnhtd
+[9] J. Angwin, J. Larson, S. Mattu , and L. Kirchner, “Machine bias—
+there’s software used across the country to predict future crim-
+inals. and it’s biased against blacks,” ProPublica, 2016. [On-
+line]. Available: https://www.propub lica.org/article/machine-bias-risk-
+assessments-in-criminalsentencing
+[10] H. Melissa, “Justice served? d iscrimination in algorithmic risk
+assessment,” Res. OUTREACH , 2019. [Online]. Available:
+https://researchoutreach.org/articles/justiceserved-discrimination-
+in-algorithmic-risk-assessment
+[11] A. Ahmed, Dutch police use ﬂaw ed algorithm to predict juvenile
+offenses, raising ethical concer ns. [Online]. Av ailable: https://
+www.digitalinformationworld.com/2025/01/dutch-police-use-ﬂawed-
+algorithm-to.html
+[12] G. Ferris, B. Min, and M. Najak -Oliver, Automating injus-
+tice: The use of artiﬁcial intellig ence & automated decision-
+making systems in criminal jus tice in Europe. [Online]. Avail-
+able: https://policehumanrightsresources.org/content/uploads/2021/09/
+Automating_Injustice.pdf
+[13] A. Moreschi, A. Nejman, and L. Deal, “Mystery accidents: Teslas in
+‘autopilot’ crashing into emergency vehicles,” Spotlight America ,J u l .
+2023. [Online]. Available: https://nbc montana.com/news/spotlight-
+on-america/responders-at-risk-nhtsa-probesdriver-assistance-systems-
+after-a-series-of-crashes-involving-teslas-and-emergencyvehicles
+[14] C. Isidore and P. Valdes-Dapena, “Tesla is under investigation because
+its cars keep hitting emergency vehicles,” CNN Bus., Aug. 2021.
+[15] M. Spector and D. Levine, “Exclusive: Tesla faces U.S. criminal
+probe over self-driving claims,” Reuters, Oct. 2022. [Online]. Avail-
+able: https://www.r euters.com/legal/exclusive-tesla-faces-us-criminal-
+probe-over-self-driving-claims-sources-2022-10-26/
+[16] J. Stempel, “Tesla must face veh icle owners’ lawsuit over self-driving
+claims,” Reuters, May 2024. [Online] . Available https://www.reuters.
+com/legal/tesla-must-face-vehicle-owners-lawsuit-over-self-driving-
+claims-2024-05-15/
+[17] P. Mozur, “A genocide incited on Facebook, with posts from Myan-
+mar’s military,”The New York Times, 2018. Accessed: Mar. 12, 2024.
+[Online]. Available: h ttps://www.nytimes.com/2018/10/15/technology/
+myanmar-facebook-genocide.html
+[18] S. Feldstein, “China’s high-tech surveillance drives oppression of
+Uyghurs,” The Bull. Atomic Scientists , 2022. Accessed: Sep. 26,
+2024. [Online]. Available: https://th ebulletin.org/2022/10/chinas-high-
+tech-surveillance-drives-oppression-of-uyghurs/
+[19] Human Rights Watch. 2018. “China: Massive crackdown in Muslim
+region.” Accessed: Sep. 26, 2024. [Online]. Available: https://www.
+hrw.org/news/2018/09/09/china-massive-crackdown-muslim-region
+[20] H.-L. E. G. on Artiﬁcial Intelligence, “Ethics Guidelines for Trustwor-
+thy AI,” Eur. Commission, Tech. Rep., Apr. 2019.
+[21] E. Department of Industry, Science and Resources, “Australia’s
+AI ethics principles,” 2024. Accessed: Sep. 30, 2024. [On-
+line]. Available: https://www.industr y.gov.au/publications/australias-
+artiﬁcial-intelligence-ethics-framework /australias-ai-ethics-principles
+[22] OECD, “OECD AI principles: R ecommendation of the council on arti-
+ﬁcial intelligence,” 2019. Accessed: Sep. 30, 2024. [Online]. Available:
+https://oecd.ai/en/ai-principles
+[23] A. Jobin, M. Ienca, and E. Vayen a, “The global landscape of AI ethics
+guidelines,” Nat. Mach. Intell. , vol. 1, no. 9, pp. 389–399, Sep. 2019.
+[24] A. Jung, Machine Learning: The Basics , 1st ed. Springer: Singapore,
+Feb. 2022.
+[25] S. Shalev-Shwartz and S. Ben-David, Understanding Machine Learn-
+ing – From Theory to Algorithms , NewYork, NY , USA: Cambridge
+Univ. Press, 2014.
+[26] D. Bertsekas and J. Tsitsiklis, Introduction to Probability , 2nd ed.
+Belmont, MA, USA: Athena Scientiﬁc, 2008.
+[27] P. Billingsley, Probability and Measure , 3rd ed., New York: Wiley,
+1995.
+[28] M. Wainwright, High-Dimensional Statistics: A Non-Asymptotic VIEW-
+POINT, Cambridge: Cambridge Univ. Press, 2019.
+[29] X. Ye, “Calﬂops: A ﬂops and Params calculate tool for neural networks
+in Pytorch framework,” 2023. [Online] . Available: https://github.com/
+MrYxJ/calculate-ﬂops.pytorch
+[30] European Union, “Charter of fundamental rights of the European
+union,” Brussels, 2012. Accessed: Oct. 17, 2024. [Online]. Available:
+https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:12012P/
+TXT
+[31] M. Botes, “Autonomy and the so cial dilemma of online manipulative
+behavior,” AI Ethics, vol. 3, no. 1, pp. 315–323, 2023.
+[32] V . Bakir and A. McStay, “Fake news and the economy of emotions,”
+Digit. Journalism, vol. 6, no. 2, pp. 154–175, 2018.
+[33] J. S. A. Chadwick, “Deception as a bridging concept in the study of
+disinformation, misinformation, an d misperceptions: Toward a holistic
+framework,” Commun. Theory, vol. 32, no. 1, pp. 1–24, Oct. 2021.
+[34] A. Simchon, M. Edwards, and S. Lewandowsky, “The persuasive
+effects of political micro targeting in the age of generative artiﬁcial
+intelligence,” PNAS Nexus, vol. 3, no. 2, pp. 1–5, 2024.
+[35] D. J. Kuss and O. Lopez-Fernand ez, “Internet addiction and problem-
+atic internet use: A systematic review of clinical research,” World J.
+Psychiatry, vol. 6, no. 1, pp. 143–176, Mar. 2016.
+[36] L. Munn, “Angry by design: toxic communication and technical
+architectures,” Humanities Social Sci. Commun. , vol. 7, no. 1, p. 53,
+2020.
+[37] S. Boyd and L. Vandenberghe, Convex Optimization. Cambridge, UK:
+Cambridge Univ. Press, 2004.
+[38] D. P. Bertsekas, A. Nedic, and A. E. Ozdaglar, Convex Analysis and
+Optimization. Belmont, MA, USA: Athena Scientiﬁc, 2003.
+[39] R. Dahlhaus, “Local inference f or locally stationary time series based
+on the empirical spectral measure,” J. Econometrics, vol. 151, no. 2,
+pp. 101–112, 2009.
+[40] R. Dahlhaus and L. Giraitis, “On the optimal segment length for
+parameter estimates for locally stationary time series,” J. Time Ser.
+Anal., vol. 19, no. 6, pp. 629–655, 1998.
+[41] Z. C. Lipton, “The mythos of model interpretability,” Commun. ACM,
+vol. 61, no. 10, pp. 36–43, 2018.
+[42] B. Mittelstadt, C. Russell, and S . Wachter, “Explaining explana-
+tions in AI,” in Proc. Conf. Fairness, Accountability, and Trans-
+parency (FAT), New York, NY , USA: ACM, 2019, pp. 279–288, doi:
+10.1145/3287560.3287574.
+[43] E. Lex, D. Kowald, P. Seitlinger, T. N. T. Tran, A. Felfernig, and
+M. Schedl, “Psychology-informed recommender systems,”Foundations
+Trends® in Inf. Retrieval, vol. 15, no. 2, pp. 134–242, 2021.
+[44] S. Sra, S. Nowozin, and S. J. Wright, Eds., Optimization for Machine
+Learning. Cambridge, MA, USA: MIT Press, 2012.
+[45] S. Sinha, N. Goyal, and R. Mall, “Survey of combined hardware–
+software reliability prediction approaches from architectural and system
+failure viewpoint,” Int. J. Syst. Assurance Eng. Manage. , vol. 10, no.
+4, pp. 453–474, 2019, doi: 10.1007/s13198-019-00811-y.
+[46] H. Lundström and M. Mattsson, “Radiation inﬂuence on indoor air
+temperature sensors: Experimen tal evaluation of measurement errors
+and improvement methods,” Exp. Therm Fluid Sci. , vol. 115, 2020,
+art. no. 110082. [Online] . Available: https:// www.sciencedirect.com/
+science/article/pii/S0894177719313822
+[47] J. Kang, Z. Xiong, D. Niyato, Y . Zou, Y . Zhang, and M. Guizani,
+“Reliable federated learning for mobile networks,” IEEE Wireless
+Commun., vol. 27, no. 2, pp. 72–80, Apr. 2020.
+[48] M. Jagielski, A. Oprea, B. Biggio, C. Liu, C. Nita-Rotaru, and B. Li,
+“Manipulating machine learning: Poisoning attacks and countermea-
+sures for regression learning,” in Proc. IEEE Symp. Secur. Privacy
+(SP), 2018, pp. 19–35.
+[49] O. Bousquet and A. Elisseeff, “Stability and generalization,” J. Mach.
+Learn. Res., vol. 2, no. 3, pp. 499–526, 2002.
+[50] H. Xu and S. Mannor, “Robustness and generalization,” Mach. Learn.,
+vol. 86, no. 3, pp. 391–423, 2012.
+[51] S. Shalev-Shwartz, O. Shamir, N. Srebro, and K. Sridharan, “Learn-
+ability, stability and uniform convergence,” J. Mach. Learn. Res. ,v o l .
+11, no. 90, pp. 2635–2670, 2010.
+[52] P. Huber, Robust Statistics. NewYork, NY , USA: Wiley, 1981.
+[53] A. Madry, A. Makelov, L. Schmidt, D. Tsipras, and A. Vladu, “Towards
+deep learning models resistant to adversarial attacks,” inProc. Int. Conf.
+Learn. Representations, 2018. [Online]. Available: https://openreview.
+net/forum?id=rJzIBfZAb
+[54] I. Goodfellow, J. Shlens, and C. Szegedy, “Explaining and harnessing
+adversarial examples,” inProc. Int. Conf. Learn. Representations, 2015,
+arXiv:1412.6572.
+[55] L. Rice, E. Wong, and J. Kolter, “Overﬁtting in adversarially robust
+deep learning,” in Proc. 37th Int. Conf. Mach. Learn. (ICML) , 2020.
+[56] E. Wong, L. Rice, and J. Z. Kolter, “Fast is better than free: Revis-
+iting adversarial training,” in Proc. 8th Int. Conf. Learn. Representa-
+tions (ICLR), 2020. [Online]. Available: http s://openreview.net/forum?
+id=BJx040EFvH
+[57] A. Javanmard, M. Soltanolkotabi, and H. Hassani, “Precise tradeoffs
+in adversarial training for linear regression,” Proc. Mach. Learn. Res. ,
+--- PAGE 16 ---
+PFAN AND JUNG: ENGINEERING TRUSTWORTHY AI: DEVELOPER GUIDE FOR ERM 2575
+vol. 125, 2020, pp. 2034–2078. [Online]. Available: https://par.nsf.gov/
+biblio/10209121
+[58] S. Shaﬁeezadeh-Abadeh, D. Kuhn, and P. M. Esfahani, “Regularization
+via mass transportation,” J. Mach. Learn. Res. , vol. 20, no. 103, pp.
+1–68, 2019. [Online]. Available http://jmlr.org/papers/v20/17-633.html
+[59] C. Caramanis, S. Mannor, and H. Xu, “ Robust optimization in machine
+learning,” in Optimization Machine Learning, 2011. Cambridge, MA,
+USA: The MIT Press, doi: 10. 7551/mitpress/8996.003.0016.
+[60] R. Bhattacharjee, M. Hopkins, A. Kumar, H. Yu, and K. Chaudhuri,
+“Robust empirical risk mini mization with tolerance,” in Proc. Int.
+Conf. Algorithmic Learn. Theory , 2022. [Online]. Available: https://
+api.semanticscholar.org/CorpusID:252683469
+[61] Z. Wang, H. Wang, C. Tian, and Y . Jin, “Adversarial training of deep
+neural networks guided by texture and structural information,” in Proc.
+31st ACM Int. Conf. Multimedia (MM) , ACM, 2023, pp. 4958–4967,
+doi: 10.1145/3581783.3612163.
+[62] Z. Cheng, J. Liang, G. Tao, D. Liu, and X. Zhang, “Adversarial training
+of self-supervised monocular depth estimation against physical-world
+attacks,” in Proc. 11th Int. Conf. Learn. Representations , 2023. [On-
+line]. Available: https://openreview.net/forum?id=LfdEuhjR5GV
+[63] J. Steinhardt, P. Koh, and P. L iang, “Certiﬁed defenses for data
+poisoning attacks,” in Proc. 31st Int. Conf. Neural Inf. Process. Syst.
+(NIPS), Curran Associates Inc., 2017, pp. 3520–3532.
+[64] N. Cesa-Bianchi, E. Dichterman, P. Fischer, E. Shamir, and H. U.
+Simon, “Sample-efﬁcient strateg ies for learning in the presence of
+noise,” J. ACM, vol. 46, no. 5, pp. 684–719, Sep. 1999.
+[65] Y . Lu, G. Kamath, and Y . Yu, “Exploring the limits of model-targeted
+indiscriminate data poisoning attacks,” in Proc. 40th Int. Conf. Mach.
+Learn., Ser. Proc. Mach. Learn. Res. (PMLR) , vol. 202, Jul. 2023, pp.
+22856–22879. [Online]. A vailable: https://proceedings.mlr.press/v202/
+lu23e.html
+[66] M. Kearns and M. Li, “Learning in the presence of malicious errors,”
+SIAM J. Comput. , vol. 22, no. 4, pp. 807–837, 1993.
+[67] W. Rudin, Principles of Mathematical Analysis, 3rd ed. New York, NY ,
+USA: McGraw Hill, 1976.
+[68] S. Bubeck and M. Sellke, “A universal law of robustness via isoperime-
+try,” J. ACM, vol. 70, no. 2, p. 10, Apr. 2023.
+[69] K. Leino, Z. Wang, and M. Fredrik son, “Globally-robust neural net-
+works,” in Proc. 38th Int. Conf. Mach. Learn., Ser. Proc. Mach. Learn.
+Res. (PMLR) , M. Meila, and T. Zhang, Eds., vol. 139, Jul. 2021,
+pp. 6212–6222. [Online]. Available: https://proceedings.mlr.press/v139/
+leino21a.html
+[70] R. Shokri, M. Stronati, C. Song, and V . Shmatikov, “Membership
+inference attacks against m achine learning models,” in Proc. IEEE
+Symp. Secur. Privacy (SP) , 2017, pp. 3–18.
+[71] V . Khatri and C. V . Brown, “Designing data governance,” Commun.
+ACM, vol. 53, no. 1, pp. 148–152, Jan. 2010.
+[72] T. Gebru et al., “Datasheets for datasets,” Commun. ACM, vol. 64, no.
+12, pp. 86–92, Nov. 2021.
+[73] D. P. Commission, “Data protection impact assessments,” 2023,
+accessed: Nov. 5, 2024. [Online]. Available: https://www.
+dataprotection.ie/en/organisations/know-your-obligations/data-
+protection-impact-assessments
+[74] P. Billingsley, Probability and Measure, 3rd ed., New York, 1995.
+[75] L. Celi et al., “Sources of bias in artiﬁcial intelligen ce that perpetu-
+ate healthcare disparities-a global review.” 2022. [Online]. Available:
+https://pmc.ncbi.nlm.nih.gov/articles/PMC9931338/
+[76] C. Dwork and A. Roth, “The algorithmic foundations of differential
+privacy,” Foundations Trends®in Theor. Comput. Sci., vol. 9, no. 3–4,
+pp. 211–407, 2014.
+[77] S. Z. E. Mestari, G. Lenzini, and H. Demirci, “Preserving data
+privacy in machine learning systems,” Comput. Secur., vol. 137, 2024,
+Art. no. 103605. [Online] . Available: https:// www.sciencedirect.com/
+science/article/pii/S0167404823005151
+[78] G. Sartor and F. Lagioia, “T he impact of the general data
+protection regulation (GDPR) on artiﬁcial intelligence,” European
+Parliamentary Research Service, S cientiﬁc Foresight Unit (STOA),
+BrusselsTechRep. PE 641530, Jun. 2020. [Online]. Available: https://
+www.europarl.europa.eu/RegData/etudes/STUD/2020/641530/EPRS_
+STU(2020)641530_EN.pdf
+[79] P. Cuff and L. Yu, “Differen tial privacy as a mutual information
+constraint,” in Proc. ACM SIGSAC Conf. Comput. Commun. Secur.
+(CCS), ACM, 2016, pp. 43–54, doi: 10.1145/2976749.2978308.
+[80] A. Makhdoumi, S. Salamatian, N. Fawaz, and M. Médard, “From the
+information bottleneck to the privacy funnel,” inProc. IEEE Inf. Theory
+Workshop (ITW), 2014, pp. 501–505, doi: 10.1109/ITW.2014.6970882.
+[81] E. L. Lehmann and G. Casella, Theory of Point Estimation , 2nd ed.,
+New York, NY , USA: Springer, 1998.
+[82] E. Pitman and J. Wishart, “Sufﬁ cient statistics and intrinsic accuracy,”
+Math. Proc. Cambridge Philos. Soc., vol. 32, no. 4, pp. 567–579, 1936.
+[83] A. Jung, S. Schmutzhard, and F. Hlawatsch, “The RKHS approach
+to minimum variance estimation rev isited: Variance bounds, sufﬁcient
+statistics, and exponential families,” IEEE Trans. Inf. Theory , vol. 60,
+no. 7, pp. 4050–4065, Jul. 2014.
+[84] K. Chaudhuri, C. Monteleoni, and A. D. Sarwate, “Differentially
+private empirical risk minimization,” J. Mach. Learn. Res. , vol. 12,
+no. 29, pp. 1069–1109, Mar. 2011.
+[85] M. Mitchell et al., “Model cards for model reporting,” in Proc. Conf.
+Fairness, Accountability, Transparency (FAT) , ACM, 2019, pp. 220–
+229, doi: 10.1145/3287560.3287596.
+[86] D. Garreau and U. von Luxburg, “Explaining the explainer: A ﬁrst
+theoretical analysis of lime,” in Proc. 23rd Int. Conf. Artif. Intell.
+Statistics (AISTATS), Ser. Proc. Mach. Learn. Res. (PMLR), S. Chiappa
+and R. Calandra, Eds., vol. 108, Aug. 2020, pp. 1287–1296. [Online].
+Available: https://proceedings.mlr.press/v108/garreau20a.html
+[87] M. Louhichi, R. Nesmaoui, M. Mbarek, and M. Lazaar, “Shapley
+values for explaining the black box nature of machine learning
+model clustering,” Proc. Comput. Sci. , vol. 220, pp. 806–811, 2023.
+[Online]. Available: h ttps://www.sciencedirect.com/science/article/pii/
+S1877050923006427
+[88] “Ck v Dun & Bradstreet Austria Gmbh, Case c203/22.”
+[89] S. Wachter, B. Mittelstadt, and C . Russell, “Counterfactual expla-
+nations without opening the black box: Automated decisions and
+the GDPR,” Harvard J. Law Technol. , vol. 31, no. 2, p. 859,
+2018.
+[90] F. Doshi-Velez and B. Kim, “To wards a rigorous science of inter-
+pretable machine learning,” 2017, arXiv:1702.08608.
+[91] P. Hase and M. Bansal, “Evaluatin g explainable AI: Which algorithmic
+explanations help users predict model behavior?,” in Proc. 58th Annu.
+Meet. Assoc. Comput. Linguistics , Assoc. Comput. Linguistics, Jul.
+2020, pp. 5540–5552. [Online]. Available: https://aclanthology.org/
+2020.acl-main.491
+[92] J. Chen, L. Song, M. Wainwright, and M. Jordan, “Learning to explain:
+An information-theoretic perspective on model interpretation,” in Proc.
+35th Int. Conf. Mach. Learn. , Stockholm, Sweden: PMLR, 2018.
+[93] J. Colin, T. Fel, R. Cadène, and T. Serre, “What I cannot predict,
+I do not understand: A human-centered evaluation framework for
+explainability methods,” Adv. Neural Inf. Process. Syst. , vol. 35, pp.
+2832–2845, 2022.
+[94] Z. C. Lipton, “The mythos of model interpretability: In machine
+learning, the concept of interpretability is both important and slippery,”
+Queue, vol. 16, no. 3, pp. 31–57, Jun. 2018.
+[95] L. Zhang, G. Karakasidis, A. Odnoblyudova, L. Dogruel, Y . Tian, and
+A. Jung, “Explainable empirical risk minimization,” Neural Comput.
+Appl., vol. 36, no. 8, pp. 3983–3996, 2024.
+[96] A. Jung and P. Nardelli, “An info rmation-theoretic approach to person-
+alized explainable machine learning,” IEEE Signal Process. Lett. ,v o l .
+27, pp. 825–829, 2020.
+[97] C. Rudin, “Stop explaining black box machine learning models for
+high-stakes decisions and use interpretable models instead,” Nat. Mach.
+Intell., vol. 1, no. 5, pp. 206–215, 2019.
+[98] M. Ribeiro, S. Singh, and C. Guestrin, “Why should I trust you?:
+Explaining the predictions of any classiﬁer,” in Proc. 22nd ACM
+SIGKDD Int. Conf. Knowl. Discovery Data Mining , Aug. 2016, pp.
+1135–1144.
+[99] R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D.
+Batra, “GRAD-CAM: Visual explanations from deep networks via
+gradient-based localization,” in Proc. IEEE Int. Conf. Comput. Vis.
+(ICCV), 2017, pp. 618–626, doi: 10.1109/ICCV .2017.74.
+[100] A. Aamodt and E. Plaza, “Case-based reasoning: Foundational issues,
+methodological variations, and system approaches,” AI Commun.,v o l .
+7, no. 1, pp. 39–59, 1994.
+[101] C. Dwork, M. Hardt, T. Pitassi, O. Reingold, and R. Zemel, “Fairness
+through awareness,” in Proc. 3rd Innovations Theor. Comput. Sci.
+Conf., 2012, pp. 214–226, doi: 10.1145/2090236.2090255.
+[102] S. Barocas, M. Hardt, and A. Narayanan, Fairness and Machine
+Learning, 2019. [Online]. Available: https://fairmlbook.org/
+[103] D. Pessach and E. Shmueli, “A review on fairness in machine learning,”
+ACM Comput. Surv., vol. 55, no. 3, p. 44, 2022, doi: 10.1145/3494672.
+[104] Equal Employment Opportunity Commission (EEOC) v. iTutorGroup,
+Inc., Tutor Group Limited, and Sh anghai Ping’an Intelligent Education
+--- PAGE 17 ---
+2576 IEEE TRANSACTIONS ON ARTIFICIAL INTELLIGENCE, VOL. 7, NO. 5, MAY 2026
+Technology Co. Ltd., Case no.1:22-cv-02565-PKC-PK, Aug. 9, 2023
+(U.S. District Court, Eastern District of New York).
+[105] M. Hardt, E. Price, and N. Srebro, “Equality of opportunity in su-
+pervised learning,” in Proc. Adv. Neural Inf. Process. Syst. (NeurIPS) ,
+pp. 3315–3323, 2016, arXiv:1610.02413.
+[106] D. Pedreshi, S. Ruggieri, and F. Turini, “Discrimination-aware data
+mining,” inProc. 14th ACM SIGKDD Int. Conf. Knowl. Discovery Data
+Mining, ACM, 2008, pp. 560–568, doi: 10.1145/1401890.1401959.
+[107] M. Donini, L. Oneto, S. Ben-Dav id, J. Shawe-Taylor, and M. Pontil,
+“Empirical risk minimization under fairness constraints,” in Proc. 32nd
+Int. Conf. Neural Inf. Process. Syst. (NeurIPS) , 2018, pp. 2796–2806.
+[108] R. Berk, H. Heidari, S. Jabbari, M. Kearns, and A. Roth, “Fairness in
+criminal justice risk assessments: The state of the art,” Sociol. Methods
+Res., vol. 50, no. 1, pp. 3–44, 2017, doi: 10.1177/0049124118782533.
+[109] J. Kleinberg, S. Mullainathan, and M. Raghavan, “Inherent trade-offs
+in the fair determination of risk scores,” in Proc. 8th Innovations Theor.
+Computer Sci. Conf. , ACM, 2017, pp. 1–23.
+[110] A. Chouldechova, “Fair predictio n with disparate impact: A study of
+bias in recidivism pre diction instruments,” Big Data, vol. 5, no. 2, pp.
+153–163, 2017.
+[111] N. Kozodoi, J. Jacob, and S. Lessm ann, “Fairness in credit scoring:
+Assessment, imp lementation, and proﬁt implications,” Eur. J. Oper.
+Res., vol. 297, no. 3, pp. 1083–1094, 2022.
+[112] I. Pastaltzidis et al., “Data augmentation for fairness-aware machine
+learning: Preventing algorithmic bias in law enforcement systems,”
+in Proc. ACM Conf. Fairness, Accountability, and Transparency
+(FAccT), New York, NY , USA: ACM, 2022, pp. 2302–2314, doi:
+10.1145/3531146.3534644.
+[113] K. He, G. Gkioxari, P. Dollár, and R. Girshick, “Mask R-CNN,” in
+Proc. IEEE Int. Conf. Comput. Vis. (ICCV) , 2017, pp. 2980–2988, doi:
+10.1109/ICCV .2017.322.
+[114] J. W et al., “Deep high-resolutio n representation learning for visual
+recognition,” IEEE Trans. Pattern Anal. Mach. Intell. , vol. 43, no. 10,
+pp. 3349–3364, 2021, doi: 10.1109/TPAMI.2020.2983686.
+[115] European Commission “Regulation (EU) 2016/679 of the European
+parliament and of the council of 27 April 2016 on the protection of
+natural persons with regard to th e processing of personal data and on
+the free movement of such data (gen eral data protection regulation),”
+Ofﬁcial J. Eur. Union , vol. 119, pp. 1–88, May 2016.
+[116] J. Duffy, “Goodrx is ﬁned for sharing users’ prescription information
+with Facebook, Google, and others,” Consumer Reports, Feb. 2023.
+[Online]. Available: h ttps://www.consumerreports.org/health/health-
+privacy/goodrx-ﬁned-for-sharing-users-prescription-information-
+a5982027618/
+[117] E. D. P. Board, “Personalised advertising: French SA ﬁned criteo
+Eur 40,000,000,” European Data Protection Board, Aug. 2023. [On-
+line]. Available: https://www.edpb.europa.eu/news/national-news/2023/
+personalised-advertising-french-sa-ﬁned-criteo-eur-40000000_en
+[118] M. Zafar, I. Valera, M. Gomez-R odriguez, and K. Gummadi, “Fairness
+constraints: A ﬂexible approach for fair classiﬁcation,” J. Mach. Learn.
+Res., vol. 20, no. 75, pp. 1–42, 2019. [Online]. Available: http://jmlr.
+org/papers/v20/18-262.html
+[119] A. Agarwal, M. Dudik, and Z. Wu, “A reductions approach to
+fair classiﬁcation,” in Proc. Int. Conf. Mach. Learn. (ICML) , 2018,
+pp. 60–69.
+[120] F. Kamiran and T. Calders, “Data preprocessing techniques for classi-
+ﬁcation without discrimination,” Knowl. Inf. Syst. , vol. 33, no. 1, pp.
+1–33, 2012.
+[121] A. Chrysopoulou, “The vision of a well-being economy,” Stanford
+Social Innov. Rev., 2020, doi: 10.48558/9SXJ-C595.
+[122] J. Gonçalves-Sá and F. Pinheiro, Societal Implications of Recommenda-
+tion Systems: A Technical Perspective. Cham: Springer Int. Publishing,
+2024, pp. 47–63, doi: 10.1007/978-3-031-41264-6_3.
+[123] S. Shekhar, T. Dubey, K. M ukherjee, A. Saxena, A. Tyagi, and
+N. Kotla, “Towards optimizing the costs of LLM usage,” 2024,
+arXiv:2402.01742.
+[124] A. Abrol and R. Jha, “Power optimization in 5G networks: A step
+towards green communication,” IEEE Access , vol. 4, pp. 1355–1374,
+2016.
+[125] P. Li, J. Yang, M. Islam, and S. Ren, “Making AI less “thirsty”:
+Uncovering and addressing the secret water footprint of AI models,”
+2023, arXiv:2304.03271.
+[126] T. Fredriksson, D. Mattos, J. Bosch, and H. Olsson, “Data
+labeling: An empirical investigation into industrial challenges
+and mitigation strategies,” in Product-Focused Software
+Process Improvement , Cham: Springer Int. Publishing, 2020,
+pp. 202–216.
+[127] “European commission and directorate-general for communications
+networks, content and technology,” in Proc. Assessment List for Trust-
+worthy Artiﬁcial Intelligence (A LTAI) for Self Assessment 2020, doi:
+10.2759/002360.
+[128] European Commission “Regulation (EU) 2024/1689 of the European
+parliament and of the council of 13 June 2024 laying down harmonised
+rules on artiﬁcial intelligence and amending regulations (EC) no
+300/2008, (EU) no 167/2013, (E U) no 168/2013, (EU) 2018/858,
+(EU) 2018/1139 and (EU) 2019/2144 an d directives 2014/90/eu, (EU)
+2016/797 and (EU) 2020/1828 artiﬁcial intelligence act,” Ofﬁcial J.
+Eur. Union, vol. 1689, Jul. 2024.
+[129] T. Fountaine, B. McCarthy, and T. Saleh, “Building the AI-
+powered organization,” Harvard Bus. Rev. , 2019, vol. 97, no. 4,
+pp. 67–73.
+[130] OECD, “Advancing accountability in AI,” OECD Report , no. 349,
+2023. [Online]. Available: https://www.oecd-ilibrary.org/content/paper/
+2448f04b-en
+[131] C. Novelli, M. Taddeo, and L. Floridi, “Accountability in artiﬁcial
+intelligence: What it is and how it works,” AI & Soc. , vol. 39, no. 4,
+pp. 1871–1882, 2024.
+[132] F. Jaotombo, L. Adorni, B. Gh attas, and L. Boyer, “Finding the
+best trade-off between performanc e and interpretability in predicting
+hospital length of stay using stru ctured and unstructured data,” PLoS
+One, vol. 18, no. 6, 2023, Art. no. e0286023. [Online]. Available:
+https://pubmed.ncbi.nlm.nih.gov/38032876/
+[133] E. Perez et al., “Red teaming la nguage models with language models,”
+Feb. 2022, arXiv:2202.03286.

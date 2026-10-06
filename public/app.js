@@ -1,6 +1,7 @@
 /**
- * AI-GRID GRC Dashboard — Dual-Mode Navigation Controller
- * Supports: Questionnaire-Based Audit + MCP Live Audit
+ * AI-GRID GRC Dashboard — Dual-Mode Navigation & Telemetry Controller
+ * Supports: Questionnaire-Based Audit + MCP Live Tool Probing
+ * Enterprise Dark UI with Real-Time 7-Pillar Scanning Animation Engine
  */
 
 let radarChartInstance = null;
@@ -15,12 +16,24 @@ let questionsData = null;
 const pageTitles = {
   "page-setup": "Project Setup",
   "page-profile": "System Profile",
-  "page-audit": "Audit Log",
-  "page-scores": "Trust Scores",
-  "page-compliance": "Regulatory Compliance",
+  "page-audit": "Live Telemetry & Probe Stream",
+  "page-scores": "7 Pillars & Trust Scores",
+  "page-compliance": "Regulatory Alignment",
+  "page-modelcard": "Google Model Card",
   "page-simulation": "What-If Simulator",
   "page-remediation": "Remediation Roadmap",
   "page-manual": "Manual Assessment"
+};
+
+// 7 Pillars key-to-ID mapping
+const PILLAR_KEYS = {
+  "Security & Robustness": "security",
+  "Transparency": "transparency",
+  "Fairness & Bias": "fairness",
+  "Privacy & Governance": "privacy",
+  "Accountability & Oversight": "accountability",
+  "Safety & Reliability": "safety",
+  "Societal Impact": "societal"
 };
 
 // Initial radar with empty data
@@ -145,112 +158,30 @@ async function loadQuestions() {
     }
   } catch (err) {
     console.log("Questions will be loaded when server is available:", err.message);
-    // Fallback: generate steps from hardcoded structure
     questionsData = generateFallbackQuestions();
     totalWizardSteps = questionsData.steps.length;
   }
 }
 
 function generateFallbackQuestions() {
-  // Fallback question structure in case API isn't available during initial load
   return {
     steps: [
       {
         step: 1, title: "Model Identity",
         questions: [
-          { id: "model_name", label: "What is the name of your AI model/system?", type: "text", placeholder: "e.g., Customer Churn Predictor", required: true },
-          { id: "model_version", label: "What is the current version?", type: "text", placeholder: "e.g., 1.0.0", required: true },
-          { id: "domain", label: "What domain does this AI operate in?", type: "select", options: [
-            {value:"healthcare",label:"Healthcare / Medical"},{value:"finance",label:"Finance / Banking"},{value:"agriculture",label:"Agriculture / Environmental"},
-            {value:"education",label:"Education / EdTech"},{value:"autonomous_vehicles",label:"Autonomous Vehicles / Robotics"},
-            {value:"criminal_justice",label:"Criminal Justice / Law Enforcement"},{value:"entertainment",label:"Entertainment / Media"},
-            {value:"ecommerce",label:"E-Commerce / Retail"},{value:"manufacturing",label:"Manufacturing / Industrial"},
-            {value:"cybersecurity",label:"Cybersecurity / Threat Detection"},{value:"other",label:"Other"}
+          { id: "model_name", label: "Model / System Name", type: "text", placeholder: "e.g., ClinicalAssistant-v2", required: true },
+          { id: "model_version", label: "Engineering Version", type: "text", placeholder: "e.g., 2.1.0", required: true },
+          { id: "domain", label: "Target Domain", type: "select", options: [
+            { value: "healthcare", label: "Healthcare / Medical" },
+            { value: "finance", label: "Finance / Banking" },
+            { value: "agriculture", label: "Commercial Agriculture" },
+            { value: "other", label: "General Purpose AI" }
           ], required: true },
-          { id: "architecture", label: "What is the model architecture?", type: "text", placeholder: "e.g., Transformer, CNN, Random Forest", required: true },
-          { id: "autonomy_level", label: "What is the autonomy level?", type: "select", options: [
-            {value:"advisory",label:"Advisory Only"},{value:"semi_autonomous",label:"Semi-Autonomous"},{value:"fully_autonomous",label:"Fully Autonomous"}
-          ], required: true }
-        ]
-      },
-      {
-        step: 2, title: "Training Data",
-        questions: [
-          { id: "dataset_size", label: "How large is the training dataset? (samples)", type: "number", placeholder: "e.g., 10000", required: true },
-          { id: "num_classes", label: "Number of output classes?", type: "number", placeholder: "e.g., 5", required: true },
-          { id: "class_balance", label: "Class distribution balance?", type: "select", options: [
-            {value:"balanced",label:"Well-Balanced"},{value:"moderate",label:"Moderately Imbalanced"},{value:"severe",label:"Severely Imbalanced"}
-          ], required: true },
-          { id: "geographic_coverage", label: "Demographic/geographic coverage?", type: "select", options: [
-            {value:"full",label:"Full (>80%)"},{value:"partial",label:"Partial (40-80%)"},{value:"limited",label:"Limited (<40%)"}
-          ], required: true },
-          { id: "known_gaps", label: "Known demographic gaps?", type: "select", options: [
-            {value:"none",label:"No known gaps"},{value:"minor",label:"Minor (1-2 groups)"},{value:"significant",label:"Significant (3+)"}
-          ], required: true }
-        ]
-      },
-      {
-        step: 3, title: "Safety & Reliability",
-        questions: [
-          { id: "input_validation", label: "Input validation for corrupted data?", type: "select", options: [
-            {value:"comprehensive",label:"Comprehensive validation"},{value:"basic",label:"Basic range checking"},{value:"none",label:"No validation"}
-          ], required: true },
-          { id: "guardrail_count", label: "Number of safety guardrails?", type: "select", options: [
-            {value:"3plus",label:"3+ guardrails"},{value:"1to2",label:"1-2 guardrails"},{value:"0",label:"No guardrails"}
-          ], required: true },
-          { id: "output_safety", label: "Output clamping for dangerous values?", type: "select", options: [
-            {value:"yes",label:"Yes - outputs clamped"},{value:"partial",label:"Partial"},{value:"no",label:"No - raw outputs"}
-          ], required: true },
-          { id: "env_advisory", label: "Environmental/contextual safety advisories?", type: "select", options: [
-            {value:"yes",label:"Yes"},{value:"no",label:"No"}
-          ], required: true }
-        ]
-      },
-      {
-        step: 4, title: "Transparency & Explainability",
-        questions: [
-          { id: "explainability_engine", label: "Explainability engine?", type: "select", options: [
-            {value:"full",label:"Full XAI (SHAP/LIME/Grad-CAM)"},{value:"partial",label:"Feature importance only"},{value:"none",label:"Black box"}
-          ], required: true },
-          { id: "attribution_count", label: "Feature attributions per prediction?", type: "select", options: [
-            {value:"4plus",label:"4+ features"},{value:"1to3",label:"1-3 features"},{value:"0",label:"None"}
-          ], required: true },
-          { id: "human_readable_reasoning", label: "Human-readable reasoning summaries?", type: "select", options: [
-            {value:"yes",label:"Yes"},{value:"no",label:"No"}
-          ], required: true }
-        ]
-      },
-      {
-        step: 5, title: "Privacy & Security",
-        questions: [
-          { id: "encryption_rest", label: "Data encrypted at rest?", type: "select", options: [
-            {value:"yes",label:"Yes (AES-256 or equivalent)"},{value:"no",label:"No"}
-          ], required: true },
-          { id: "encryption_transit", label: "Data encrypted in transit?", type: "select", options: [
-            {value:"yes",label:"Yes (TLS/HTTPS)"},{value:"no",label:"No"}
-          ], required: true },
-          { id: "data_retention", label: "Data retention period?", type: "select", options: [
-            {value:"short",label:"≤90 days"},{value:"medium",label:"91-180 days"},{value:"long",label:">180 days"}
-          ], required: true },
-          { id: "adversarial_tested", label: "Adversarial robustness tested?", type: "select", options: [
-            {value:"comprehensive",label:"Comprehensive testing"},{value:"basic",label:"Basic testing"},{value:"none",label:"Not tested"}
-          ], required: true },
-          { id: "drift_monitoring", label: "Model drift monitoring?", type: "select", options: [
-            {value:"yes",label:"Automated detection"},{value:"manual",label:"Manual review"},{value:"none",label:"None"}
-          ], required: true }
-        ]
-      },
-      {
-        step: 6, title: "Accountability & Impact",
-        questions: [
-          { id: "human_oversight", label: "Human oversight before AI output is acted upon?", type: "select", options: [
-            {value:"mandatory",label:"Mandatory human review"},{value:"optional",label:"Optional review"},{value:"none",label:"No human review"}
-          ], required: true },
-          { id: "incident_escalation", label: "Incident escalation protocol defined?", type: "select", options: [
-            {value:"yes",label:"Yes"},{value:"no",label:"No"}
-          ], required: true },
-          { id: "societal_risk", label: "Potential societal risk from incorrect outputs?", type: "select", options: [
-            {value:"low",label:"Low (minor inconvenience)"},{value:"medium",label:"Medium (financial/operational)"},{value:"high",label:"High (physical harm/legal)"}
+          { id: "architecture", label: "Model Architecture", type: "text", placeholder: "e.g., Transformer, XGBoost", required: true },
+          { id: "autonomy_level", label: "Autonomy Level", type: "select", options: [
+            { value: "advisory", label: "Advisory Only" },
+            { value: "semi_autonomous", label: "Semi-Autonomous" },
+            { value: "fully_autonomous", label: "Fully Autonomous" }
           ], required: true }
         ]
       }
@@ -260,42 +191,28 @@ function generateFallbackQuestions() {
 
 function renderWizardStep() {
   if (!questionsData) return;
-
   const stepData = questionsData.steps[wizardStep - 1];
   if (!stepData) return;
 
-  // Update header
   document.getElementById("wizardStepTitle").textContent = `Step ${wizardStep}: ${stepData.title}`;
+  document.getElementById("wizardStepDesc").textContent = `Specification of parameters for Step ${wizardStep} of ${totalWizardSteps}`;
 
-  const stepDescs = {
-    1: "Tell us about your AI model — name, version, domain, and architecture.",
-    2: "Describe your training dataset — size, balance, and coverage.",
-    3: "What safety controls and guardrails does your model have?",
-    4: "How transparent and explainable are your model's predictions?",
-    5: "Describe your data privacy, security, and robustness measures.",
-    6: "Tell us about human oversight, accountability, and societal impact."
-  };
-  document.getElementById("wizardStepDesc").textContent = stepDescs[wizardStep] || "";
+  // Progress Bar
+  const pct = (wizardStep / totalWizardSteps) * 100;
+  document.getElementById("wizardProgressFill").style.width = `${pct}%`;
 
-  // Update progress bar
-  const progressPct = (wizardStep / totalWizardSteps) * 100;
-  document.getElementById("wizardProgressFill").style.width = `${progressPct}%`;
-
-  // Update step dots
-  document.querySelectorAll(".step-dot").forEach(dot => {
-    const s = parseInt(dot.dataset.step);
-    dot.classList.toggle("active", s === wizardStep);
-    dot.classList.toggle("completed", s < wizardStep);
+  // Step dots
+  document.querySelectorAll(".step-dot").forEach((dot, idx) => {
+    dot.classList.toggle("active", idx < wizardStep);
   });
 
-  // Render questions
   const body = document.getElementById("wizardBody");
-  let html = '<div class="wizard-questions">';
+  let html = '<div class="wizard-questions-grid">';
 
   stepData.questions.forEach(q => {
     const savedVal = wizardAnswers[q.id] || "";
-    html += `<div class="wizard-question-group">`;
-    html += `<label class="wizard-label" for="wq_${q.id}">${q.label}</label>`;
+    html += `<div class="form-group">`;
+    html += `<label for="wq_${q.id}">${q.label} ${q.required ? '<span style="color:var(--danger)">*</span>' : ''}</label>`;
 
     if (q.type === "text") {
       html += `<input type="text" id="wq_${q.id}" class="form-input" placeholder="${q.placeholder || ''}" value="${savedVal}" onchange="saveWizardAnswer('${q.id}', this.value)">`;
@@ -303,7 +220,7 @@ function renderWizardStep() {
       html += `<input type="number" id="wq_${q.id}" class="form-input" placeholder="${q.placeholder || ''}" value="${savedVal}" min="0" onchange="saveWizardAnswer('${q.id}', this.value)">`;
     } else if (q.type === "select") {
       html += `<select id="wq_${q.id}" class="form-select" onchange="saveWizardAnswer('${q.id}', this.value)">`;
-      html += `<option value="">— Select —</option>`;
+      html += `<option value="">Select Option</option>`;
       (q.options || []).forEach(opt => {
         const selected = savedVal === opt.value ? "selected" : "";
         html += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
@@ -317,7 +234,6 @@ function renderWizardStep() {
   html += '</div>';
   body.innerHTML = html;
 
-  // Update navigation buttons
   document.getElementById("wizardBackBtn").style.display = wizardStep > 1 ? "inline-flex" : "none";
   document.getElementById("wizardNextBtn").style.display = wizardStep < totalWizardSteps ? "inline-flex" : "none";
   document.getElementById("wizardSubmitBtn").style.display = wizardStep === totalWizardSteps ? "inline-flex" : "none";
@@ -328,13 +244,10 @@ function saveWizardAnswer(id, value) {
 }
 
 function wizardNext() {
-  // Validate current step
   if (!validateCurrentStep()) return;
-
   if (wizardStep < totalWizardSteps) {
     wizardStep++;
     renderWizardStep();
-    // Smooth scroll to top of wizard
     document.getElementById("wizardCard").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
@@ -367,14 +280,131 @@ function validateCurrentStep() {
 }
 
 // =========================================================================
-// 4. SUBMIT AUDIT (Both modes)
+// 4. REAL-TIME 7-PILLARS ANIMATION ENGINE
+// =========================================================================
+function activatePillarsScanning() {
+  const badge = document.getElementById("liveScanStatusBadge");
+  const badgeText = document.getElementById("liveScanStatusText");
+  if (badge) badge.className = "scan-pulse-badge scanning";
+  if (badgeText) badgeText.textContent = "SCANNING ACTIVE";
+
+  // Activate laser sweep animation on each pillar card
+  Object.values(PILLAR_KEYS).forEach(id => {
+    const card = document.getElementById(`pillarCard_${id}`);
+    const scoreEl = document.getElementById(`pillarScore_${id}`);
+    const tagEl = document.getElementById(`pillarTag_${id}`);
+    const fillEl = document.getElementById(`pillarFill_${id}`);
+
+    if (card) {
+      card.classList.add("scanning");
+      card.classList.remove("active-probe");
+    }
+    if (scoreEl) {
+      scoreEl.classList.add("counting");
+      scoreEl.textContent = "...";
+    }
+    if (tagEl) {
+      tagEl.className = "pillar-status-tag warning";
+      tagEl.textContent = "PROBING";
+    }
+    if (fillEl) {
+      fillEl.style.width = "20%";
+    }
+  });
+}
+
+function resolvePillarsLive(dimensions) {
+  if (!dimensions) return;
+
+  const entries = Object.entries(dimensions);
+  entries.forEach(([dimName, score], index) => {
+    const pillarId = PILLAR_KEYS[dimName];
+    if (!pillarId) return;
+
+    // Stagger resolution smoothly across pillars for telemetry effect
+    setTimeout(() => {
+      const card = document.getElementById(`pillarCard_${pillarId}`);
+      const scoreEl = document.getElementById(`pillarScore_${pillarId}`);
+      const tagEl = document.getElementById(`pillarTag_${pillarId}`);
+      const fillEl = document.getElementById(`pillarFill_${pillarId}`);
+
+      if (card) {
+        card.classList.remove("scanning");
+        card.classList.add("active-probe");
+        setTimeout(() => card.classList.remove("active-probe"), 1200);
+      }
+
+      // Smooth count-up
+      if (scoreEl) {
+        scoreEl.classList.remove("counting");
+        animateValue(scoreEl, 0, score, 900, 1);
+      }
+
+      // Progress bar fill & color
+      if (fillEl) {
+        fillEl.style.width = `${Math.min(100, Math.max(0, score))}%`;
+        fillEl.className = "pillar-progress-fill";
+        if (score >= 80) fillEl.classList.add("high");
+        else if (score >= 60) fillEl.classList.add("medium");
+        else fillEl.classList.add("low");
+      }
+
+      // Status tag badge
+      if (tagEl) {
+        if (score >= 80) {
+          tagEl.className = "pillar-status-tag verified";
+          tagEl.textContent = "OPTIMAL";
+        } else if (score >= 60) {
+          tagEl.className = "pillar-status-tag warning";
+          tagEl.textContent = "DEFICIT";
+        } else {
+          tagEl.className = "pillar-status-tag danger";
+          tagEl.textContent = "CRITICAL GAP";
+        }
+      }
+    }, index * 140);
+  });
+
+  // Finish scanning state on badge
+  setTimeout(() => {
+    const badge = document.getElementById("liveScanStatusBadge");
+    const badgeText = document.getElementById("liveScanStatusText");
+    if (badge) badge.className = "scan-pulse-badge";
+    if (badgeText) badgeText.textContent = "VERIFIED";
+  }, entries.length * 140 + 500);
+}
+
+function animateValue(element, start, end, duration, decimals = 1) {
+  if (!element) return;
+  const startTime = performance.now();
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Cubic ease-out
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = start + (end - start) * ease;
+    element.textContent = current.toFixed(decimals);
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      element.textContent = end.toFixed(decimals);
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+// =========================================================================
+// 5. SUBMIT AUDIT
 // =========================================================================
 async function submitQuestionnaire() {
   if (!validateCurrentStep()) return;
 
   const btn = document.getElementById("wizardSubmitBtn");
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span> Generating Report...';
+  btn.innerHTML = `
+    <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    <span>Compiling Evidence...</span>
+  `;
 
   try {
     const res = await fetch("/api/audit/questionnaire", {
@@ -389,29 +419,26 @@ async function submitQuestionnaire() {
     }
 
     currentAuditData = json.data;
-
-    // Update MCP status pill
-    updateStatusPill("Audit Complete", "online");
-
-    // Update topbar target
+    updateStatusPill("Audited", "online");
     document.getElementById("topbarTarget").textContent = wizardAnswers.model_name || "AI System";
 
-    // Show the run audit button for re-runs
     document.getElementById("btnRunAudit").style.display = "inline-flex";
     document.getElementById("btnRunAudit2").style.display = "inline-flex";
 
-    // Stream logs and apply data
     showPage("page-audit");
+    activatePillarsScanning();
+
     const terminalLog = document.getElementById("terminalLog");
     const terminalStatus = document.getElementById("terminalStatus");
     terminalStatus.textContent = "ANALYZING...";
-    terminalStatus.style.color = "#d97706";
-    terminalLog.innerHTML = `<div class="log-line info"><span class="timestamp">[SYSTEM]</span> Starting questionnaire-based audit for '${wizardAnswers.model_name || "AI System"}'...</div>`;
+    terminalStatus.style.color = "#38bdf8";
+    terminalLog.innerHTML = `<div class="log-line info"><span class="timestamp">[KERNEL]</span> Executing 7-pillar audit for '${wizardAnswers.model_name || "AI System"}'...</div>`;
 
     streamLogsToTerminal(json.data.audit_logs, () => {
       applyAuditDataToUI(json.data);
+      resolvePillarsLive(json.data.dimensions);
       terminalStatus.textContent = "AUDIT COMPLETE";
-      terminalStatus.style.color = "#059669";
+      terminalStatus.style.color = "#10b981";
       showProbeSummary(json.data.probe_summary);
     });
 
@@ -420,7 +447,10 @@ async function submitQuestionnaire() {
     alert("Error generating audit: " + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">🚀</span> Generate Audit Report';
+    btn.innerHTML = `
+      <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Generate Audit Dossier</span>
+    `;
   }
 }
 
@@ -434,7 +464,7 @@ async function connectMcp() {
     : { mcp_url: url };
 
   if (!config.mcp_url && !config.mcp_command) {
-    alert("Please enter the MCP server URL or command.");
+    alert("Please provide the MCP server URL or command.");
     return;
   }
 
@@ -447,23 +477,26 @@ async function connectMcp() {
     const json = await res.json();
 
     if (!json.success) {
-      alert("MCP Connection: " + (json.error || "Failed to connect"));
+      alert("MCP Connection Error: " + (json.error || "Failed to connect"));
       return;
     }
 
     currentAuditData = json.data;
     updateStatusPill("MCP Connected", "online");
-    document.getElementById("topbarTarget").textContent = json.data.model_metadata?.model_name || "MCP AI System";
+    document.getElementById("topbarTarget").textContent = json.data.model_metadata?.model_name || "MCP AI Agent";
     document.getElementById("btnRunAudit").style.display = "inline-flex";
 
     showPage("page-audit");
+    activatePillarsScanning();
+
     const terminalLog = document.getElementById("terminalLog");
-    terminalLog.innerHTML = `<div class="log-line info"><span class="timestamp">[SYSTEM]</span> Connected to MCP server...</div>`;
+    terminalLog.innerHTML = `<div class="log-line info"><span class="timestamp">[KERNEL]</span> Connected to MCP agent endpoint. Probing tools...</div>`;
 
     streamLogsToTerminal(json.data.audit_logs, () => {
       applyAuditDataToUI(json.data);
+      resolvePillarsLive(json.data.dimensions);
       document.getElementById("terminalStatus").textContent = "AUDIT COMPLETE";
-      document.getElementById("terminalStatus").style.color = "#059669";
+      document.getElementById("terminalStatus").style.color = "#10b981";
       showProbeSummary(json.data.probe_summary);
     });
   } catch (err) {
@@ -485,9 +518,6 @@ function rerunAudit() {
   showPage("page-setup");
 }
 
-// =========================================================================
-// 5. STATUS PILL
-// =========================================================================
 function updateStatusPill(text, status) {
   const pill = document.getElementById("mcpStatusPill");
   const textEl = document.getElementById("mcpStatusText");
@@ -496,7 +526,7 @@ function updateStatusPill(text, status) {
 }
 
 // =========================================================================
-// 6. RADAR CHART
+// 6. RADAR CHART (DARK THEME)
 // =========================================================================
 function initRadarChart(dims) {
   const ctx = document.getElementById("radarChart").getContext("2d");
@@ -510,13 +540,13 @@ function initRadarChart(dims) {
         label: "Assurance Score (0-100)",
         data: Object.values(dims),
         fill: true,
-        backgroundColor: "rgba(139, 92, 246, 0.15)",
-        borderColor: "#8b5cf6",
-        pointBackgroundColor: "#8b5cf6",
+        backgroundColor: "rgba(99, 102, 241, 0.22)",
+        borderColor: "#6366f1",
+        pointBackgroundColor: "#06b6d4",
         pointBorderColor: "#ffffff",
-        pointHoverBackgroundColor: "#7c3aed",
-        pointHoverBorderColor: "#8b5cf6",
-        borderWidth: 2.5,
+        pointHoverBackgroundColor: "#38bdf8",
+        pointHoverBorderColor: "#6366f1",
+        borderWidth: 2.2,
         pointRadius: 4
       }]
     },
@@ -525,15 +555,15 @@ function initRadarChart(dims) {
       maintainAspectRatio: false,
       scales: {
         r: {
-          angleLines: { color: "rgba(139, 92, 246, 0.1)" },
-          grid: { color: "rgba(139, 92, 246, 0.08)" },
+          angleLines: { color: "rgba(148, 163, 184, 0.14)" },
+          grid: { color: "rgba(148, 163, 184, 0.1)" },
           pointLabels: {
-            font: { family: "'Inter', sans-serif", size: 10, weight: "600" },
-            color: "#4c4577"
+            font: { family: "'Inter', sans-serif", size: 10.5, weight: "600" },
+            color: "#cbd5e1"
           },
           ticks: {
-            backdropColor: "rgba(255, 255, 255, 0.8)",
-            color: "#7c7499",
+            backdropColor: "transparent",
+            color: "#64748b",
             stepSize: 20
           },
           suggestedMin: 0,
@@ -543,10 +573,10 @@ function initRadarChart(dims) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#1e1b4b",
-          titleColor: "#c4b5fd",
-          bodyColor: "#f5f3ff",
-          borderColor: "rgba(139, 92, 246, 0.4)",
+          backgroundColor: "#0e1526",
+          titleColor: "#38bdf8",
+          bodyColor: "#f8fafc",
+          borderColor: "rgba(99, 102, 241, 0.4)",
           borderWidth: 1,
           padding: 10
         }
@@ -583,7 +613,7 @@ function streamLogsToTerminal(logs, onComplete) {
     terminalLog.appendChild(line);
     terminalLog.scrollTop = terminalLog.scrollHeight;
     i++;
-  }, 70);
+  }, 65);
 }
 
 function showProbeSummary(summary) {
@@ -596,9 +626,9 @@ function showProbeSummary(summary) {
   stats.innerHTML = `
     <div class="probe-stat-item"><div class="stat-num">${summary.total_probes}</div><div class="stat-label">Probes Run</div></div>
     <div class="probe-stat-item"><div class="stat-num">${summary.mcp_tools_called}</div><div class="stat-label">MCP Tools</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.guardrails_tested}</div><div class="stat-label">Guardrails</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.adversarial_tests}</div><div class="stat-label">Adversarial Tests</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.findings_count}</div><div class="stat-label">Findings</div></div>
+    <div class="probe-stat-item"><div class="stat-num">${summary.guardrails_tested}</div><div class="stat-label">Guardrails Tested</div></div>
+    <div class="probe-stat-item"><div class="stat-num">${summary.adversarial_tests}</div><div class="stat-label">Adversarial Probes</div></div>
+    <div class="probe-stat-item"><div class="stat-num">${summary.findings_count}</div><div class="stat-label">Audit Findings</div></div>
   `;
 }
 
@@ -606,14 +636,13 @@ function showProbeSummary(summary) {
 // 8. APPLY AUDIT DATA TO UI
 // =========================================================================
 function applyAuditDataToUI(data) {
-  // Profile
   const meta = data.model_metadata || {};
-  const el = (id) => document.getElementById(id);
+  const el = id => document.getElementById(id);
 
   if (el("profModelName")) el("profModelName").textContent = meta.model_name || "—";
   if (el("profDomain")) el("profDomain").textContent = meta.domain || meta.model_name || "—";
   if (el("profArch")) el("profArch").textContent = meta.model_architecture || "—";
-  if (el("profAuditMode")) el("profAuditMode").textContent = data.audit_mode === "questionnaire" ? "Questionnaire-Based Assessment" : "MCP Live Probe";
+  if (el("profAuditMode")) el("profAuditMode").textContent = data.audit_mode === "questionnaire" ? "Questionnaire-Based Pre-Audit" : "MCP Live Protocol Probe";
   if (el("profDataSize")) el("profDataSize").textContent = meta.training_dataset_size ? `${meta.training_dataset_size.toLocaleString()} Samples` : "—";
   if (el("profAutonomy")) {
     const autonomyLabels = { "advisory": "Advisory Only", "semi_autonomous": "Semi-Autonomous", "fully_autonomous": "Fully Autonomous" };
@@ -623,30 +652,39 @@ function applyAuditDataToUI(data) {
 
   // Scores
   const scoring = data.scoring;
-  el("aasScore").textContent = scoring.aas_score;
+  const targetAas = scoring.aas_score;
+  const aasEl = el("aasScore");
+  if (aasEl) animateValue(aasEl, 0, targetAas, 1000, 1);
+
   el("gradeBadge").textContent = scoring.trust_grade;
   el("mathAvg").textContent = scoring.weighted_average;
   el("mathMin").textContent = scoring.bottleneck_score;
-  el("bottleneckDesc").textContent = `${scoring.bottleneck_dimension} (${scoring.bottleneck_score}/100) constraints overall adequacy.`;
+  el("bottleneckDesc").textContent = `${scoring.bottleneck_dimension} (${scoring.bottleneck_score}/100) constitutes the primary governance bottleneck constraint.`;
 
   // Grade badge styling
   const badge = el("gradeBadge");
   const scoreLbl = el("scoreLabel");
   if (scoring.trust_grade.startsWith("A")) {
-    badge.style.borderColor = "#059669"; badge.style.color = "#059669";
-    badge.style.background = "linear-gradient(135deg, #ecfdf5, #d1fae5)";
-    scoreLbl.textContent = "Minimal Governance Risk"; scoreLbl.style.color = "#059669";
+    badge.style.borderColor = "var(--success)";
+    badge.style.color = "var(--success)";
+    badge.style.background = "var(--success-bg)";
+    scoreLbl.textContent = "Minimal Governance Risk";
+    scoreLbl.style.color = "var(--success)";
   } else if (scoring.trust_grade === "B" || scoring.trust_grade === "C") {
-    badge.style.borderColor = "#d97706"; badge.style.color = "#d97706";
-    badge.style.background = "linear-gradient(135deg, #fffbeb, #fef3c7)";
-    scoreLbl.textContent = "Moderate Governance Risk"; scoreLbl.style.color = "#d97706";
+    badge.style.borderColor = "var(--warning)";
+    badge.style.color = "var(--warning)";
+    badge.style.background = "var(--warning-bg)";
+    scoreLbl.textContent = "Moderate Governance Risk";
+    scoreLbl.style.color = "var(--warning)";
   } else {
-    badge.style.borderColor = "#7c3aed"; badge.style.color = "#7c3aed";
-    badge.style.background = "linear-gradient(135deg, #f5f3ff, #ede9fe)";
-    scoreLbl.textContent = "High Governance Risk"; scoreLbl.style.color = "#7c3aed";
+    badge.style.borderColor = "var(--danger)";
+    badge.style.color = "var(--danger)";
+    badge.style.background = "var(--danger-bg)";
+    scoreLbl.textContent = "Elevated Risk Posture";
+    scoreLbl.style.color = "var(--danger)";
   }
 
-  // Radar
+  // Update Radar
   updateRadarChart(data.dimensions);
 
   // EU AI Act
@@ -670,19 +708,32 @@ function applyAuditDataToUI(data) {
   tbody.innerHTML = "";
   const items = data.remediation_plan || [];
   if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No findings — all dimensions passed.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No vulnerabilities detected &mdash; all dimensions compliant.</td></tr>`;
   } else {
     items.forEach(item => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><span class="priority-tag ${item.badge}">${item.priority}</span></td>
-        <td><strong>${item.dimension}</strong></td>
-        <td style="color: #4c4577;">${item.finding}</td>
-        <td style="color: #6d28d9; font-weight: 500;">${item.action}</td>
+        <td><strong style="color:#fff;">${item.dimension}</strong></td>
+        <td>${item.finding}</td>
+        <td style="color:var(--cyan-400); font-weight:500;">${item.action}</td>
       `;
       tbody.appendChild(tr);
     });
   }
+
+  // IBM AIF360 Empirical Fairness
+  if (data.aif360) renderAif360(data.aif360);
+
+  // Microsoft RAI Cohorts & Counterfactuals
+  if (data.cohort_analysis) renderRaiCohorts(data.cohort_analysis);
+  if (data.prescriptive_counterfactual) renderCounterfactual(data.prescriptive_counterfactual);
+
+  // Google Model Card
+  if (data.model_card) renderModelCard(data.model_card);
+
+  // Cybersecurity & AI-BOM Vulnerability Scanner
+  if (data.vulnerability_scan) renderCveVulnerabilities(data.vulnerability_scan);
 
   // Run simulation
   runSimulation();
@@ -723,13 +774,13 @@ async function runSimulation() {
 
       const deltaEl = document.getElementById("simDelta");
       if (sim.delta < 0) {
-        deltaEl.textContent = `${sim.delta} (Elevated Risk)`;
+        deltaEl.textContent = `${sim.delta} pts (Elevated Risk)`;
         deltaEl.className = "sim-delta negative";
       } else if (sim.delta > 0) {
-        deltaEl.textContent = `+${sim.delta} (Reduced Risk)`;
+        deltaEl.textContent = `+${sim.delta} pts (Reduced Risk)`;
         deltaEl.className = "sim-delta positive";
       } else {
-        deltaEl.textContent = "0.0 (Baseline)";
+        deltaEl.textContent = "0.0 pts (Baseline)";
         deltaEl.className = "sim-delta neutral";
       }
     }
@@ -765,4 +816,363 @@ function recalculateManual() {
   currentAuditData.scoring.bottleneck_score = min;
 
   applyAuditDataToUI(currentAuditData);
+  resolvePillarsLive(currentAuditData.dimensions);
+}
+
+// =========================================================================
+// 11. IBM AIF360 FAIRNESS & REWEIGHING
+// =========================================================================
+function renderAif360(aif) {
+  if (!aif) return;
+  const dirEl = document.getElementById("aifDirVal");
+  const badgeEl = document.getElementById("aifDirBadge");
+  const textEl = document.getElementById("aifDirText");
+  const spdEl = document.getElementById("aifSpdVal");
+  const privEl = document.getElementById("aifPrivRate");
+  const unprivEl = document.getElementById("aifUnprivRate");
+  const recEl = document.getElementById("aifMitigationRec");
+  const tbody = document.getElementById("aifReweighingTbody");
+
+  if (dirEl) dirEl.textContent = aif.disparate_impact_ratio != null ? aif.disparate_impact_ratio.toFixed(3) : "—";
+  if (badgeEl && aif.four_fifths_rule) {
+    badgeEl.textContent = aif.four_fifths_rule.verdict;
+    badgeEl.className = `aif-verdict-badge ${aif.four_fifths_rule.compliant ? "badge-success" : "badge-danger"}`;
+  }
+  if (textEl && aif.four_fifths_rule) {
+    textEl.textContent = aif.four_fifths_rule.status_text;
+  }
+  if (spdEl) spdEl.textContent = aif.statistical_parity_difference != null ? aif.statistical_parity_difference.toFixed(3) : "—";
+  if (privEl && aif.rates) privEl.textContent = `${(aif.rates.privileged_acceptance_rate * 100).toFixed(1)}%`;
+  if (unprivEl && aif.rates) unprivEl.textContent = `${(aif.rates.unprivileged_acceptance_rate * 100).toFixed(1)}%`;
+  if (recEl) recEl.textContent = aif.recommendation || "—";
+
+  if (tbody && aif.reweighing_weights) {
+    tbody.innerHTML = "";
+    const w = aif.reweighing_weights;
+    const rows = [
+      { slice: "Unprivileged (Female Protected)", y: "Favorable (Y=1)", weight: w.unprivileged_favorable, impact: "Upscale positive protected samples" },
+      { slice: "Unprivileged (Female Protected)", y: "Unfavorable (Y=0)", weight: w.unprivileged_unfavorable, impact: "Downscale negative protected samples" },
+      { slice: "Privileged (Male Majority)", y: "Favorable (Y=1)", weight: w.privileged_favorable, impact: "Normalize majority favorable outcomes" },
+      { slice: "Privileged (Male Majority)", y: "Unfavorable (Y=0)", weight: w.privileged_unfavorable, impact: "Normalize majority negative outcomes" }
+    ];
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong style="color:#fff;">${r.slice}</strong></td>
+        <td><span class="pillar-status-tag ${r.y.includes('1') ? 'verified' : 'warning'}">${r.y}</span></td>
+        <td><strong style="color:var(--cyan-400); font-family:var(--font-mono);">${r.weight}x</strong></td>
+        <td style="color:var(--text-secondary);">${r.impact}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+// =========================================================================
+// 12. MICROSOFT RAI COHORTS & COUNTERFACTUAL
+// =========================================================================
+function renderRaiCohorts(cohorts) {
+  const container = document.getElementById("raiCohortGrid");
+  if (!container || !cohorts) return;
+  container.innerHTML = "";
+
+  cohorts.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "pillar-card";
+    const sevBadge = c.severity === "HIGH" ? "badge-danger" : (c.severity === "MEDIUM" ? "badge-warning" : "badge-success");
+    card.innerHTML = `
+      <div class="pillar-top">
+        <div>
+          <div class="pillar-title">${c.name}</div>
+          <div class="pillar-anchor">${c.slice_condition}</div>
+        </div>
+        <span class="comp-badge ${sevBadge}">${c.severity} RISK</span>
+      </div>
+      <div class="pillar-progress-track">
+        <div class="pillar-progress-fill ${c.severity.toLowerCase()}" style="width: ${c.risk_contribution_pct}%;"></div>
+      </div>
+      <div class="pillar-footer-meta">
+        <span>Risk Contribution: <strong>${c.risk_contribution_pct}%</strong></span>
+        <span class="pillar-status-tag danger">Bottleneck: ${c.primary_bottleneck}</span>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.65rem;">${c.description}</p>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderCounterfactual(cf) {
+  const box = document.getElementById("cfResultsBox");
+  if (!box || !cf) return;
+
+  if (cf.already_compliant) {
+    box.innerHTML = `
+      <div style="background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:1.25rem;">
+        <strong style="color:var(--success);">Threshold Compliant: ${cf.current_aas} AAS</strong>
+        <p style="margin-top:0.25rem; color:var(--text-secondary); font-size:13px;">${cf.message}</p>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div style="display:flex; gap:1.25rem; flex-wrap:wrap; background:var(--bg-surface-elevated); padding:1rem 1.25rem; border-radius:8px; border:1px solid var(--border-card);">
+      <div><span class="sim-lbl">Current AAS:</span> <strong style="color:#fff; font-family:var(--font-mono);">${cf.current_aas}</strong></div>
+      <div><span class="sim-lbl">Target AAS:</span> <strong style="color:var(--cyan-400); font-family:var(--font-mono);">${cf.target_score}</strong></div>
+      <div><span class="sim-lbl">Projected AAS:</span> <strong style="color:var(--success); font-family:var(--font-mono);">${cf.projected_aas}</strong></div>
+      <div><span class="sim-lbl">Score Lift:</span> <strong style="color:var(--indigo-400); font-family:var(--font-mono);">+${cf.score_delta} pts</strong></div>
+      <div><span class="sim-lbl">Statutory Tier:</span> <strong class="comp-badge badge-success">${cf.projected_tier}</strong></div>
+    </div>
+    <div class="roadmap-table-container" style="margin-top:1rem;">
+      <table class="roadmap-table">
+        <thead>
+          <tr>
+            <th>Priority</th>
+            <th>Dimension</th>
+            <th>Prescriptive Intervention</th>
+            <th>Dimension Gain</th>
+            <th>AAS Lift</th>
+            <th>Projected AAS</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  (cf.required_actions || []).forEach(a => {
+    html += `
+      <tr>
+        <td><strong>${a.step}</strong></td>
+        <td><strong style="color:#fff;">${a.dimension}</strong></td>
+        <td>${a.intervention}</td>
+        <td><span class="priority-tag info">${a.dimension_gain}</span></td>
+        <td><strong style="color:var(--success); font-family:var(--font-mono);">${a.aas_lift}</strong></td>
+        <td><strong style="color:var(--cyan-400); font-family:var(--font-mono);">${a.resulting_aas}</strong></td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+  box.innerHTML = html;
+}
+
+async function solveCustomCounterfactual() {
+  if (!currentAuditData) {
+    alert("Please execute an audit first.");
+    return;
+  }
+  const target = parseFloat(document.getElementById("cfTargetInput").value) || 76.0;
+  const box = document.getElementById("cfResultsBox");
+  box.innerHTML = `<div class="log-line info"><span class="timestamp">[RAI]</span> Solving prescriptive counterfactual optimization for target AAS ${target}...</div>`;
+
+  try {
+    const res = await fetch("/api/rai/counterfactual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_score: target, audit_data: currentAuditData })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      currentAuditData.prescriptive_counterfactual = json.data;
+      renderCounterfactual(json.data);
+    } else {
+      box.innerHTML = `<div class="empty-state">${json.error || "Failed to solve counterfactual optimization."}</div>`;
+    }
+  } catch (err) {
+    box.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
+  }
+}
+
+// =========================================================================
+// 13. GOOGLE MODEL CARD
+// =========================================================================
+function renderModelCard(card) {
+  if (!card) return;
+  const el = id => document.getElementById(id);
+
+  if (el("mcModelName")) el("mcModelName").textContent = card.model_name || "AI System";
+  if (el("mcModelVersion")) el("mcModelVersion").textContent = `v${card.version || "1.0.0"}`;
+  if (el("mcModelDomain")) el("mcModelDomain").textContent = card.domain || "—";
+  if (el("mcModelGrade") && card.summary) el("mcModelGrade").textContent = card.summary.trust_grade || "—";
+  if (el("mcModelTier") && card.summary) el("mcModelTier").textContent = card.summary.eu_tier || "—";
+
+  const rawEl = el("mcRawView");
+  if (rawEl) rawEl.value = card.markdown || "";
+
+  const jsonEl = el("mcJsonView");
+  if (jsonEl) jsonEl.querySelector("code").textContent = JSON.stringify(card, null, 2);
+
+  const renderedEl = el("mcRenderedView");
+  if (renderedEl && card.markdown) {
+    renderedEl.innerHTML = parseMarkdownToHtml(card.markdown);
+  }
+}
+
+function parseMarkdownToHtml(md) {
+  let html = md
+    .replace(/^# (.*$)/gim, '<h2 style="color:#fff; font-family:var(--font-heading); margin-bottom:0.5rem;">$1</h2>')
+    .replace(/^## (.*$)/gim, '<h3 style="color:var(--cyan-400); font-family:var(--font-heading); margin:1.2rem 0 0.4rem;">$1</h3>')
+    .replace(/^### (.*$)/gim, '<h4 style="color:#fff; margin:0.8rem 0 0.3rem;">$1</h4>')
+    .replace(/^> (.*$)/gim, '<blockquote style="border-left:3px solid var(--indigo-500); padding-left:1rem; color:var(--text-muted); margin:0.75rem 0;">$1</blockquote>')
+    .replace(/\*\*(.*?)\*\*/gim, '<strong style="color:#fff;">$1</strong>')
+    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+    .replace(/`([^`]+)`/gim, '<code style="background:rgba(99,102,241,0.15); color:var(--cyan-400); padding:2px 6px; border-radius:4px; font-family:var(--font-mono); font-size:12px;">$1</code>')
+    .replace(/^\- (.*$)/gim, '<li>$1</li>');
+
+  html = html.replace(/\|(.+)\|/gim, match => {
+    if (match.includes("---")) return "";
+    const cells = match.split("|").filter(c => c.trim() !== "");
+    const cellHtml = cells.map(c => `<td>${c.trim()}</td>`).join("");
+    return `<tr>${cellHtml}</tr>`;
+  });
+
+  html = html.replace(/(<tr>.+<\/tr>\s*)+/gim, match => `<table class="roadmap-table" style="margin:1rem 0;">${match}</table>`);
+  html = html.replace(/(<li>.+<\/li>\s*)+/gim, match => `<ul style="padding-left:1.25rem; margin:0.5rem 0;">${match}</ul>`);
+  html = html.replace(/\n\n+/gim, '<br>');
+
+  return html;
+}
+
+function switchModelCardTab(tab, clickedEl) {
+  document.querySelectorAll(".mc-tab").forEach(t => t.classList.remove("active"));
+  if (clickedEl) clickedEl.classList.add("active");
+
+  const rendered = document.getElementById("mcRenderedView");
+  const raw = document.getElementById("mcRawView");
+  const json = document.getElementById("mcJsonView");
+
+  if (rendered) rendered.style.display = tab === "rendered" ? "block" : "none";
+  if (raw) raw.style.display = tab === "raw" ? "block" : "none";
+  if (json) json.style.display = tab === "json" ? "block" : "none";
+}
+
+function copyModelCardMarkdown() {
+  const raw = document.getElementById("mcRawView");
+  if (!raw || !raw.value) {
+    alert("No model card available. Complete an audit first.");
+    return;
+  }
+
+  navigator.clipboard.writeText(raw.value).then(() => {
+    const btn = document.getElementById("btnCopyModelCard");
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = `
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Copied to Clipboard</span>
+      `;
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    }
+  }).catch(err => {
+    alert("Could not copy to clipboard: " + err.message);
+  });
+}
+
+function downloadModelCard(format) {
+  if (!currentAuditData || !currentAuditData.model_card) {
+    alert("No model card available. Complete an audit first.");
+    return;
+  }
+  const card = currentAuditData.model_card;
+  const modelName = (card.model_name || "ai_system").replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
+
+  let content = "";
+  let filename = "";
+  let type = "";
+
+  if (format === "json") {
+    content = JSON.stringify(card, null, 2);
+    filename = `model_card_${modelName}.json`;
+    type = "application/json";
+  } else {
+    content = card.markdown || "";
+    filename = `model_card_${modelName}.md`;
+    type = "text/markdown";
+  }
+
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// =========================================================================
+// 14. CVSS, EPSS & CVE VULNERABILITY SCANNER
+// =========================================================================
+function renderCveVulnerabilities(vuln) {
+  if (!vuln) return;
+  const el = id => document.getElementById(id);
+
+  if (el("cvePostureVal")) el("cvePostureVal").textContent = vuln.security_posture;
+  if (el("cvePostureBadge")) {
+    el("cvePostureBadge").textContent = `${vuln.criticality_multiplier}x Multiplier`;
+    el("cvePostureBadge").className = `aif-verdict-badge ${vuln.average_compound_risk >= 60 ? "badge-danger" : (vuln.average_compound_risk >= 35 ? "badge-warning" : "badge-success")}`;
+  }
+  if (el("cveCompoundRiskVal")) el("cveCompoundRiskVal").innerHTML = `${vuln.average_compound_risk}<small>/100</small>`;
+  if (el("cveActiveThreatsVal")) el("cveActiveThreatsVal").textContent = `${vuln.active_exploits_count} Active`;
+  if (el("cveTotalScannedVal")) el("cveTotalScannedVal").textContent = `${vuln.total_cves_scanned} Packages`;
+  if (el("cveCriticalitySelect") && vuln.asset_criticality) {
+    el("cveCriticalitySelect").value = vuln.asset_criticality;
+  }
+
+  const tbody = document.getElementById("cveTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  (vuln.vulnerabilities || []).forEach(v => {
+    const tr = document.createElement("tr");
+    const epssBadge = v.epss_badge === "danger" ? "badge-danger" : (v.epss_badge === "warning" ? "badge-warning" : "badge-info");
+
+    tr.innerHTML = `
+      <td>
+        <strong style="color:var(--cyan-400); font-family:var(--font-mono); font-size:13px;">${v.cve_id}</strong>
+        <div style="font-size:11px; color:var(--text-dim);">${v.package_type}</div>
+      </td>
+      <td>
+        <strong style="color:#fff;">${v.package}</strong>
+        <div style="font-size:11px; color:var(--text-muted);">${v.vulnerability_type}</div>
+      </td>
+      <td>
+        <span class="priority-tag ${v.cvss_tier === 'CRITICAL' ? 'danger' : 'warning'}">${v.cvss_score} ${v.cvss_tier}</span>
+      </td>
+      <td>
+        <span class="comp-badge ${epssBadge}" style="font-size:11px;">${v.epss_pct}</span>
+        <div style="font-size:10px; color:var(--text-dim); margin-top:2px;">${v.epss_threat}</div>
+      </td>
+      <td>
+        <strong style="color:${v.compound_risk >= 70 ? 'var(--danger)' : (v.compound_risk >= 45 ? 'var(--warning)' : 'var(--success)')}; font-family:var(--font-mono); font-size:14px;">
+          ${v.compound_risk}/100
+        </strong>
+      </td>
+      <td>
+        <div style="color:var(--success); font-weight:600; font-size:12px;">${v.remediation_patch}</div>
+        <div style="color:var(--text-secondary); font-size:11px; max-width:280px; margin-top:2px;">${v.description}</div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function rescanVulnerabilities() {
+  const criticality = document.getElementById("cveCriticalitySelect").value;
+  const domain = currentAuditData?.model_metadata?.domain || "General Purpose AI";
+
+  try {
+    const res = await fetch("/api/security/cve-scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain, asset_criticality: criticality })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      if (currentAuditData) currentAuditData.vulnerability_scan = json.data;
+      renderCveVulnerabilities(json.data);
+    }
+  } catch (err) {
+    console.error("Vulnerability rescan error:", err);
+  }
 }

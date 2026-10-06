@@ -812,12 +812,11 @@ A6: "A REST API tests simple text-in, text-out behavior. MCP standardizes
      boundary — tool poisoning, argument manipulation, privilege escalation. 
      MCP lets AI-GRID probe these protocol-level vulnerabilities."
 
-Q7: "What is the difference between AI-GRID and tools like IBM AI Fairness 360?"
-A7: "IBM AIF360, Google Model Cards, and Microsoft RAI Toolkit are siloed — 
-     they address bias, documentation, or interpretability in isolation. 
-     AI-GRID is a unified GRC platform that evaluates all 7 trustworthiness 
-     dimensions simultaneously, maps them to both EU and US regulations, 
-     and provides What-If simulation and remediation roadmaps."
+Q7: "How does AI-GRID integrate and go beyond tools like IBM AI Fairness 360, Google Model Cards, and Microsoft RAI Toolkit?"
+A7: "Legacy tools are siloed — AIF360 focuses strictly on demographic parity, Google Model Cards on static documentation, and Microsoft RAI Toolkit on error analysis. AI-GRID v2.1 synthesizes their greatest algorithmic capabilities into a unified GRC intelligence platform:
+     1. From IBM AIF360: Real-time Disparate Impact Ratio (DIR, evaluating the EEOC 80% Four-Fifths rule), Statistical Parity Difference (SPD), and pre-processing sample reweighing factors W(D, Y).
+     2. From Google Model Cards (Mitchell et al., 2019): Automated, exportable technical documentation conforming to EU AI Act Article 13 requirements with 1-click Markdown and JSON export.
+     3. From Microsoft RAI Toolkit: Operational Cohort Risk Slicing (identifying risk concentration clusters) and a DiCE-inspired Prescriptive Counterfactual Solver that computes the minimal action path required to reach Minimal Risk (AAS >= 76.0)."
 
 Q8: "How does the What-If Simulation Engine work?"
 A8: "It models how risk changes when the same AI is deployed in different 
