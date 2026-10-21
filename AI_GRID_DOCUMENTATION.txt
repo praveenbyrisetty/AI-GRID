@@ -117,7 +117,7 @@ AI-GRID v2.0 supports TWO ways to assess any AI system:
     agentic AI architectures.
 
   Both modes produce IDENTICAL output:
-  → 7-dimension trust scores
+  → 6-dimension trust scores
   → Composite AAS (Assurance Adequacy Score)
   → EU AI Act risk tier classification
   → NIST AI RMF compliance mapping
@@ -150,7 +150,7 @@ HIGH-LEVEL ARCHITECTURE:
     │   - Mode Selection: "Answer Questions" or "Connect via MCP"  │
     │   - 6-Step Question Wizard with Progress Bar                 │
     │   - MCP Connection Form (URL / STDIO command)                │
-    │   - 7-Dimension Radar Chart (Chart.js)                       │
+    │   - 6-Dimension Radar Chart (Chart.js)                       │
     │   - Audit Log Terminal with Streaming                        │
     │   - What-If Simulator & Remediation Table                    │
     └───────────────────────────┬───────────────────────────────────┘
@@ -712,7 +712,7 @@ PROJECT DIRECTORY: t:\Main\
                           wizard with 6-step progress bar
    • #page-profile     → Shows the AI system's identity after audit
    • #page-audit       → Audit log terminal showing probe-by-probe results
-   • #page-scores      → AAS score card + 7-dimension Radar Chart
+   • #page-scores      → AAS score card + 6-dimension Radar Chart
    • #page-compliance  → EU AI Act badge + NIST RMF 4-function matrix
    • #page-simulation  → What-If slider with domain and user scaling
    • #page-remediation → Prioritized remediation table with action items
@@ -904,7 +904,7 @@ DEMONSTRATION WALKTHROUGH FOR EXAMINERS:
           is the weakest and why it drags down the score.
 
   Step 5: RADAR CHART
-          Point out the 7-dimension radar chart. Show how some dimensions 
+          Point out the 6-dimension radar chart. Show how some dimensions 
           are high (e.g., Transparency = 100) while others are low (e.g., 
           Accountability = 35). This visually demonstrates the bottleneck.
 

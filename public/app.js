@@ -1003,19 +1003,41 @@ function backToModeSelection() {
   document.getElementById("mcpConnectionCard").style.display = "none";
 }
 
+function toggleMcpAuditType() {
+  const isLive = document.getElementById("mcpTypeLive")?.checked;
+  const demoGroup = document.getElementById("mcpDemoGroup");
+  const liveGroup = document.getElementById("mcpLiveGroup");
+  const btnText = document.getElementById("mcpSubmitBtnText");
+
+  if (demoGroup && liveGroup) {
+    if (isLive) {
+      demoGroup.style.display = "none";
+      liveGroup.style.display = "block";
+      if (btnText) btnText.textContent = "Execute Live Protocol Audit";
+    } else {
+      demoGroup.style.display = "block";
+      liveGroup.style.display = "none";
+      if (btnText) btnText.textContent = "Execute Benchmark Probe Audit";
+    }
+  }
+}
+
 async function runQuickDemoAudit() {
   showToast("Initiating Tier T1 automated wire probe against certified benchmark...");
   try {
     const res = await fetch("/api/audit/mcp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile: "good" })
+      body: JSON.stringify({ demo_profile: "good" })
     });
     const json = await res.json();
     if (json.success && json.data) {
       currentAuditData = json.data;
-      applyAuditDataToUI(json.data, "Tier T1 (Automated MCP Probe &bull; Live Run)");
-      showToast("Live Wire Probe Completed — Telemetry Analyzed");
+      const modeLabel = json.data.execution_mode === "DEMO_BENCHMARK"
+        ? "Tier T1 (Certified Demo Benchmark Reference)"
+        : "Tier T1 (Live MCP Protocol Audit)";
+      applyAuditDataToUI(json.data, modeLabel);
+      showToast("Benchmark Reference Audit Completed");
       showPage("page-overview");
     } else {
       showToast("Notice: " + (json.error || "Unable to retrieve probe data"));
@@ -1026,19 +1048,45 @@ async function runQuickDemoAudit() {
 }
 
 async function connectMcp() {
-  const profile = document.getElementById("mcpProfileSelect").value;
+  const isLive = document.getElementById("mcpTypeLive")?.checked;
+  let payload = {};
+
+  if (isLive) {
+    const authCheck = document.getElementById("mcpAuthorizeCheck");
+    if (!authCheck || !authCheck.checked) {
+      alert("Explicit authorization is required before launching a live MCP server process.");
+      return;
+    }
+    const cmdExec = (document.getElementById("mcpLiveExec")?.value || "python").trim();
+    const cmdArgsStr = (document.getElementById("mcpLiveScript")?.value || "").trim();
+    const cmdArgs = cmdArgsStr ? cmdArgsStr.split(" ").filter(Boolean) : [];
+    payload = {
+      target_command: [cmdExec, ...cmdArgs],
+      authorized: true
+    };
+  } else {
+    const profile = document.getElementById("mcpProfileSelect")?.value || "good";
+    payload = { demo_profile: profile };
+  }
+
   try {
+    showToast("Starting protocol audit execution...");
     const res = await fetch("/api/audit/mcp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile: profile })
+      body: JSON.stringify(payload)
     });
     const json = await res.json();
     if (json.success && json.data) {
       currentAuditData = json.data;
-      applyAuditDataToUI(json.data, "Tier T1 (Automated MCP Probe &bull; Live Run)");
-      showToast("Live MCP Protocol Prober Completed!");
+      const modeLabel = json.data.execution_mode === "DEMO_BENCHMARK"
+        ? `Tier T1 (Certified Demo Benchmark &bull; ${json.data.model_metadata?.model_name || 'AgriTrust'})`
+        : `Tier T1 (Live Wire MCP Protocol Probing &bull; Active Connection)`;
+      applyAuditDataToUI(json.data, modeLabel);
+      showToast("MCP Protocol Audit Completed!");
       showPage("page-overview");
+    } else {
+      alert("Audit Failed: " + (json.error || "Unable to execute audit"));
     }
   } catch (err) {
     alert("MCP Probe Error: " + err.message);

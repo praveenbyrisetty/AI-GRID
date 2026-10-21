@@ -22,7 +22,7 @@ This document catalogs the verified scientific papers, IEEE publications, and te
 
 | AI-GRID Feature | How This Paper Supports It |
 |:----------------|:---------------------------|
-| **7-Dimension Trust Framework** | Maps **7 key trustworthy AI requirements** (Robustness, Safety, Transparency, Privacy, Governance, Human Agency, Nondiscrimination) directly to implementation design choices — this is the **exact same 7-pillar structure** as your AI-GRID |
+| **6-Dimension Trust Framework** | Maps **6 key trustworthy AI requirements** (Security & Robustness, Fairness & Non-Discrimination, Transparency & Explainability, Privacy & Data Governance, Human Oversight & Accountability, Safety & Reliability) directly to implementation design choices — this is the **exact same 6-pillar structure** as AI-GRID |
 | **Quantitative Scoring (AAS)** | Provides an **Empirical Risk Minimization (ERM)** mathematical framework for quantifying AI trustworthiness — directly parallels your AAS formula's weighted scoring |
 | **EU AI Act Compliance** | Explicitly maps technical design choices to **EU AI Act legislative requirements and GDPR** — directly supports your regulatory compliance engine |
 | **Implementation Focus** | Bridges the gap between **high-level ethics principles → concrete technical implementation** — this is exactly what your `ai_profile_engine.py` questionnaire logic does |

@@ -605,21 +605,61 @@
             <div class="card-header">
               <div>
                 <h3 class="card-title">Step 2: Configure MCP Target Server</h3>
-                <p class="card-subtitle">Select target agent environment or enter remote MCP JSON-RPC endpoint</p>
+                <p class="card-subtitle">Select certified benchmark reference target or specify custom live MCP server</p>
               </div>
               <button class="btn-secondary sm" onclick="backToModeSelection()">Back</button>
             </div>
-            <div class="form-group">
+
+            <!-- Target Selection Mode -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+              <label class="card" style="margin:0; padding:12px; cursor:pointer; border:1px solid var(--primary-500); display:flex; align-items:center; gap:8px;">
+                <input type="radio" name="mcpAuditType" id="mcpTypeDemo" value="demo" checked onchange="toggleMcpAuditType()">
+                <div>
+                  <strong>Certified Demo Benchmark</strong>
+                  <div style="font-size:11px; color:var(--text-secondary);">Reproducible reference servers in <code>demo_servers/</code></div>
+                </div>
+              </label>
+              <label class="card" style="margin:0; padding:12px; cursor:pointer; border:1px solid var(--border-card); display:flex; align-items:center; gap:8px;">
+                <input type="radio" name="mcpAuditType" id="mcpTypeLive" value="live" onchange="toggleMcpAuditType()">
+                <div>
+                  <strong>Live Custom MCP Process</strong>
+                  <div style="font-size:11px; color:var(--text-secondary);">Direct stdio protocol probing of local agent</div>
+                </div>
+              </label>
+            </div>
+
+            <!-- Demo Form -->
+            <div id="mcpDemoGroup" class="form-group">
               <label class="form-label" for="mcpProfileSelect">Audit Target Profile:</label>
               <select id="mcpProfileSelect" class="form-select">
                 <option value="good" selected>AgriTrust-SoilNet-Certified (High-Assurance / Robust / Clamped Output)</option>
                 <option value="moderate">AgriModel-Beta (Moderate Gaps / Missing Adversarial &amp; Encryption)</option>
                 <option value="poor">Uncertified-Predictor (High-Risk / Unclamped Output / Missing Encryption)</option>
               </select>
+              <small style="color:var(--text-muted); display:block; margin-top:6px;">Runs protocol verification against a certified reference benchmark profile.</small>
             </div>
+
+            <!-- Live Target Form -->
+            <div id="mcpLiveGroup" style="display:none; margin-bottom:16px;">
+              <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px; margin-bottom:10px;">
+                <div>
+                  <label class="form-label" for="mcpLiveExec">Executable:</label>
+                  <input type="text" id="mcpLiveExec" class="form-input" value="python" placeholder="python">
+                </div>
+                <div>
+                  <label class="form-label" for="mcpLiveScript">Server Script / Args:</label>
+                  <input type="text" id="mcpLiveScript" class="form-input" value="demo_servers/good_server.py" placeholder="path/to/server.py">
+                </div>
+              </div>
+              <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; margin-top:8px;">
+                <input type="checkbox" id="mcpAuthorizeCheck">
+                <span><strong>Explicit Authorization:</strong> I explicitly authorize AI-GRID to launch and probe this local MCP server process via stdio transport.</span>
+              </label>
+            </div>
+
             <button class="btn-primary" onclick="connectMcp()">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span>Execute Automated Probe Audit</span>
+              <span id="mcpSubmitBtnText">Execute Benchmark Probe Audit</span>
             </button>
           </section>
 

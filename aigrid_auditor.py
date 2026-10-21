@@ -151,13 +151,21 @@ class AIGRIDMCPAuditor:
             log("CONNECTION", f"MCP SDK error: {e}. Falling back to direct invocation.", "WARNING")
             use_sdk = False
 
-        # Fallback: direct invocation (clearly labeled)
+        # Fallback: direct invocation (strictly for demo servers, NEVER for custom targets)
         if not use_sdk:
-            log("CONNECTION", "Using DIRECT INVOCATION fallback (not MCP protocol).", "WARNING")
+            if mcp_command:
+                log("CONNECTION", f"Failed to connect to custom MCP target '{server_command}' via MCP protocol.", "ERROR")
+                return self._build_error_payload(
+                    f"Live MCP protocol connection to '{server_command}' failed. "
+                    "Simulated fallbacks are disabled for live targets to guarantee test integrity.",
+                    logs,
+                )
+            log("CONNECTION", "Using DIRECT INVOCATION demo benchmark fallback (not live wire MCP protocol).", "WARNING")
+            log("INTEGRITY", "NOTICE: This benchmark run executed via simulated in-process calls.", "WARNING")
             fallback_client = await self._create_fallback_client(profile)
             if not fallback_client:
                 return self._build_error_payload(
-                    "Failed to connect to MCP server via both SDK and fallback.",
+                    "Failed to connect to demo MCP server via both SDK and fallback.",
                     logs,
                 )
             try:
@@ -221,16 +229,23 @@ class AIGRIDMCPAuditor:
         )
 
         audit_payload = {
+            "execution_mode": "DEMO_BENCHMARK" if (not mcp_command) else "LIVE_MCP_PROTOCOL",
+            "is_demo": bool(not mcp_command),
+            "protocol_verified": bool(use_sdk),
+            "protocol_status": "OFFICIAL_MCP_SDK_STDIO_VERIFIED" if use_sdk else "SIMULATED_FALLBACK_NON_PROTOCOL",
             "model_metadata": {
                 "model_name": meta_data.get("model_name", "MCP Target AI"),
                 "version": meta_data.get("version", "Unknown"),
                 "domain": meta_data.get("domain", "Unknown"),
                 "model_architecture": meta_data.get("model_architecture", "Unknown"),
                 "deployment_type": "mcp_agent",
+                "execution_mode": "DEMO_BENCHMARK" if (not mcp_command) else "LIVE_MCP_PROTOCOL",
+                "audit_mode_label": "Certified Demo Benchmark Audit" if (not mcp_command) else "Live Wire MCP Protocol Audit",
                 "evidence_tier": "T1",
                 "evidence_confidence_weight": 1.0,
                 "mcp_tools_discovered": tools_discovered,
-                "mcp_transport": "stdio (MCP SDK)" if use_sdk else "direct_invocation (fallback)",
+                "mcp_transport": "stdio (Official MCP Python SDK)" if use_sdk else "direct_invocation (simulated_fallback)",
+                "simulated_fallback": not use_sdk,
                 "audit_timestamp": datetime.now().isoformat(),
             },
             "dimensions": dimensions,

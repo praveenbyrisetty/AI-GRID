@@ -40,6 +40,27 @@ def test_eu_ai_act_prohibited_and_high_risk_classification():
     assert "MINIMAL" in res_agri["intended_purpose_classification"]["tier"] or "GENERAL" in res_agri["intended_purpose_classification"]["tier"]
 
 
+def test_eu_ai_act_classification_independent_of_scores():
+    """Verify regulatory tier is strictly domain-based and does NOT change when AAS/dimension scores fluctuate."""
+    high_scores = {d: 98.0 for d in [
+        "Security & Robustness", "Fairness & Non-Discrimination", "Transparency & Explainability",
+        "Privacy & Data Governance", "Human Oversight & Accountability", "Safety & Reliability"
+    ]}
+    low_scores = {d: 15.0 for d in high_scores}
+
+    # Even with 98% across all dimensions, a clinical diagnostic system remains HIGH RISK under Annex III
+    res_high = evaluate_eu_ai_act_compliance(domain="healthcare", autonomy_level="semi_autonomous", dimensions=high_scores)
+    assert "HIGH RISK" in res_high["intended_purpose_classification"]["tier"]
+
+    # Even with 15% across all dimensions, a hobbyist agriculture tool remains MINIMAL RISK under Annex III
+    res_low = evaluate_eu_ai_act_compliance(domain="agriculture", autonomy_level="semi_autonomous", dimensions=low_scores)
+    assert "MINIMAL" in res_low["intended_purpose_classification"]["tier"]
+
+    # Check legal disclaimer is present
+    assert "legal_disclaimer" in res_high["article_level_conformance"]
+    assert "Notified Body" in res_high["article_level_conformance"]["legal_disclaimer"]
+
+
 def test_nist_ai_rmf_crosswalk():
     """Verify all 4 core NIST AI RMF functions are mapped."""
     dims = {
@@ -107,9 +128,7 @@ def test_remediation_priority_ranker():
     assert "recommended_interventions" in rem_res
     interventions = rem_res["recommended_interventions"]
     assert len(interventions) == 3
-    # Check interventions content
     assert any(i["priority"] == "CRITICAL" for i in interventions)
-    # Ensure honest disclaimer is present
     assert "projection_disclaimer" in rem_res
 
 

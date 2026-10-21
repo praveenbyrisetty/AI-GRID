@@ -46,12 +46,27 @@ app = Flask(__name__, static_folder="public", static_url_path="")
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2MB max payload limit
 
-# Restrict CORS to common development and production origins
+# Restrict CORS to trusted origins
+# Defaults to localhost/127.0.0.1, configurable via AIGRID_ALLOWED_ORIGINS env var
+_allowed_origins_env = os.environ.get("AIGRID_ALLOWED_ORIGINS", "")
+if _allowed_origins_env:
+    ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+else:
+    ALLOWED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+
 CORS(
     app,
-    resources={r"/api/*": {"origins": "*"}},
+    resources={r"/api/*": {"origins": ALLOWED_ORIGINS}},
     supports_credentials=False,
 )
+
+ALLOWED_LIVE_EXECUTABLES = {"python", "python3", "python.exe", "node", "node.exe"}
+DISALLOWED_SHELL_CHARS = {";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r"}
 
 auditor = AIGRIDMCPAuditor()
 store = AuditStore()
@@ -75,6 +90,15 @@ def add_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self';"
+    )
     return response
 
 
@@ -215,37 +239,112 @@ def run_mcp_audit():
     global last_mcp_data, last_audit_data
     body, err = validate_json_body()
     if err:
-        # Default to good profile if no body was provided
-        body = {}
-
-    profile = body.get("profile", "good")
-    if not isinstance(profile, str) or profile not in ("good", "moderate", "poor"):
         return jsonify({
             "success": False,
-            "error": "Invalid profile parameter. Must be one of: 'good', 'moderate', 'poor'",
+            "error": f"Invalid request body: {err}. You must explicitly provide 'demo_profile': 'good'|'moderate'|'poor' or 'target_command' with 'authorized': true."
         }), 400
 
-    try:
-        # Run async probe in a clean event loop
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    if not body:
+        return jsonify({
+            "success": False,
+            "error": "Request body cannot be empty. Specify either 'demo_profile' ('good', 'moderate', 'poor') or 'target_command' with 'authorized': true."
+        }), 400
+
+    # Optional API key authentication if configured
+    required_api_key = os.environ.get("AIGRID_API_KEY")
+    if required_api_key:
+        client_key = request.headers.get("X-API-Key") or request.headers.get("Authorization", "").replace("Bearer ", "")
+        if client_key != required_api_key:
+            return jsonify({
+                "success": False,
+                "error": "Unauthorized: Invalid or missing API Key for audit execution."
+            }), 401
+
+    demo_profile = body.get("demo_profile") or body.get("profile")
+    target_command = body.get("target_command")
+
+    # Mode 1: Live Custom Target Probing
+    if target_command is not None:
+        if not body.get("authorized"):
+            return jsonify({
+                "success": False,
+                "error": "Live MCP protocol audits require explicit authorization. Include 'authorized': true in the request body."
+            }), 403
+
+        if not isinstance(target_command, list) or len(target_command) == 0:
+            return jsonify({
+                "success": False,
+                "error": "'target_command' must be a non-empty list of command arguments (e.g. ['python', 'my_server.py'])."
+            }), 400
+
+        cmd_exec = str(target_command[0]).strip()
+        cmd_args = [str(a).strip() for a in target_command[1:]]
+
+        exec_base = os.path.basename(cmd_exec).lower()
+        if exec_base not in ALLOWED_LIVE_EXECUTABLES:
+            return jsonify({
+                "success": False,
+                "error": f"Executable '{cmd_exec}' is not permitted for live probing. Allowed: {sorted(list(ALLOWED_LIVE_EXECUTABLES))}"
+            }), 400
+
+        for arg in cmd_args:
+            if any(c in arg for c in DISALLOWED_SHELL_CHARS):
+                return jsonify({
+                    "success": False,
+                    "error": f"Command argument contains disallowed shell character: '{arg}'"
+                }), 400
+
         try:
-            results = loop.run_until_complete(auditor.run_live_audit(profile=profile))
-        finally:
-            loop.close()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                results = loop.run_until_complete(
+                    auditor.run_live_audit(mcp_command=cmd_exec, mcp_args=cmd_args)
+                )
+            finally:
+                loop.close()
 
-        results["disclaimer"] = DISCLAIMER_TEXT
+            results["disclaimer"] = DISCLAIMER_TEXT
+            audit_id = store.save_audit(results)
+            results["audit_id"] = audit_id
+            last_mcp_data = results
+            last_audit_data = results
+            return jsonify({"success": True, "data": results, "audit_id": audit_id})
+        except Exception as e:
+            logger.exception("Error executing live MCP target audit")
+            return jsonify({"success": False, "error": f"Live MCP protocol audit failed: {e}"}), 500
 
-        # Persist audit run
-        audit_id = store.save_audit(results)
-        results["audit_id"] = audit_id
+    # Mode 2: Certified Demo Benchmark Profile
+    elif demo_profile is not None:
+        if not isinstance(demo_profile, str) or demo_profile not in ("good", "moderate", "poor"):
+            return jsonify({
+                "success": False,
+                "error": "Invalid demo profile parameter. Must be one of: 'good', 'moderate', 'poor'",
+            }), 400
 
-        last_mcp_data = results
-        last_audit_data = results
-        return jsonify({"success": True, "data": results, "audit_id": audit_id})
-    except Exception as e:
-        logger.exception("Error executing MCP audit")
-        return jsonify({"success": False, "error": "Failed to execute automated MCP probe audit"}), 500
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                results = loop.run_until_complete(auditor.run_live_audit(profile=demo_profile))
+            finally:
+                loop.close()
+
+            results["disclaimer"] = DISCLAIMER_TEXT
+            audit_id = store.save_audit(results)
+            results["audit_id"] = audit_id
+            last_mcp_data = results
+            last_audit_data = results
+            return jsonify({"success": True, "data": results, "audit_id": audit_id})
+        except Exception as e:
+            logger.exception("Error executing demo MCP benchmark audit")
+            return jsonify({"success": False, "error": f"Demo benchmark audit failed: {e}"}), 500
+
+    else:
+        return jsonify({
+            "success": False,
+            "error": "Missing audit target specification. You must explicitly provide either 'demo_profile': 'good'|'moderate'|'poor' or 'target_command': ['<executable>', '<arg1>', ...] with 'authorized': true."
+        }), 400
 
 
 # ================================================================

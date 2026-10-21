@@ -6,7 +6,7 @@
 [![Framework](https://img.shields.io/badge/Framework-Flask%20%7C%20REST%20API-orange.svg)](https://flask.palletsprojects.com/)
 [![Standards](https://img.shields.io/badge/Standards-EU%20AI%20Act%20(Art.%209--15)%20%7C%20NIST%20AI%20RMF-emerald.svg)](https://artificialintelligenceact.eu/)
 [![Protocol](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)%202.x-purple.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/Tests-17%20Passed%20(pytest)-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-27%20Passed%20(pytest)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -73,17 +73,33 @@ AI-GRID executes calculations natively against 3 empirical datasets located in `
 
 ---
 
-## Regulatory Compliance Engines
+## Regulatory Compliance & Threat Engines
 
 * **EU AI Act (Regulation (EU) 2024/1689)**:
-  - System classification based strictly on **intended purpose domain** (Annex III High-Risk vs Article 5 Prohibited vs Article 50 Limited vs Minimal).
-  - Article-by-Article technical conformity checklist across **Articles 9 to 15**.
+  - **Intended Purpose Classification**: Categorized strictly by intended domain (Annex III High-Risk vs Article 5 Prohibited vs Article 50 Limited vs Minimal). The legal risk tier is NEVER derived from audit/AAS scores.
+  - **Articles 9–15 Technical Pre-Audit Indicators**: Evaluates empirical technical criteria for risk management, data governance, documentation, logging, transparency, human oversight, and robustness.
+  - *Statutory Notice*: Pre-audit indicators do NOT constitute legal advice or formal CE-mark certification by a Notified Body.
 * **NIST AI RMF 1.0 (NIST SP 1270)**:
-  - Crosswalked across **GOVERN, MAP, MEASURE, MANAGE** subcategories.
+  - Crosswalked across **GOVERN, MAP, MEASURE, MANAGE** lifecycle functions across all 6 dimensions.
 * **OWASP &amp; MITRE ATLAS Threat Crosswalk**:
-  - Maps vulnerabilities to OWASP Top 10 for LLMs, OWASP MCP Top 10, and MITRE ATLAS matrix technique IDs.
+  - Maps identified vulnerabilities to OWASP Top 10 for LLMs, OWASP MCP Top 10, and MITRE ATLAS matrix technique IDs.
 * **Model Cards for Model Reporting (Mitchell et al., 2019)**:
-  - Exports technical passport in Markdown and JSON.
+  - Exports technical governance passport in Markdown and JSON formats.
+
+---
+
+## Technical Implementation Disclosures & Architecture Integrity
+
+AI-GRID upholds rigorous academic and scientific honesty regarding library usage:
+
+| Capability | Engineering Implementation | Third-Party Library Claim Status |
+|:---|:---|:---|
+| **MCP Protocol Client** | Official Anthropic Model Context Protocol SDK (`mcp` package) via stdio JSON-RPC transport (`mcp_client.py`). | **Real MCP SDK Integration** |
+| **8-Probe Security Suite** | Automated tool discovery, schema inspection, capability analysis, boundary testing, clamping check, metadata extraction, error leakage, and encryption check (`mcp_probes.py`). | **Native Protocol Prober** |
+| **Audit Persistence** | Native SQLite ledger (`audit_store.py` -> `data/aigrid_audits.db`) storing complete audit dossiers, evidence items, and findings. | **Built-in `sqlite3`** |
+| **Fairness Metrics** | Native computation of Disparate Impact Ratio (DIR) and Statistical Parity Difference (SPD) on UCI Statlog German Credit benchmark (`data/german_credit_fairness.csv`). | **Custom Formulas (Not IBM AIF360)** |
+| **Risk Cohort Slicing** | Empirical rule-based classification against Clinical Patient Safety benchmark (`data/clinical_patient_safety.csv`). | **Custom Rule Engine (Not Fairlearn)** |
+| **Remediation Ranker** | Ranks findings by severity and bottleneck gap without fabricated score multipliers. | **Empirical Heuristic Ranking** |
 
 ---
 
@@ -105,7 +121,7 @@ python server.py
 Open **`http://localhost:8000`** in any web browser.
 
 ### Running Test Verification Suite
-Execute the full 17-test verification suite (unit tests, MCP protocol tests, compliance tests, and empirical experiments):
+Execute the full 27-test verification suite (unit tests, MCP protocol tests, security validation, compliance indicators, and empirical experiments):
 ```bash
 python -m pytest tests/ -v
 ```

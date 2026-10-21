@@ -114,6 +114,7 @@ class DimensionResult:
     confidence: float
     evidence_count: int
     tier_breakdown: Dict[str, int]
+    status: str = "SUFFICIENT"  # "SUFFICIENT" | "INSUFFICIENT_EVIDENCE"
 
 
 def compute_weighted_dimension_score(
@@ -174,12 +175,14 @@ def aggregate_dimension_scores(
         for e in items:
             tier_counts[e.tier] = tier_counts.get(e.tier, 0) + 1
 
+        evidence_status = "SUFFICIENT" if (len(items) > 0 and confidence >= 0.20) else "INSUFFICIENT_EVIDENCE"
         results[dim_name] = DimensionResult(
             name=dim_name,
             score=score,
             confidence=confidence,
             evidence_count=len(items),
             tier_breakdown=tier_counts,
+            status=evidence_status,
         )
 
     return results
@@ -200,6 +203,13 @@ def compute_aas(
     """
     scores = [r.score for r in dimension_results.values()]
     confidences = [r.confidence for r in dimension_results.values()]
+    missing_evidence_dims = [
+        r.name for r in dimension_results.values() if r.evidence_count == 0
+    ]
+    sufficiency_pct = round(
+        100.0 * (len(dimension_results) - len(missing_evidence_dims)) / max(len(dimension_results), 1),
+        1
+    )
 
     if not scores:
         return {
@@ -263,6 +273,9 @@ def compute_aas(
         "trust_grade": grade,
         "alpha_parameter": alpha,
         "overall_confidence": round(overall_confidence, 3),
+        "missing_evidence_dimensions": missing_evidence_dims,
+        "evidence_sufficiency_pct": sufficiency_pct,
+        "is_fully_evidenced": len(missing_evidence_dims) == 0,
         "sensitivity_curve": sensitivity_curve,
         "dimension_confidences": {
             name: round(r.confidence, 3) for name, r in dimension_results.items()

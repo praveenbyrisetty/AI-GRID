@@ -383,11 +383,15 @@ def solve_remediation_priority(current_aas: float,
 def evaluate_eu_ai_act_compliance(domain: str,
                                   autonomy_level: str,
                                   dimensions: Dict[str, float],
-                                  answers: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                                  answers: Optional[Dict[str, Any]] = None,
+                                  findings: Optional[List[Dict[str, Any]]] = None,
+                                  dimension_confidences: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """
     Evaluates EU AI Act (Regulation (EU) 2024/1689) compliance in two distinct, legally sound stages:
-    1. Intended Purpose & Domain Risk Classification (Annex III, Article 5, Article 6, Article 50)
-    2. Article-by-Article Technical Conformity (Articles 9 to 15)
+    1. Intended Purpose & Domain Risk Classification (Annex III, Article 5, Article 6, Article 50).
+       NOTE: Legal risk tier is strictly determined by intended purpose domain, NEVER by audit/AAS scores.
+    2. Article-by-Article Technical Pre-Audit Assessment (Articles 9 to 15).
+       NOTE: Produces evidence-based technical indicators, NOT legal or statutory certification.
     """
     # STAGE 1: SYSTEM CLASSIFICATION (By Intended Purpose & Domain, NOT Audit Score!)
     high_risk_domains = {
@@ -430,6 +434,8 @@ def evaluate_eu_ai_act_compliance(domain: str,
         market_placement_permitted = True
 
     # STAGE 2: ARTICLE-BY-ARTICLE TECHNICAL ASSESSMENT (Articles 9 to 15)
+    # Evidence-based technical pre-audit indicators (NOT statutory legal declarations)
+    confidences = dimension_confidences or {}
     sec_score = dimensions.get("Security & Robustness", 70.0)
     fair_score = dimensions.get("Fairness & Non-Discrimination", 70.0)
     trans_score = dimensions.get("Transparency & Explainability", 70.0)
@@ -437,84 +443,117 @@ def evaluate_eu_ai_act_compliance(domain: str,
     over_score = dimensions.get("Human Oversight & Accountability", 70.0)
     safe_score = dimensions.get("Safety & Reliability", 70.0)
 
+    def determine_status(score: float, conf_dim: str, threshold: float = 70.0) -> str:
+        conf = confidences.get(conf_dim, 0.5)
+        if conf < 0.20:
+            return "INSUFFICIENT_EVIDENCE"
+        if score >= threshold:
+            return "INDICATIVE_CONFORMANT"
+        elif score >= threshold - 20:
+            return "PARTIAL"
+        else:
+            return "NON-CONFORMANT"
+
     articles = [
         {
             "article": "Article 9",
             "title": "Risk Management System",
             "requirement": "Continuous iterative risk management identifying known and foreseeable risks across lifecycle.",
-            "status": "CONFORMANT" if (safe_score >= 70 and sec_score >= 65) else "NON-CONFORMANT",
+            "status": determine_status((safe_score + sec_score) / 2, "Safety & Reliability", 68.0),
             "score": round((safe_score + sec_score) / 2, 1),
-            "mandatory_controls": ["Continuous drift monitoring", "Risk mitigation plan", "Known failure mode catalog"]
+            "mandatory_controls": ["Continuous drift monitoring", "Risk mitigation plan", "Known failure mode catalog"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 10",
             "title": "Data & Data Governance",
             "requirement": "Training, validation, and testing datasets must be relevant, representative, and examined for biases.",
-            "status": "CONFORMANT" if (fair_score >= 70 and priv_score >= 65) else "NON-CONFORMANT",
+            "status": determine_status((fair_score + priv_score) / 2, "Fairness & Non-Discrimination", 68.0),
             "score": round((fair_score + priv_score) / 2, 1),
-            "mandatory_controls": ["Data origin documentation", "Statistical bias analysis", "Data encryption at rest & transit"]
+            "mandatory_controls": ["Data origin documentation", "Statistical bias analysis", "Data encryption at rest & transit"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 11",
             "title": "Technical Documentation",
             "requirement": "Detailed technical documentation drawn up before placement on market (system architecture, parameters, validation).",
-            "status": "CONFORMANT" if trans_score >= 65 else "PARTIAL",
+            "status": determine_status(trans_score, "Transparency & Explainability", 65.0),
             "score": round(trans_score, 1),
-            "mandatory_controls": ["Comprehensive Model Card", "Validation test benchmarks", "Dependency SBOM"]
+            "mandatory_controls": ["Comprehensive Model Card", "Validation test benchmarks", "Dependency SBOM"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 12",
             "title": "Record-Keeping & Logging",
             "requirement": "Automatic logging of events during operation ensuring traceability and post-market monitoring.",
-            "status": "CONFORMANT" if (over_score >= 70 and sec_score >= 60) else "NON-CONFORMANT",
+            "status": determine_status((over_score + sec_score) / 2, "Human Oversight & Accountability", 65.0),
             "score": round((over_score + sec_score) / 2, 1),
-            "mandatory_controls": ["Decision audit trail", "Tamper-evident logs", "Audit log retention >= 6 months"]
+            "mandatory_controls": ["Decision audit trail", "Tamper-evident logs", "Audit log retention >= 6 months"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 13",
             "title": "Transparency & Provision of Information",
             "requirement": "Operation sufficiently transparent to enable deployers to interpret outputs and use appropriately.",
-            "status": "CONFORMANT" if trans_score >= 75 else ("PARTIAL" if trans_score >= 50 else "NON-CONFORMANT"),
+            "status": determine_status(trans_score, "Transparency & Explainability", 72.0),
             "score": round(trans_score, 1),
-            "mandatory_controls": ["Explainability engine (TreeSHAP/LIME)", "Feature attributions >= 4 features", "Deployer user manual"]
+            "mandatory_controls": ["Explainability engine (TreeSHAP/LIME)", "Feature attributions >= 4 features", "Deployer user manual"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 14",
             "title": "Human Oversight",
             "requirement": "Designed to be effectively overseen by natural persons; ability to override, interrupt, or stop system.",
-            "status": "CONFORMANT" if over_score >= 75 else ("PARTIAL" if over_score >= 55 else "NON-CONFORMANT"),
+            "status": determine_status(over_score, "Human Oversight & Accountability", 70.0),
             "score": round(over_score, 1),
-            "mandatory_controls": ["Mandatory human-in-the-loop review", "Emergency stop / kill-switch mechanism", "Escalation protocol"]
+            "mandatory_controls": ["Mandatory human-in-the-loop review", "Emergency stop / kill-switch mechanism", "Escalation protocol"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 15",
             "title": "Accuracy, Robustness & Cybersecurity",
             "requirement": "Resilient against errors, adversarial attacks, data poisoning, and unauthorized system manipulation.",
-            "status": "CONFORMANT" if (sec_score >= 75 and safe_score >= 70) else "NON-CONFORMANT",
+            "status": determine_status((sec_score + safe_score) / 2, "Security & Robustness", 72.0),
             "score": round((sec_score + safe_score) / 2, 1),
-            "mandatory_controls": ["Adversarial robustness testing", "Input validation & corrupted data rejection", "Output clamping"]
+            "mandatory_controls": ["Adversarial robustness testing", "Input validation & corrupted data rejection", "Output clamping"],
+            "assessment_type": "Technical Pre-Audit Indicator"
         }
     ]
 
-    conformant_count = sum(1 for a in articles if a["status"] == "CONFORMANT")
+    indicative_conformant_count = sum(1 for a in articles if a["status"] == "INDICATIVE_CONFORMANT")
+    insufficient_count = sum(1 for a in articles if a["status"] == "INSUFFICIENT_EVIDENCE")
 
-    overall_compliance = "HIGH CONFORMITY" if conformant_count >= 6 else (
-        "SUBSTANTIAL GAPS" if conformant_count >= 4 else "CRITICAL DEFICIENCIES"
+    if insufficient_count >= 3:
+        overall_compliance = "INSUFFICIENT EVIDENCE FOR ASSESSMENT"
+    elif indicative_conformant_count >= 6:
+        overall_compliance = "INDICATIVE HIGH TECHNICAL CONFORMITY"
+    elif indicative_conformant_count >= 4:
+        overall_compliance = "PARTIAL CONFORMITY WITH TECHNICAL GAPS"
+    else:
+        overall_compliance = "CRITICAL TECHNICAL DEFICIENCIES"
+
+    legal_disclaimer = (
+        "AI-GRID assessments evaluate empirical technical indicators against Articles 9-15 of "
+        "Regulation (EU) 2024/1689. This automated pre-audit does NOT constitute legal advice, "
+        "statutory clearance, or formal certification by a Notified Body under the EU AI Act."
     )
 
     return {
-        "engine": "EU AI Act Article-by-Article Compliance Engine (Regulation (EU) 2024/1689)",
+        "engine": "EU AI Act Article-by-Article Technical Pre-Audit Engine (Regulation (EU) 2024/1689)",
         "intended_purpose_classification": {
             "tier": regulatory_tier,
             "badge_color": regulatory_color,
             "legal_basis": tier_legal_basis,
             "market_placement_permitted": market_placement_permitted,
-            "conformity_assessment_required": regulatory_tier.startswith("HIGH RISK")
+            "conformity_assessment_required": regulatory_tier.startswith("HIGH RISK"),
+            "classification_method": "Intended Purpose Domain Analysis (Annex III / Article 5 / Article 50)"
         },
         "article_level_conformance": {
             "overall_status": overall_compliance,
-            "conformant_articles": f"{conformant_count}/7",
-            "articles": articles
+            "conformant_articles": f"{indicative_conformant_count}/7",
+            "insufficient_evidence_articles": f"{insufficient_count}/7",
+            "articles": articles,
+            "legal_disclaimer": legal_disclaimer
         }
     }
 

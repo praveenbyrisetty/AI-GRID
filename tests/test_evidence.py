@@ -49,22 +49,38 @@ def test_compute_weighted_dimension_score():
     assert mixed_score == 68.8
 
 
-def test_aggregate_dimension_scores():
-    """Verify all 6 dimensions are populated with scores and confidence."""
-    evidence = [
+def test_missing_evidence_handling():
+    """Verify that dimensions with zero evidence default safely to 50.0 score and 0.0 confidence."""
+    empty_items = []
+    score, conf = compute_weighted_dimension_score(empty_items)
+    assert score == 50.0
+    assert conf == 0.0
+
+
+def test_aggregate_dimension_scores_and_missing_evidence_flag():
+    """Verify all 6 dimensions are populated, and unevidenced dimensions are flagged."""
+    # Only provide evidence for 4 dimensions; leave Privacy and Fairness empty
+    partial_evidence = [
         Evidence(dimension="Security & Robustness", source="p:p03", tier="T1", value=95.0),
-        Evidence(dimension="Fairness & Non-Discrimination", source="q:q5", tier="T3", value=80.0),
         Evidence(dimension="Transparency & Explainability", source="p:p01", tier="T1", value=100.0),
-        Evidence(dimension="Privacy & Data Governance", source="p:p08", tier="T1", value=85.0),
         Evidence(dimension="Human Oversight & Accountability", source="p:p06", tier="T1", value=75.0),
         Evidence(dimension="Safety & Reliability", source="p:p04", tier="T1", value=40.0),
     ]
-    results = aggregate_dimension_scores(evidence)
+    results = aggregate_dimension_scores(partial_evidence)
     assert len(results) == 6
-    for dim_name in DIMENSIONS_LIST:
-        assert dim_name in results
-        assert isinstance(results[dim_name], DimensionResult)
-        assert 0.0 <= results[dim_name].score <= 100.0
+
+    # Evidenced dimension
+    assert results["Security & Robustness"].status == "SUFFICIENT"
+    assert results["Security & Robustness"].evidence_count == 1
+    assert results["Security & Robustness"].confidence > 0.2
+
+    # Unevidenced dimensions
+    assert results["Privacy & Data Governance"].status == "INSUFFICIENT_EVIDENCE"
+    assert results["Privacy & Data Governance"].evidence_count == 0
+    assert results["Privacy & Data Governance"].confidence == 0.0
+
+    assert results["Fairness & Non-Discrimination"].status == "INSUFFICIENT_EVIDENCE"
+    assert results["Fairness & Non-Discrimination"].evidence_count == 0
 
 
 def test_compute_aas_bottleneck_penalty():
@@ -88,3 +104,20 @@ def test_compute_aas_bottleneck_penalty():
     assert aas_res["aas_score"] == 55.0
     assert aas_res["trust_grade"] == "D"
     assert len(aas_res["sensitivity_curve"]) == 9
+    assert aas_res["is_fully_evidenced"] is True
+    assert aas_res["evidence_sufficiency_pct"] == 100.0
+
+
+def test_compute_aas_with_missing_evidence_impact():
+    """Verify AAS reports missing evidence dimensions and reduced sufficiency percentage."""
+    partial_evidence = [
+        Evidence(dimension="Security & Robustness", source="p:p03", tier="T1", value=80.0),
+        Evidence(dimension="Safety & Reliability", source="p:p04", tier="T1", value=70.0),
+    ]
+    results = aggregate_dimension_scores(partial_evidence)
+    aas_res = compute_aas(results, alpha=0.6)
+
+    assert aas_res["is_fully_evidenced"] is False
+    assert len(aas_res["missing_evidence_dimensions"]) == 4
+    assert "Privacy & Data Governance" in aas_res["missing_evidence_dimensions"]
+    assert aas_res["evidence_sufficiency_pct"] == round(100.0 * 2 / 6, 1)
