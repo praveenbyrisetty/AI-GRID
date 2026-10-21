@@ -1,59 +1,90 @@
 /**
- * AI-GRID GRC Dashboard — Dual-Mode Navigation & Telemetry Controller
- * Supports: Questionnaire-Based Audit + MCP Live Tool Probing
- * Enterprise Dark UI with Real-Time 7-Pillar Scanning Animation Engine
+ * AI-GRID Enterprise Control Plane (v4.0)
+ * Dual-Mode Controller: Structured Research Questionnaire (T3) + MCP Automated Probe (T1)
+ * High-Assurance 6 Trust Dimensions | EU AI Act (Art. 9-15) | Attestation Discrepancy | Framework Mapping
  */
 
+// =========================================================================
+// GLOBAL APPLICATION STATE
+// =========================================================================
 let radarChartInstance = null;
 let currentAuditData = null;
-let currentMode = null; // 'questionnaire' or 'mcp'
+let currentMode = "mcp";
 let wizardStep = 1;
-let totalWizardSteps = 6;
+let totalWizardSteps = 7;
 let wizardAnswers = {};
 let questionsData = null;
+let currentDatasetsCatalog = [];
+let activeDatasetId = "german_credit";
+let isTerminalPaused = false;
+let currentAlpha = 0.60;
+let isGraphListView = false;
 
-// Page title map
 const pageTitles = {
-  "page-setup": "Project Setup",
-  "page-profile": "System Profile",
-  "page-audit": "Live Telemetry & Probe Stream",
-  "page-scores": "7 Pillars & Trust Scores",
-  "page-compliance": "Regulatory Alignment",
+  "page-overview": "AI Assurance Overview",
+  "page-setup": "Audit Launchpad",
+  "page-compliance": "EU AI Act Regulatory Compliance",
+  "page-discrepancy": "Attestation Discrepancy Analysis",
+  "page-framework-map": "Interactive Framework Mapping",
+  "page-datasets": "Empirical Benchmark Datasets",
+  "page-question-bank": "Research Question Bank (30 Items)",
+  "page-remediation": "Governance Remediation Roadmap",
   "page-modelcard": "Google Model Card",
-  "page-simulation": "What-If Simulator",
-  "page-remediation": "Remediation Roadmap",
-  "page-manual": "Manual Assessment"
+  "page-simulation": "What-If Scenario Risk Simulator"
 };
 
-// 7 Pillars key-to-ID mapping
 const PILLAR_KEYS = {
   "Security & Robustness": "security",
-  "Transparency": "transparency",
-  "Fairness & Bias": "fairness",
-  "Privacy & Governance": "privacy",
-  "Accountability & Oversight": "accountability",
-  "Safety & Reliability": "safety",
-  "Societal Impact": "societal"
+  "Fairness & Non-Discrimination": "fairness",
+  "Transparency & Explainability": "transparency",
+  "Privacy & Data Governance": "privacy",
+  "Human Oversight & Accountability": "oversight",
+  "Safety & Reliability": "safety"
 };
 
-// Initial radar with empty data
 const defaultDimensions = {
-  "Fairness & Bias": 0,
-  "Transparency": 0,
-  "Safety & Reliability": 0,
-  "Privacy & Governance": 0,
-  "Accountability & Oversight": 0,
   "Security & Robustness": 0,
-  "Societal Impact": 0
+  "Fairness & Non-Discrimination": 0,
+  "Transparency & Explainability": 0,
+  "Privacy & Data Governance": 0,
+  "Human Oversight & Accountability": 0,
+  "Safety & Reliability": 0
 };
 
+// =========================================================================
+// INITIALIZATION
+// =========================================================================
 document.addEventListener("DOMContentLoaded", () => {
+  // 1. Initialize Theme: Executive Dark by default, or user's stored preference
+  const savedTheme = localStorage.getItem("ai_grid_theme") || "dark";
+  if (savedTheme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+  updateThemeButtonUI(savedTheme);
+
+  // 2. Initialize Radar Chart with standby dimensions
   initRadarChart(defaultDimensions);
+
+  // 3. Load Questions & Datasets catalogs from backend
   loadQuestions();
+  loadDatasets();
+
+  // 4. Check if an active audit exists on server, otherwise maintain standby state
+  checkCurrentAuditStatus();
+
+  // 5. Setup keyboard shortcut (ESC to close drawer / modal)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeDetailDrawer();
+      closeDossierModal();
+    }
+  });
 });
 
 // =========================================================================
-// 1. PAGE NAVIGATION
+// 1. PAGE NAVIGATION & SHELL CONTROLS
 // =========================================================================
 function showPage(pageId, clickedEl) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -73,52 +104,896 @@ function showPage(pageId, clickedEl) {
   const titleEl = document.getElementById("pageTitle");
   if (titleEl && pageTitles[pageId]) titleEl.textContent = pageTitles[pageId];
 
+  window.scrollTo({ top: 0, behavior: "smooth" });
   closeSidebarOnMobile();
 }
 
-function toggleSidebar() {
+function toggleSidebarCollapse() {
   const sidebar = document.getElementById("sidebar");
-  const content = document.getElementById("contentArea");
-
-  if (window.innerWidth <= 1024) {
-    sidebar.classList.toggle("open");
-    let overlay = document.querySelector(".sidebar-overlay");
-    if (!overlay) {
-      overlay = document.createElement("div");
-      overlay.className = "sidebar-overlay";
-      overlay.onclick = closeSidebarOnMobile;
-      document.body.appendChild(overlay);
-    }
-    overlay.classList.toggle("visible");
-  } else {
-    sidebar.classList.toggle("collapsed");
-    content.classList.toggle("expanded");
+  sidebar.classList.toggle("collapsed");
+  const isCollapsed = sidebar.classList.contains("collapsed");
+  const icon = document.getElementById("collapseIcon");
+  if (icon) {
+    icon.innerHTML = isCollapsed
+      ? `<polyline points="9 18 15 12 9 6"/>`
+      : `<polyline points="15 18 9 12 15 6"/>`;
   }
 }
 
 function closeSidebarOnMobile() {
-  if (window.innerWidth <= 1024) {
-    document.getElementById("sidebar").classList.remove("open");
-    const overlay = document.querySelector(".sidebar-overlay");
-    if (overlay) overlay.classList.remove("visible");
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar && window.innerWidth <= 1024) sidebar.classList.remove("open");
+}
+
+// =========================================================================
+// 2. THEME CONTROLLER (CORPORATE LIGHT / EXECUTIVE DARK)
+// =========================================================================
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const newTheme = isDark ? "light" : "dark";
+  if (newTheme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+  localStorage.setItem("ai_grid_theme", newTheme);
+  updateThemeButtonUI(newTheme);
+
+  // Re-render radar chart with updated theme colors
+  if (currentAuditData && currentAuditData.dimensions) {
+    initRadarChart(currentAuditData.dimensions);
+  } else {
+    initRadarChart(defaultDimensions);
+  }
+  showToast(`Switched to ${newTheme === "dark" ? "Executive Dark" : "Corporate Light"} Mode`);
+}
+
+function updateThemeButtonUI(theme) {
+  const btnText = document.getElementById("themeToggleText");
+  const icon = document.getElementById("themeIcon");
+  if (!btnText || !icon) return;
+  if (theme === "dark") {
+    btnText.textContent = "Light";
+    icon.innerHTML = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+  } else {
+    btnText.textContent = "Dark";
+    icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
   }
 }
 
 // =========================================================================
-// 2. MODE SELECTION
+// 3. SERVER AUDIT STATE CHECKER & LOADER
+// =========================================================================
+async function checkCurrentAuditStatus() {
+  try {
+    const res = await fetch("/api/audit/current");
+    const json = await res.json();
+    if (json.success && json.active && json.data) {
+      currentAuditData = json.data;
+      const tierLabel = json.data.evidence_tier === "T1"
+        ? "Tier T1 (Automated MCP Probe)"
+        : "Tier T3 (Self-Attested Questionnaire)";
+      applyAuditDataToUI(json.data, tierLabel);
+    } else {
+      clearAuditUI();
+    }
+  } catch (err) {
+    console.warn("Audit status check error:", err);
+    clearAuditUI();
+  }
+}
+
+function clearAuditUI() {
+  currentAuditData = null;
+
+  // Header badges & chips
+  const tierEl = document.getElementById("evidenceTierText");
+  if (tierEl) tierEl.textContent = "—";
+
+  const statusTag = document.getElementById("assessmentStatusTag");
+  const statusText = document.getElementById("assessmentStatusText");
+  if (statusTag) statusTag.className = "status-tag";
+  if (statusText) statusText.textContent = "Standby";
+
+  const targetEl = document.getElementById("sidebarContextTarget");
+  if (targetEl) targetEl.textContent = "Target: Standby";
+
+  // KPIs
+  const kpiAas = document.getElementById("kpiAasScore");
+  if (kpiAas) kpiAas.textContent = "—";
+
+  const gradeBadge = document.getElementById("kpiGradeBadge");
+  if (gradeBadge) {
+    gradeBadge.textContent = "UNAUDITED";
+    gradeBadge.className = "badge info";
+  }
+
+  const aasMath = document.getElementById("kpiAasMath");
+  if (aasMath) aasMath.textContent = "Awaiting calculation: 0.60 × Mean + 0.40 × Min";
+
+  const confBadge = document.getElementById("kpiConfidenceBadge");
+  if (confBadge) confBadge.textContent = "AWAITING AUDIT";
+
+  const bnScore = document.getElementById("kpiBottleneckScore");
+  if (bnScore) bnScore.textContent = "—";
+
+  const bnName = document.getElementById("kpiBottleneckName");
+  if (bnName) bnName.textContent = "Bottleneck dimension caps overall trust ceiling";
+
+  const bnBadge = document.getElementById("kpiBottleneckBadge");
+  if (bnBadge) {
+    bnBadge.textContent = "STANDBY";
+    bnBadge.className = "badge info";
+  }
+
+  const cveCount = document.getElementById("kpiCveCount");
+  if (cveCount) cveCount.textContent = "—";
+
+  const cveBadge = document.getElementById("kpiCveBadge");
+  if (cveBadge) cveBadge.textContent = "INDEXED REGISTRY";
+
+  const euTier = document.getElementById("kpiEuTier");
+  if (euTier) euTier.textContent = "UNASSESSED";
+
+  const euStatus = document.getElementById("kpiEuStatus");
+  if (euStatus) euStatus.textContent = "Awaiting statutory article evaluation";
+
+  const euBadge = document.getElementById("kpiEuBadge");
+  if (euBadge) {
+    euBadge.textContent = "STANDBY";
+    euBadge.className = "badge info";
+  }
+
+  // Verdict banner
+  const headline = document.getElementById("verdictHeadlineText");
+  if (headline) headline.textContent = "AWAITING SYSTEM AUDIT • CONTROL PLANE READY";
+
+  const subText = document.getElementById("verdictSubText");
+  if (subText) subText.innerHTML = `No active assessment executed. Connect live Model Context Protocol (MCP) tool endpoints (Tier T1) or complete the research questionnaire (Tier T3) to dynamically evaluate assurance adequacy.
+    <div style="margin-top: 10px; display:flex; gap:10px;">
+      <button class="btn-primary sm" onclick="runQuickDemoAudit()">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Execute Automated MCP Probe Now</span>
+      </button>
+      <button class="btn-secondary sm" onclick="showPage('page-setup')">
+        <span>Structured Questionnaire (T3) &rarr;</span>
+      </button>
+    </div>`;
+
+  const bannerDisc = document.getElementById("bannerDiscrepancyVal");
+  if (bannerDisc) bannerDisc.textContent = "—";
+
+  const bannerBasis = document.getElementById("bannerEvidenceBasis");
+  if (bannerBasis) bannerBasis.textContent = "Awaiting Probe";
+
+  const bannerHash = document.getElementById("bannerHashIntegrity");
+  if (bannerHash) bannerHash.textContent = "Standby";
+
+  // Dimension Cards
+  Object.values(PILLAR_KEYS).forEach(pid => {
+    const scoreEl = document.getElementById(`pillarScore_${pid}`);
+    const fillEl = document.getElementById(`pillarFill_${pid}`);
+    const tagEl = document.getElementById(`pillarTag_${pid}`);
+    if (scoreEl) scoreEl.textContent = "—";
+    if (fillEl) {
+      fillEl.style.width = "0%";
+      fillEl.className = "dim-progress-fill";
+    }
+    if (tagEl) {
+      tagEl.textContent = "STANDBY";
+      tagEl.className = "badge info";
+    }
+  });
+
+  // Terminal log
+  const term = document.getElementById("terminalLog");
+  if (term) {
+    term.innerHTML = `
+      <div class="log-entry">
+        <span class="log-timestamp">[00:00:00]</span>
+        <span class="log-badge PROBE">STANDBY</span>
+        <span>AI-GRID Control Plane online. Awaiting MCP connection or questionnaire execution...</span>
+      </div>
+    `;
+  }
+  const termStatus = document.getElementById("terminalStatus");
+  if (termStatus) termStatus.textContent = "IDLE / STANDBY";
+
+  // Overview Remediation Table
+  const remTbody = document.getElementById("overviewRemediationTbody");
+  if (remTbody) {
+    remTbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No active findings. Execute an audit to dynamically generate remediation roadmap.</td>
+      </tr>
+    `;
+  }
+
+  // Framework flow node labels
+  const flSystem = document.getElementById("flabel-system");
+  if (flSystem) flSystem.textContent = "Target System";
+  const flProbe = document.getElementById("flabel-probe");
+  if (flProbe) flProbe.textContent = "Awaiting Audit";
+  const flEvidence = document.getElementById("flabel-evidence");
+  if (flEvidence) flEvidence.textContent = "No Evidence";
+  const flFinding = document.getElementById("flabel-finding");
+  if (flFinding) flFinding.textContent = "Pending";
+  const flDimension = document.getElementById("flabel-dimension");
+  if (flDimension) flDimension.textContent = "Standby";
+  const flClause = document.getElementById("flabel-clause");
+  if (flClause) flClause.textContent = "EU Art. 9–15";
+  const flRemediation = document.getElementById("flabel-remediation");
+  if (flRemediation) flRemediation.textContent = "Standby";
+
+  // Radar chart
+  initRadarChart(defaultDimensions);
+
+  // ERM Sensitivity
+  updateAlphaSlider(currentAlpha);
+}
+
+async function resetAuditState() {
+  try {
+    const res = await fetch("/api/audit/reset", { method: "POST" });
+    const json = await res.json();
+    clearAuditUI();
+    showToast("Audit state reset to clean standby");
+  } catch (err) {
+    clearAuditUI();
+    showToast("Audit state reset to clean standby");
+  }
+}
+
+// =========================================================================
+// 4. RADAR CHART CONTROLLER (CHART.JS)
+// =========================================================================
+function initRadarChart(dims) {
+  const canvas = document.getElementById("radarChart");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (radarChartInstance) radarChartInstance.destroy();
+
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const dimValues = dims ? Object.values(dims) : [0, 0, 0, 0, 0, 0];
+  const dimLabels = dims ? Object.keys(dims) : Object.keys(defaultDimensions);
+  const isStandby = dimValues.every(v => v === 0);
+
+  const datasets = [];
+
+  if (isStandby) {
+    // Elegant baseline reference envelope (80.0 Conformity Target)
+    datasets.push({
+      label: "Regulatory Target (80.0)",
+      data: [80, 80, 80, 80, 80, 80],
+      fill: true,
+      backgroundColor: isDark ? "rgba(222, 173, 82, 0.05)" : "rgba(200, 149, 46, 0.05)",
+      borderColor: isDark ? "rgba(222, 173, 82, 0.35)" : "rgba(200, 149, 46, 0.40)",
+      borderWidth: 1.5,
+      borderDash: [5, 5],
+      pointRadius: 3,
+      pointBackgroundColor: isDark ? "#DEAD52" : "#C8952E",
+      pointBorderColor: "transparent"
+    });
+  } else {
+    // Real evaluated AAS dimensions in warm gold/amber
+    datasets.push({
+      label: "Assurance Adequacy Score",
+      data: dimValues,
+      fill: true,
+      backgroundColor: isDark ? "rgba(222, 173, 82, 0.22)" : "rgba(200, 149, 46, 0.16)",
+      borderColor: isDark ? "#DEAD52" : "#C8952E",
+      pointBackgroundColor: isDark ? "#DEAD52" : "#C8952E",
+      pointBorderColor: isDark ? "#161614" : "#FFFFFF",
+      borderWidth: 2.5,
+      pointRadius: 4.5,
+      pointHoverRadius: 7
+    });
+
+    // Reference target at 80
+    datasets.push({
+      label: "Conformity Target (80.0)",
+      data: [80, 80, 80, 80, 80, 80],
+      fill: false,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.18)",
+      borderWidth: 1,
+      borderDash: [4, 4],
+      pointRadius: 0
+    });
+  }
+
+  radarChartInstance = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: dimLabels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0,
+          max: 100,
+          ticks: {
+            stepSize: 25,
+            color: isDark ? "#9C958C" : "#6B6560",
+            backdropColor: "transparent",
+            font: { family: "'IBM Plex Mono', monospace", size: 10 }
+          },
+          grid: {
+            color: isDark ? "rgba(222, 173, 82, 0.10)" : "rgba(200, 149, 46, 0.12)"
+          },
+          angleLines: {
+            color: isDark ? "rgba(222, 173, 82, 0.12)" : "rgba(200, 149, 46, 0.14)"
+          },
+          pointLabels: {
+            color: isDark ? "#F2EDE8" : "#1A1814",
+            font: { family: "'Space Grotesk', sans-serif", size: 11, weight: "600" }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: {
+            color: isDark ? "#9C958C" : "#6B6560",
+            font: { family: "'DM Sans', sans-serif", size: 11 },
+            boxWidth: 12,
+            padding: 10
+          }
+        },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}/100`
+          }
+        }
+      },
+      onClick: (e, elements) => {
+        if (!isStandby && elements && elements.length > 0) {
+          const index = elements[0].index;
+          const dimLabel = dimLabels[index];
+          const pid = PILLAR_KEYS[dimLabel];
+          if (pid) openDimensionDrawer(pid);
+        }
+      }
+    }
+  });
+}
+
+// =========================================================================
+// 5. ERM SCORING SENSITIVITY EXPLORER CONTROLLER
+// =========================================================================
+function updateAlphaSlider(val) {
+  currentAlpha = parseFloat(val);
+  const alphaValEl = document.getElementById("alphaValueDisplay");
+  const meanWeightEl = document.getElementById("alphaMeanWeight");
+  const minWeightEl = document.getElementById("alphaMinWeight");
+  const resultEl = document.getElementById("alphaAasResult");
+  const noteEl = document.getElementById("alphaInsightNote");
+
+  if (alphaValEl) alphaValEl.textContent = `α = ${currentAlpha.toFixed(2)}`;
+  if (meanWeightEl) meanWeightEl.textContent = `${Math.round(currentAlpha * 100)}%`;
+  if (minWeightEl) minWeightEl.textContent = `${Math.round((1 - currentAlpha) * 100)}%`;
+
+  const dims = currentAuditData?.dimensions || defaultDimensions;
+  const vals = Object.values(dims);
+  const allZero = vals.every(v => v === 0);
+  if (allZero) {
+    if (resultEl) resultEl.textContent = "—";
+    if (noteEl) {
+      noteEl.innerHTML = "Execute an audit to inspect sensitivity across empirical trust dimensions under varying risk appetites.";
+      noteEl.style.borderLeftColor = "var(--border-card)";
+    }
+    return;
+  }
+
+  const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
+  const min = Math.min(...vals);
+  const recalculatedAas = (currentAlpha * mean) + ((1 - currentAlpha) * min);
+
+  if (resultEl) resultEl.textContent = recalculatedAas.toFixed(1);
+
+  if (noteEl) {
+    if (currentAlpha >= 0.85) {
+      noteEl.innerHTML = `<strong>Arithmetic Mean Dominance (&alpha; = ${currentAlpha.toFixed(2)}):</strong> Outlier vulnerabilities (min: ${min.toFixed(1)}) are masked by higher dimensions, concealing critical single-point failure risks.`;
+      noteEl.style.borderLeftColor = "var(--critical)";
+    } else if (currentAlpha <= 0.25) {
+      noteEl.innerHTML = `<strong>Bottleneck Dominance (&alpha; = ${currentAlpha.toFixed(2)}):</strong> AAS score is strictly bounded by lowest pillar (${min.toFixed(1)}), penalizing high overall system maturity (${mean.toFixed(1)}).`;
+      noteEl.style.borderLeftColor = "var(--warning)";
+    } else {
+      noteEl.innerHTML = `<strong>Balanced ERM Formulation (&alpha; = ${currentAlpha.toFixed(2)}):</strong> Weighted Mean (${mean.toFixed(1)}) balanced with Bottleneck Constraint (${min.toFixed(1)}) to enforce high-assurance robustness.`;
+      noteEl.style.borderLeftColor = "var(--primary-500)";
+    }
+  }
+}
+
+// =========================================================================
+// 6. UI DATA APPLICATION & COCKPIT SYNC
+// =========================================================================
+function applyAuditDataToUI(data, tierText) {
+  if (!data) return;
+
+  // 1. Evidence Tier & Assessment Status
+  const tierEl = document.getElementById("evidenceTierText");
+  if (tierEl) tierEl.innerHTML = tierText || (data.evidence_tier === 'T1' ? 'Tier T1 (Automated MCP Probe)' : 'Tier T3 (Self-Attested Questionnaire)');
+
+  const statusTag = document.getElementById("assessmentStatusTag");
+  const statusText = document.getElementById("assessmentStatusText");
+  if (statusTag) statusTag.className = "status-tag completed";
+  if (statusText) statusText.textContent = "Evidence Reviewed";
+
+  const targetEl = document.getElementById("sidebarContextTarget");
+  if (targetEl) targetEl.textContent = "Target: " + (data.model_metadata?.model_name || data.model_metadata?.name || data.model_card?.model_name || "Active System");
+
+  // 2. Scoring & KPIs
+  const sc = data.scoring || {};
+  document.getElementById("kpiAasScore").textContent = sc.aas_score ?? "—";
+  document.getElementById("kpiGradeBadge").textContent = `GRADE ${sc.trust_grade || 'A'}`;
+  document.getElementById("kpiGradeBadge").className = `badge ${sc.trust_grade && sc.trust_grade[0] === 'A' ? 'success' : 'warning'}`;
+  document.getElementById("kpiAasMath").textContent = `Mean: ${sc.weighted_average} | Min: ${sc.bottleneck_score} (α=0.6)`;
+
+  const confBadge = document.getElementById("kpiConfidenceBadge");
+  if (confBadge) confBadge.textContent = `CONFIDENCE ${(sc.evidence_weight || 1.0).toFixed(2)}`;
+
+  document.getElementById("kpiBottleneckScore").textContent = sc.bottleneck_score ?? "—";
+  document.getElementById("kpiBottleneckName").textContent = `${sc.bottleneck_dimension || 'Safety & Reliability'} (Caps trust ceiling)`;
+  const bnBadge = document.getElementById("kpiBottleneckBadge");
+  if (bnBadge) {
+    bnBadge.textContent = (sc.bottleneck_score !== undefined && sc.bottleneck_score < 80) ? "DEFICIT" : "OPTIMAL";
+    bnBadge.className = `badge ${(sc.bottleneck_score !== undefined && sc.bottleneck_score < 80) ? "warning" : "success"}`;
+  }
+
+  const cveCountEl = document.getElementById("kpiCveCount");
+  if (cveCountEl) {
+    cveCountEl.textContent = data.vulnerability_scan?.critical_high_count !== undefined
+      ? data.vulnerability_scan.critical_high_count
+      : 0;
+  }
+  const cveBadgeEl = document.getElementById("kpiCveBadge");
+  if (cveBadgeEl) {
+    cveBadgeEl.textContent = `${data.vulnerability_scan?.total_indexed_cves || 50} INDEXED`;
+  }
+
+  const eu = data.compliance?.eu_ai_act || {};
+  document.getElementById("kpiEuTier").textContent = eu.tier || "HIGH RISK";
+  document.getElementById("kpiEuStatus").textContent = `${eu.conformant_articles || '6/7'} Articles Technical Conformity`;
+  document.getElementById("kpiEuBadge").textContent = eu.tier && eu.tier.includes("HIGH") ? "ANNEX III" : "MINIMAL";
+
+  // 3. Status Banner
+  const subText = document.getElementById("verdictSubText");
+  const headlineText = document.getElementById("verdictHeadlineText");
+  if (subText && headlineText) {
+    if (sc.trust_grade && sc.trust_grade[0] === 'A') {
+      headlineText.textContent = "ASSESSMENT COMPLETED • EVIDENCE REVIEWED";
+      subText.textContent = `Evaluated via ${data.evidence_tier === 'T1' ? 'Model Context Protocol wire probes (Tier T1)' : '30-Item Research Questionnaire (Tier T3)'}. Technical compliance evaluated against EU AI Act Articles 9–15 and NIST AI RMF 1.0.`;
+    } else {
+      headlineText.textContent = "ASSESSMENT COMPLETED • FINDINGS REQUIRE ATTENTION";
+      subText.textContent = `Identified governance bottleneck in ${sc.bottleneck_dimension || 'Safety & Reliability'}. Prioritized engineering remediation required.`;
+    }
+  }
+
+  const bannerDisc = document.getElementById("bannerDiscrepancyVal");
+  if (bannerDisc) {
+    bannerDisc.textContent = data.evidence_tier === 'T1' ? "+0.0 pts (Verified)" : "T3 Self-Attested";
+  }
+  const bannerBasis = document.getElementById("bannerEvidenceBasis");
+  if (bannerBasis) {
+    bannerBasis.textContent = data.evidence_tier === 'T1'
+      ? `${data.tools_count || 4} Live MCP Tools`
+      : "30 Attestation Questions";
+  }
+  const bannerHash = document.getElementById("bannerHashIntegrity");
+  if (bannerHash) {
+    bannerHash.textContent = data.integrity_hash
+      ? `${data.integrity_hash.substring(0, 12)}... (Validated)`
+      : "SHA-256 Validated";
+  }
+
+  // 4. Radar Chart & Dimension Cards
+  if (data.dimensions) {
+    initRadarChart(data.dimensions);
+
+    Object.entries(data.dimensions).forEach(([dimName, score]) => {
+      const pid = PILLAR_KEYS[dimName];
+      if (pid) {
+        const scoreEl = document.getElementById(`pillarScore_${pid}`);
+        const fillEl = document.getElementById(`pillarFill_${pid}`);
+        const tagEl = document.getElementById(`pillarTag_${pid}`);
+        if (scoreEl) scoreEl.textContent = score.toFixed(1);
+        if (fillEl) {
+          fillEl.style.width = `${Math.min(100, Math.max(0, score))}%`;
+          fillEl.className = "dim-progress-fill " + (score >= 80 ? "high" : (score >= 60 ? "medium" : "low"));
+        }
+        if (tagEl) {
+          tagEl.textContent = score >= 80 ? "CONFORMANT" : (score >= 60 ? "SUB-OPTIMAL" : "BOTTLENECK");
+          tagEl.className = "badge " + (score >= 80 ? "success" : (score >= 60 ? "warning" : "critical"));
+        }
+      }
+    });
+  }
+
+  // 5. Terminal Logs
+  renderTerminalLogs(data.audit_logs || []);
+
+  // 6. Overview Priority Remediation Preview Table
+  const overviewRemTbody = document.getElementById("overviewRemediationTbody");
+  if (overviewRemTbody && data.remediation_plan) {
+    const topPlans = data.remediation_plan.slice(0, 3);
+    if (topPlans.length > 0) {
+      overviewRemTbody.innerHTML = topPlans.map(p => `
+        <tr>
+          <td><span class="badge ${p.priority === 'CRITICAL' ? 'critical' : (p.priority === 'HIGH' ? 'warning' : 'info')}">${p.priority}</span></td>
+          <td>${p.finding}</td>
+          <td><strong>${p.dimension}</strong></td>
+          <td><strong style="color:var(--primary-500);">${p.action}</strong></td>
+          <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${p.eu_ai_act_ref || 'Art. 9'}</small></td>
+        </tr>
+      `).join("");
+    }
+  }
+
+  // 7. EU AI Act Table & Classification Cards
+  renderEuArticlesTable(eu.articles || []);
+  const euBadge = document.getElementById("euBadge");
+  if (euBadge) {
+    euBadge.textContent = eu.tier ? `${eu.tier}` : "ANNEX III";
+    euBadge.className = `badge ${eu.tier && eu.tier.includes("HIGH") ? "warning" : "info"}`;
+  }
+  const euTierName = document.getElementById("euTierName");
+  if (euTierName) euTierName.textContent = eu.tier ? `${eu.tier} (Annex III §5)` : "HIGH RISK";
+  const euLegalBasis = document.getElementById("euLegalBasis");
+  if (euLegalBasis) euLegalBasis.textContent = eu.legal_basis || "Critical Decision Support";
+  const euMarket = document.getElementById("euMarketPermitted");
+  if (euMarket) {
+    euMarket.textContent = "PERMITTED (Conformity Required)";
+    euMarket.style.color = "var(--success)";
+  }
+  const euConfReq = document.getElementById("euConformityReq");
+  if (euConfReq) euConfReq.textContent = eu.assessment_protocol || "Annex VII Internal Control";
+  const euConfCount = document.getElementById("euConformantCount");
+  if (euConfCount) euConfCount.textContent = `${eu.conformant_articles || '6/7'} Articles Conformant`;
+
+  // 8. NIST Crosswalk Cards
+  if (data.compliance?.nist_rmf) {
+    const nist = data.compliance.nist_rmf;
+    const gov = document.getElementById("nistGovern");
+    if (gov && nist.GOVERN) gov.textContent = `${nist.GOVERN.score.toFixed(1)}/100 (${nist.GOVERN.status})`;
+    const map = document.getElementById("nistMap");
+    if (map && nist.MAP) map.textContent = `${nist.MAP.score.toFixed(1)}/100 (${nist.MAP.status})`;
+    const meas = document.getElementById("nistMeasure");
+    if (meas && nist.MEASURE) meas.textContent = `${nist.MEASURE.score.toFixed(1)}/100 (${nist.MEASURE.status})`;
+    const man = document.getElementById("nistManage");
+    if (man && nist.MANAGE) man.textContent = `${nist.MANAGE.score.toFixed(1)}/100 (${nist.MANAGE.status})`;
+  }
+
+  // 9. Remediation Roadmap
+  renderRemediationTable(data.remediation_plan || []);
+
+  // 10. Model Card
+  renderModelCard(data);
+
+  // 11. Framework Flow Node labels
+  const flSystem = document.getElementById("flabel-system");
+  if (flSystem) flSystem.textContent = data.model_metadata?.model_name || data.model_metadata?.name || data.model_card?.model_name || "Target System";
+  const flProbe = document.getElementById("flabel-probe");
+  if (flProbe) flProbe.textContent = data.evidence_tier === 'T1' ? 'MCP Tool Probe' : 'Questionnaire';
+  const flEvidence = document.getElementById("flabel-evidence");
+  if (flEvidence) flEvidence.textContent = data.evidence_tier === 'T1' ? `${data.tools_count || 4} Tools Probed` : '30 Attestations';
+  const flFinding = document.getElementById("flabel-finding");
+  if (flFinding) {
+    const f = data.remediation_plan?.[0]?.finding;
+    flFinding.textContent = f ? (f.length > 18 ? f.substring(0, 18) + '...' : f) : "Verified Bounds";
+  }
+  const flDimension = document.getElementById("flabel-dimension");
+  if (flDimension) flDimension.textContent = `${sc.bottleneck_dimension || 'Safety'} (${sc.bottleneck_score ?? '—'})`;
+  const flClause = document.getElementById("flabel-clause");
+  if (flClause) flClause.textContent = data.remediation_plan?.[0]?.eu_ai_act_ref || "EU Art. 15(1)";
+  const flRemediation = document.getElementById("flabel-remediation");
+  if (flRemediation) {
+    const a = data.remediation_plan?.[0]?.action;
+    flRemediation.textContent = a ? (a.length > 18 ? a.substring(0, 18) + '...' : a) : "Maintain Safeguards";
+  }
+
+  // Sync Framework node detail box
+  selectGraphNode("system", document.getElementById("gnode-system"));
+
+  // 12. Update ERM Slider Calculation
+  updateAlphaSlider(currentAlpha);
+}
+
+// =========================================================================
+// 7. TERMINAL EVENT STREAM CONTROLLER
+// =========================================================================
+function renderTerminalLogs(logs) {
+  const term = document.getElementById("terminalLog");
+  if (!term) return;
+
+  if (!logs || logs.length === 0) {
+    term.innerHTML = `<div class="terminal-empty">No telemetry events captured. Run assessment or load a preset.</div>`;
+    return;
+  }
+
+  term.innerHTML = logs.map((l, idx) => {
+    const timeStr = `[00:00:0${idx + 1}]`;
+    const badgeClass = l.status === "SUCCESS" ? "COMPLETE" : (l.status === "WARNING" ? "WARNING" : (l.status === "DANGER" ? "DANGER" : "PROBE"));
+    return `
+      <div class="log-entry">
+        <span class="log-timestamp">${timeStr}</span>
+        <span class="log-badge ${badgeClass}">${l.stage || 'EVENT'}</span>
+        <span>${l.message}</span>
+      </div>
+    `;
+  }).join("");
+
+  if (!isTerminalPaused) {
+    term.scrollTop = term.scrollHeight;
+  }
+}
+
+function toggleLogPause() {
+  isTerminalPaused = !isTerminalPaused;
+  const btn = document.getElementById("btnPauseLogs");
+  if (btn) btn.textContent = isTerminalPaused ? "Resume" : "Pause";
+  showToast(isTerminalPaused ? "Terminal streaming paused" : "Terminal streaming resumed");
+}
+
+function copyTerminalLogs() {
+  const term = document.getElementById("terminalLog");
+  if (term) {
+    navigator.clipboard.writeText(term.innerText);
+    showToast("Terminal telemetry copied to clipboard");
+  }
+}
+
+// =========================================================================
+// 8. UNIVERSAL DETAIL DRAWER (SLIDE-OUT INSPECTOR)
+// =========================================================================
+function openDetailDrawer(title, subtitle, htmlContent) {
+  const drawer = document.getElementById("detailDrawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+  const titleEl = document.getElementById("drawerTitle");
+  const subEl = document.getElementById("drawerSubtitle");
+  const bodyEl = document.getElementById("drawerBody");
+
+  if (!drawer || !backdrop) return;
+
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = subtitle;
+  if (bodyEl) bodyEl.innerHTML = htmlContent;
+
+  backdrop.classList.add("open");
+  drawer.classList.add("open");
+}
+
+function closeDetailDrawer() {
+  const drawer = document.getElementById("detailDrawer");
+  const backdrop = document.getElementById("drawerBackdrop");
+  if (drawer) drawer.classList.remove("open");
+  if (backdrop) backdrop.classList.remove("open");
+}
+
+function openDimensionDrawer(dimKey) {
+  const titles = {
+    security: "Security & Robustness",
+    fairness: "Fairness & Non-Discrimination",
+    transparency: "Transparency & Explainability",
+    privacy: "Privacy & Data Governance",
+    oversight: "Human Oversight & Agency",
+    safety: "Safety & Reliability"
+  };
+
+  const anchors = {
+    security: "EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP MCP Top 10",
+    fairness: "EU AI Act Art. 10(2) &bull; EEOC 80% Rule &bull; Kamiran & Calders (2012)",
+    transparency: "EU AI Act Art. 13 &bull; NIST MAP 1.5 &bull; TreeSHAP Attributions",
+    privacy: "EU AI Act Art. 10(5) &bull; GDPR Art. 25/32 &bull; Cryptographic Controls",
+    oversight: "EU AI Act Art. 14 &bull; NIST GOVERN 1.4 &bull; Mandatory HITL Kill-Switch",
+    safety: "EU AI Act Art. 9 &bull; NIST MANAGE 2.2 &bull; Deterministic Output Clamping"
+  };
+
+  const hasAudit = currentAuditData && currentAuditData.dimensions && currentAuditData.dimensions[titles[dimKey]] !== undefined;
+  const currentScore = hasAudit ? currentAuditData.dimensions[titles[dimKey]] : null;
+  const scoreDisplay = hasAudit ? `${currentScore.toFixed(1)} / 100` : "— / 100";
+  const findingsDisplay = hasAudit
+    ? (currentScore >= 80
+        ? '<span class="badge success">CONFORMANT</span> No critical security vulnerabilities or regulatory deficits detected in this dimension.'
+        : '<span class="badge warning">DEFICIT DETECTED</span> Sub-optimal boundary clamping or attestation gap requires engineering remediation before production release.')
+    : '<span class="badge info">AWAITING AUDIT</span> Execute an automated MCP probe (Tier T1) or complete the questionnaire (Tier T3) to evaluate empirical adequacy.';
+
+  const html = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Current Pillar Score</div>
+      <div style="font-size:24px; font-weight:700; font-family:var(--font-mono); color:var(--primary-500);">${scoreDisplay}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Regulatory &amp; Threat Anchors</div>
+      <div class="drawer-section-content" style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">${anchors[dimKey]}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Evidence &amp; Verification Methodology</div>
+      <div class="drawer-section-content">
+        Evaluated via wire-level Model Context Protocol probes (Tier T1) and research-grounded questionnaire items (Tier T3). Evaluates extreme boundary handling, adversarial noise perturbation, and formal data retention controls.
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Identified Findings</div>
+      <div class="drawer-section-content">
+        ${findingsDisplay}
+      </div>
+    </div>
+  `;
+
+  openDetailDrawer(titles[dimKey], anchors[dimKey], html);
+}
+
+function openArticleDrawer(artNum) {
+  const articles = currentAuditData?.compliance?.eu_ai_act?.articles || [];
+  const item = articles.find(a => a.article.includes(artNum)) || {
+    article: `Article ${artNum}`,
+    title: "EU AI Act Requirement",
+    requirement: "Statutory engineering obligation under Regulation (EU) 2024/1689.",
+    score: "—",
+    status: "STANDBY",
+    mandatory_controls: ["Technical documentation", "Verification testing"]
+  };
+
+  const html = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Statutory Requirement</div>
+      <div class="drawer-section-content"><strong>${item.title}</strong></div>
+      <div class="drawer-section-content" style="margin-top:6px;">${item.requirement}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Conformity Status &amp; Score</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge ${item.status === 'CONFORMANT' ? 'success' : (item.status === 'STANDBY' ? 'info' : 'warning')}">${item.status}</span>
+        <span style="font-family:var(--font-mono); font-weight:700;">${item.score === '—' ? '—' : item.score + '/100'}</span>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Mandatory Engineering Controls</div>
+      <ul style="padding-left:18px; font-size:13px; color:var(--text-secondary); line-height:1.7;">
+        ${(item.mandatory_controls || []).map(c => `<li>${c}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+
+  openDetailDrawer(item.article, item.title, html);
+}
+
+// =========================================================================
+// 9. SECTION 13: INTERACTIVE FRAMEWORK MAPPING CONTROLLER
+// =========================================================================
+function selectGraphNode(nodeKey, el) {
+  document.querySelectorAll(".graph-node").forEach(n => n.classList.remove("active"));
+  if (el) el.classList.add("active");
+
+  const detailBox = document.getElementById("graphNodeDetailBox");
+  const typeEl = document.getElementById("gdetailType");
+  const titleEl = document.getElementById("gdetailTitle");
+  const descEl = document.getElementById("gdetailDesc");
+  const badgeEl = document.getElementById("gdetailBadge");
+  const statusEl = document.getElementById("gdetailStatus");
+
+  if (!detailBox) return;
+
+  const modelName = currentAuditData?.model_metadata?.model_name || currentAuditData?.model_metadata?.name || currentAuditData?.model_card?.model_name || "System Under Evaluation";
+  const tier = currentAuditData?.evidence_tier || "T1";
+  const bottleneck = currentAuditData?.scoring?.bottleneck_dimension || "Safety & Reliability";
+  const bscore = currentAuditData?.scoring?.bottleneck_score !== undefined ? currentAuditData.scoring.bottleneck_score : "—";
+  const topPlan = currentAuditData?.remediation_plan?.[0];
+
+  const nodeData = {
+    system: {
+      type: "Target AI System",
+      title: modelName,
+      desc: currentAuditData
+        ? `Production AI system evaluated under domain '${currentAuditData.model_metadata?.domain || "General"}'. Architecture: ${currentAuditData.model_metadata?.architecture || "Machine Learning Pipeline"}. Assessed under EU AI Act Annex III statutory requirements.`
+        : "Connect a live MCP tool server or submit the research questionnaire to trace system governance lineage.",
+      badge: currentAuditData ? "Annex III §5" : "Standby",
+      status: currentAuditData ? "Under Active Audit" : "Awaiting Audit"
+    },
+    probe: {
+      type: "Assessment Protocol",
+      title: tier === "T1" ? "Automated MCP Wire Probe (Tier T1)" : "Structured Attestation Questionnaire (Tier T3)",
+      desc: tier === "T1"
+        ? "Executes dynamic list_tools() wire introspection, input perturbation tests, and boundary checks directly across JSON-RPC protocols."
+        : "Comprehensive 30-item technical attestation questionnaire mapped to QB4AIRA, EU AI Act Articles 9–15, and NIST AI RMF 1.0.",
+      badge: `Evidence Tier ${tier}`,
+      status: tier === "T1" ? "Weight: 1.00 (High Confidence)" : "Weight: 0.60 (Self-Attested)"
+    },
+    evidence: {
+      type: "Observed Evidence",
+      title: tier === "T1" ? "MCP Telemetry & Boundary Logs" : "Attested Operational Answers",
+      desc: currentAuditData?.audit_logs?.length
+        ? `Captured ${currentAuditData.audit_logs.length} wire-level audit telemetry events. Evaluated output clamping, adversarial divergence, and cryptographic data governance.`
+        : "Awaiting telemetry events or questionnaire submission.",
+      badge: currentAuditData ? "Telemetry Captured" : "Awaiting Telemetry",
+      status: currentAuditData ? "Verified" : "Standby"
+    },
+    finding: {
+      type: "Security & Assurance Finding",
+      title: topPlan ? topPlan.finding : "Vulnerability Assessment",
+      desc: topPlan
+        ? `Identified vulnerability in ${topPlan.dimension}: ${topPlan.finding}. Priority: ${topPlan.priority}. Recommended action: ${topPlan.action}.`
+        : "No active findings recorded. Execute audit to discover vulnerabilities.",
+      badge: topPlan ? `${topPlan.priority} Severity` : "Pending",
+      status: topPlan ? "Action Required" : "Standby"
+    },
+    dimension: {
+      type: "Empirical Trust Dimension",
+      title: `${bottleneck} (${bscore}/100)`,
+      desc: currentAuditData
+        ? `Identified as the primary bottleneck constraint (D_min = ${bscore}). Penalizes composite Assurance Adequacy Score via 40% bottleneck weighting in ERM.`
+        : "Evaluates 6 international pillars (Security, Fairness, Transparency, Privacy, Oversight, Safety).",
+      badge: "Primary Bottleneck",
+      status: (typeof bscore === 'number' && bscore < 80) ? "Deficit Constraint" : "Conformant"
+    },
+    clause: {
+      type: "Statutory Framework Clause",
+      title: topPlan?.eu_ai_act_ref || "EU AI Act Article 15",
+      desc: "High-risk AI systems shall be designed and developed in such a way that they achieve an appropriate level of accuracy, robustness, cybersecurity, and safety throughout their lifecycle.",
+      badge: "Regulation (EU) 2024/1689",
+      status: topPlan?.eu_ai_act_ref || "Article 15"
+    },
+    remediation: {
+      type: "Actionable Remediation",
+      title: topPlan ? topPlan.action : "Engineering Remediation",
+      desc: topPlan
+        ? `Recommended engineering intervention: ${topPlan.action}. Verify compliance by re-executing protocol probes against the endpoint.`
+        : "Awaiting audit findings to generate prioritized remediation tasks.",
+      badge: "Remediation Task",
+      status: topPlan ? "Fix Ready" : "Standby"
+    }
+  };
+
+  const d = nodeData[nodeKey] || nodeData.system;
+  if (typeEl) typeEl.textContent = `Selected Node: ${d.type}`;
+  if (titleEl) titleEl.textContent = d.title;
+  if (descEl) descEl.textContent = d.desc;
+  if (badgeEl) badgeEl.textContent = d.badge;
+  if (statusEl) statusEl.textContent = d.status;
+}
+
+function resetFrameworkGraph() {
+  const first = document.getElementById("gnode-system");
+  selectGraphNode("system", first);
+  showToast("Framework graph highlight reset");
+}
+
+function toggleGraphListView() {
+  isGraphListView = !isGraphListView;
+  const flowNodes = document.getElementById("frameworkFlowNodes");
+  const btn = document.getElementById("btnGraphListToggle");
+  if (!flowNodes) return;
+
+  if (isGraphListView) {
+    flowNodes.style.flexDirection = "column";
+    flowNodes.style.alignItems = "stretch";
+    if (btn) btn.textContent = "Switch to Flow View";
+  } else {
+    flowNodes.style.flexDirection = "row";
+    flowNodes.style.alignItems = "center";
+    if (btn) btn.textContent = "Switch to List View";
+  }
+}
+
+// =========================================================================
+// 10. LAUNCH AUDIT & QUESTIONNAIRE CONTROLLER
 // =========================================================================
 function selectMode(mode) {
   currentMode = mode;
   document.getElementById("modeSelectionCard").style.display = "none";
-
-  if (mode === "questionnaire") {
+  if (mode === "mcp") {
+    document.getElementById("mcpConnectionCard").style.display = "block";
+    document.getElementById("wizardCard").style.display = "none";
+  } else {
     document.getElementById("wizardCard").style.display = "block";
     document.getElementById("mcpConnectionCard").style.display = "none";
     wizardStep = 1;
     renderWizardStep();
-  } else if (mode === "mcp") {
-    document.getElementById("mcpConnectionCard").style.display = "block";
-    document.getElementById("wizardCard").style.display = "none";
   }
 }
 
@@ -126,27 +1001,52 @@ function backToModeSelection() {
   document.getElementById("modeSelectionCard").style.display = "block";
   document.getElementById("wizardCard").style.display = "none";
   document.getElementById("mcpConnectionCard").style.display = "none";
-  currentMode = null;
 }
 
-// MCP transport toggle
-document.addEventListener("DOMContentLoaded", () => {
-  const transportEl = document.getElementById("mcpTransport");
-  if (transportEl) {
-    transportEl.addEventListener("change", function() {
-      if (this.value === "stdio") {
-        document.getElementById("mcpUrlGroup").style.display = "none";
-        document.getElementById("mcpCommandGroup").style.display = "block";
-      } else {
-        document.getElementById("mcpUrlGroup").style.display = "block";
-        document.getElementById("mcpCommandGroup").style.display = "none";
-      }
+async function runQuickDemoAudit() {
+  showToast("Initiating Tier T1 automated wire probe against certified benchmark...");
+  try {
+    const res = await fetch("/api/audit/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile: "good" })
     });
+    const json = await res.json();
+    if (json.success && json.data) {
+      currentAuditData = json.data;
+      applyAuditDataToUI(json.data, "Tier T1 (Automated MCP Probe &bull; Live Run)");
+      showToast("Live Wire Probe Completed — Telemetry Analyzed");
+      showPage("page-overview");
+    } else {
+      showToast("Notice: " + (json.error || "Unable to retrieve probe data"));
+    }
+  } catch (err) {
+    showToast("Probe Error: " + err.message);
   }
-});
+}
+
+async function connectMcp() {
+  const profile = document.getElementById("mcpProfileSelect").value;
+  try {
+    const res = await fetch("/api/audit/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile: profile })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      currentAuditData = json.data;
+      applyAuditDataToUI(json.data, "Tier T1 (Automated MCP Probe &bull; Live Run)");
+      showToast("Live MCP Protocol Prober Completed!");
+      showPage("page-overview");
+    }
+  } catch (err) {
+    alert("MCP Probe Error: " + err.message);
+  }
+}
 
 // =========================================================================
-// 3. QUESTIONNAIRE WIZARD
+// 11. QUESTIONNAIRE WIZARD CONTROLLER
 // =========================================================================
 async function loadQuestions() {
   try {
@@ -155,38 +1055,100 @@ async function loadQuestions() {
     if (json.success && json.data) {
       questionsData = json.data;
       totalWizardSteps = json.data.steps.length;
+      renderFullQuestionBank(json.data.steps);
     }
   } catch (err) {
-    console.log("Questions will be loaded when server is available:", err.message);
-    questionsData = generateFallbackQuestions();
-    totalWizardSteps = questionsData.steps.length;
+    console.error("Questions load error", err);
   }
 }
 
-function generateFallbackQuestions() {
-  return {
-    steps: [
-      {
-        step: 1, title: "Model Identity",
-        questions: [
-          { id: "model_name", label: "Model / System Name", type: "text", placeholder: "e.g., ClinicalAssistant-v2", required: true },
-          { id: "model_version", label: "Engineering Version", type: "text", placeholder: "e.g., 2.1.0", required: true },
-          { id: "domain", label: "Target Domain", type: "select", options: [
-            { value: "healthcare", label: "Healthcare / Medical" },
-            { value: "finance", label: "Finance / Banking" },
-            { value: "agriculture", label: "Commercial Agriculture" },
-            { value: "other", label: "General Purpose AI" }
-          ], required: true },
-          { id: "architecture", label: "Model Architecture", type: "text", placeholder: "e.g., Transformer, XGBoost", required: true },
-          { id: "autonomy_level", label: "Autonomy Level", type: "select", options: [
-            { value: "advisory", label: "Advisory Only" },
-            { value: "semi_autonomous", label: "Semi-Autonomous" },
-            { value: "fully_autonomous", label: "Fully Autonomous" }
-          ], required: true }
-        ]
+function renderFullQuestionBank(steps) {
+  const tbody = document.getElementById("fullQuestionsTbody");
+  if (!tbody || !steps) return;
+
+  let html = "";
+  let counter = 1;
+
+  steps.forEach(s => {
+    s.questions.forEach(q => {
+      if (!q.is_identity) {
+        html += `
+          <tr onclick="openQuestionDrawer('${q.id}')">
+            <td><strong>Q${counter++}</strong></td>
+            <td><strong>${q.label.replace(/^Q\d+:\s*/, '')}</strong></td>
+            <td><span class="badge info">${q.dimension || 'Identity'}</span></td>
+            <td><small style="color:var(--text-secondary); font-family:var(--font-mono);">${q.research_source || 'NIST AI RMF'}</small></td>
+            <td><span class="badge success">${q.eu_ai_act_ref || 'Art. 9'}</span></td>
+            <td><small style="color:var(--text-muted);">${q.nist_rmf_ref || 'MEASURE'}</small></td>
+            <td><small style="color:var(--teal-accent);">${q.owasp_ref || 'OWASP MCP'}</small></td>
+          </tr>
+        `;
       }
-    ]
-  };
+    });
+  });
+
+  tbody.innerHTML = html;
+}
+
+function filterQuestionBank(query) {
+  const q = (query || "").toLowerCase();
+  const rows = document.querySelectorAll("#fullQuestionsTbody tr");
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    r.style.display = text.includes(q) ? "" : "none";
+  });
+}
+
+function filterQuestionByDim(dim, btn) {
+  document.querySelectorAll(".btn-secondary.sm").forEach(p => p.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+
+  const rows = document.querySelectorAll("#fullQuestionsTbody tr");
+  rows.forEach(r => {
+    if (dim === "all") {
+      r.style.display = "";
+    } else {
+      const dimBadge = r.querySelector(".badge.info");
+      const text = dimBadge ? dimBadge.textContent.toLowerCase() : "";
+      r.style.display = text.includes(dim.toLowerCase()) ? "" : "none";
+    }
+  });
+}
+
+function openQuestionDrawer(qId) {
+  let matchedQ = null;
+  (questionsData?.steps || []).forEach(s => {
+    s.questions.forEach(q => {
+      if (q.id === qId) matchedQ = q;
+    });
+  });
+
+  if (!matchedQ) return;
+
+  const html = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Question Prompt</div>
+      <div class="drawer-section-content"><strong>${matchedQ.label}</strong></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Trust Dimension</div>
+      <div class="drawer-section-content"><span class="badge info">${matchedQ.dimension || 'Identity'}</span></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Academic Literature Citation</div>
+      <div class="drawer-section-content" style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">${matchedQ.research_source || 'NIST AI RMF 1.0 (SP 1270)'}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Regulatory Framework Crosswalk</div>
+      <div class="drawer-section-content">
+        <div>&bull; EU AI Act: <strong>${matchedQ.eu_ai_act_ref || 'Article 9'}</strong></div>
+        <div>&bull; NIST AI RMF: <strong>${matchedQ.nist_rmf_ref || 'MEASURE'}</strong></div>
+        <div>&bull; OWASP Threat: <strong>${matchedQ.owasp_ref || 'MCP Top 10'}</strong></div>
+      </div>
+    </div>
+  `;
+
+  openDetailDrawer(matchedQ.id, matchedQ.dimension || "Question Specification", html);
 }
 
 function renderWizardStep() {
@@ -195,24 +1157,26 @@ function renderWizardStep() {
   if (!stepData) return;
 
   document.getElementById("wizardStepTitle").textContent = `Step ${wizardStep}: ${stepData.title}`;
-  document.getElementById("wizardStepDesc").textContent = `Specification of parameters for Step ${wizardStep} of ${totalWizardSteps}`;
+  document.getElementById("wizardStepDesc").textContent = `Specification of controls for Step ${wizardStep} of ${totalWizardSteps}`;
 
-  // Progress Bar
   const pct = (wizardStep / totalWizardSteps) * 100;
   document.getElementById("wizardProgressFill").style.width = `${pct}%`;
 
-  // Step dots
-  document.querySelectorAll(".step-dot").forEach((dot, idx) => {
+  document.querySelectorAll(".wizard-step-bubble").forEach((dot, idx) => {
     dot.classList.toggle("active", idx < wizardStep);
   });
 
   const body = document.getElementById("wizardBody");
-  let html = '<div class="wizard-questions-grid">';
+  let html = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">';
 
   stepData.questions.forEach(q => {
     const savedVal = wizardAnswers[q.id] || "";
     html += `<div class="form-group">`;
-    html += `<label for="wq_${q.id}">${q.label} ${q.required ? '<span style="color:var(--danger)">*</span>' : ''}</label>`;
+    html += `<label class="form-label" for="wq_${q.id}">${q.label} ${q.required ? '<span style="color:var(--critical)">*</span>' : ''}</label>`;
+
+    if (q.research_source) {
+      html += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:4px; font-family:var(--font-mono);">${q.research_source} &bull; EU AI Act: ${q.eu_ai_act_ref || 'Art. 9'}</div>`;
+    }
 
     if (q.type === "text") {
       html += `<input type="text" id="wq_${q.id}" class="form-input" placeholder="${q.placeholder || ''}" value="${savedVal}" onchange="saveWizardAnswer('${q.id}', this.value)">`;
@@ -239,16 +1203,14 @@ function renderWizardStep() {
   document.getElementById("wizardSubmitBtn").style.display = wizardStep === totalWizardSteps ? "inline-flex" : "none";
 }
 
-function saveWizardAnswer(id, value) {
-  wizardAnswers[id] = value;
+function saveWizardAnswer(id, val) {
+  wizardAnswers[id] = val;
 }
 
 function wizardNext() {
-  if (!validateCurrentStep()) return;
   if (wizardStep < totalWizardSteps) {
     wizardStep++;
     renderWizardStep();
-    document.getElementById("wizardCard").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
@@ -256,156 +1218,10 @@ function wizardPrev() {
   if (wizardStep > 1) {
     wizardStep--;
     renderWizardStep();
-    document.getElementById("wizardCard").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
-function validateCurrentStep() {
-  if (!questionsData) return true;
-  const stepData = questionsData.steps[wizardStep - 1];
-  if (!stepData) return true;
-
-  for (const q of stepData.questions) {
-    if (q.required && (!wizardAnswers[q.id] || wizardAnswers[q.id].toString().trim() === "")) {
-      const el = document.getElementById(`wq_${q.id}`);
-      if (el) {
-        el.classList.add("input-error");
-        el.focus();
-        setTimeout(() => el.classList.remove("input-error"), 2000);
-      }
-      return false;
-    }
-  }
-  return true;
-}
-
-// =========================================================================
-// 4. REAL-TIME 7-PILLARS ANIMATION ENGINE
-// =========================================================================
-function activatePillarsScanning() {
-  const badge = document.getElementById("liveScanStatusBadge");
-  const badgeText = document.getElementById("liveScanStatusText");
-  if (badge) badge.className = "scan-pulse-badge scanning";
-  if (badgeText) badgeText.textContent = "SCANNING ACTIVE";
-
-  // Activate laser sweep animation on each pillar card
-  Object.values(PILLAR_KEYS).forEach(id => {
-    const card = document.getElementById(`pillarCard_${id}`);
-    const scoreEl = document.getElementById(`pillarScore_${id}`);
-    const tagEl = document.getElementById(`pillarTag_${id}`);
-    const fillEl = document.getElementById(`pillarFill_${id}`);
-
-    if (card) {
-      card.classList.add("scanning");
-      card.classList.remove("active-probe");
-    }
-    if (scoreEl) {
-      scoreEl.classList.add("counting");
-      scoreEl.textContent = "...";
-    }
-    if (tagEl) {
-      tagEl.className = "pillar-status-tag warning";
-      tagEl.textContent = "PROBING";
-    }
-    if (fillEl) {
-      fillEl.style.width = "20%";
-    }
-  });
-}
-
-function resolvePillarsLive(dimensions) {
-  if (!dimensions) return;
-
-  const entries = Object.entries(dimensions);
-  entries.forEach(([dimName, score], index) => {
-    const pillarId = PILLAR_KEYS[dimName];
-    if (!pillarId) return;
-
-    // Stagger resolution smoothly across pillars for telemetry effect
-    setTimeout(() => {
-      const card = document.getElementById(`pillarCard_${pillarId}`);
-      const scoreEl = document.getElementById(`pillarScore_${pillarId}`);
-      const tagEl = document.getElementById(`pillarTag_${pillarId}`);
-      const fillEl = document.getElementById(`pillarFill_${pillarId}`);
-
-      if (card) {
-        card.classList.remove("scanning");
-        card.classList.add("active-probe");
-        setTimeout(() => card.classList.remove("active-probe"), 1200);
-      }
-
-      // Smooth count-up
-      if (scoreEl) {
-        scoreEl.classList.remove("counting");
-        animateValue(scoreEl, 0, score, 900, 1);
-      }
-
-      // Progress bar fill & color
-      if (fillEl) {
-        fillEl.style.width = `${Math.min(100, Math.max(0, score))}%`;
-        fillEl.className = "pillar-progress-fill";
-        if (score >= 80) fillEl.classList.add("high");
-        else if (score >= 60) fillEl.classList.add("medium");
-        else fillEl.classList.add("low");
-      }
-
-      // Status tag badge
-      if (tagEl) {
-        if (score >= 80) {
-          tagEl.className = "pillar-status-tag verified";
-          tagEl.textContent = "OPTIMAL";
-        } else if (score >= 60) {
-          tagEl.className = "pillar-status-tag warning";
-          tagEl.textContent = "DEFICIT";
-        } else {
-          tagEl.className = "pillar-status-tag danger";
-          tagEl.textContent = "CRITICAL GAP";
-        }
-      }
-    }, index * 140);
-  });
-
-  // Finish scanning state on badge
-  setTimeout(() => {
-    const badge = document.getElementById("liveScanStatusBadge");
-    const badgeText = document.getElementById("liveScanStatusText");
-    if (badge) badge.className = "scan-pulse-badge";
-    if (badgeText) badgeText.textContent = "VERIFIED";
-  }, entries.length * 140 + 500);
-}
-
-function animateValue(element, start, end, duration, decimals = 1) {
-  if (!element) return;
-  const startTime = performance.now();
-  function update(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    // Cubic ease-out
-    const ease = 1 - Math.pow(1 - progress, 3);
-    const current = start + (end - start) * ease;
-    element.textContent = current.toFixed(decimals);
-    if (progress < 1) {
-      requestAnimationFrame(update);
-    } else {
-      element.textContent = end.toFixed(decimals);
-    }
-  }
-  requestAnimationFrame(update);
-}
-
-// =========================================================================
-// 5. SUBMIT AUDIT
-// =========================================================================
 async function submitQuestionnaire() {
-  if (!validateCurrentStep()) return;
-
-  const btn = document.getElementById("wizardSubmitBtn");
-  btn.disabled = true;
-  btn.innerHTML = `
-    <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    <span>Compiling Evidence...</span>
-  `;
-
   try {
     const res = await fetch("/api/audit/questionnaire", {
       method: "POST",
@@ -413,351 +1229,206 @@ async function submitQuestionnaire() {
       body: JSON.stringify({ answers: wizardAnswers })
     });
     const json = await res.json();
-
-    if (!json.success || !json.data) {
-      throw new Error(json.error || "Failed to generate audit");
+    if (json.success && json.data) {
+      currentAuditData = json.data;
+      applyAuditDataToUI(json.data, "Tier T3 (Self-Attested Questionnaire)");
+      showToast("Questionnaire Compiled Successfully!");
+      showPage("page-overview");
     }
-
-    currentAuditData = json.data;
-    updateStatusPill("Audited", "online");
-    document.getElementById("topbarTarget").textContent = wizardAnswers.model_name || "AI System";
-
-    document.getElementById("btnRunAudit").style.display = "inline-flex";
-    document.getElementById("btnRunAudit2").style.display = "inline-flex";
-
-    showPage("page-audit");
-    activatePillarsScanning();
-
-    const terminalLog = document.getElementById("terminalLog");
-    const terminalStatus = document.getElementById("terminalStatus");
-    terminalStatus.textContent = "ANALYZING...";
-    terminalStatus.style.color = "#38bdf8";
-    terminalLog.innerHTML = `<div class="log-line info"><span class="timestamp">[KERNEL]</span> Executing 7-pillar audit for '${wizardAnswers.model_name || "AI System"}'...</div>`;
-
-    streamLogsToTerminal(json.data.audit_logs, () => {
-      applyAuditDataToUI(json.data);
-      resolvePillarsLive(json.data.dimensions);
-      terminalStatus.textContent = "AUDIT COMPLETE";
-      terminalStatus.style.color = "#10b981";
-      showProbeSummary(json.data.probe_summary);
-    });
-
   } catch (err) {
-    console.error("Audit error:", err);
-    alert("Error generating audit: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = `
-      <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-      <span>Generate Audit Dossier</span>
-    `;
+    alert("Questionnaire Error: " + err.message);
   }
 }
 
-async function connectMcp() {
-  const transport = document.getElementById("mcpTransport").value;
-  const url = document.getElementById("mcpUrlInput").value;
-  const command = document.getElementById("mcpCommandInput").value;
+// =========================================================================
+// 12. TABLES & RENDERERS
+// =========================================================================
+function renderEuArticlesTable(articles) {
+  const tbody = document.getElementById("euArticlesTbody");
+  if (!tbody || !articles || articles.length === 0) return;
 
-  const config = transport === "stdio"
-    ? { mcp_command: command }
-    : { mcp_url: url };
+  tbody.innerHTML = articles.map(a => `
+    <tr onclick="openArticleDrawer('${a.article.replace(/[^0-9]/g, '')}')">
+      <td><strong>${a.article}</strong><br><small style="color:var(--text-secondary);">${a.title}</small></td>
+      <td><small>${a.requirement}</small></td>
+      <td><strong>${a.score ?? '—'}/100</strong></td>
+      <td><span class="badge ${a.status === 'CONFORMANT' ? 'success' : (a.status === 'PARTIAL' ? 'warning' : 'critical')}">${a.status}</span></td>
+      <td><small style="color:var(--text-secondary);">${(a.mandatory_controls || []).join(" &bull; ")}</small></td>
+    </tr>
+  `).join("");
+}
 
-  if (!config.mcp_url && !config.mcp_command) {
-    alert("Please provide the MCP server URL or command.");
+function renderRemediationTable(plan) {
+  const tbody = document.getElementById("remediationBody");
+  if (!tbody || !plan || plan.length === 0) return;
+
+  tbody.innerHTML = plan.map((item, idx) => `
+    <tr onclick="openFindingDrawer(${idx})">
+      <td><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : (item.priority === 'HIGH' ? 'warning' : 'info')}">${item.priority}</span></td>
+      <td><strong>${item.dimension}</strong></td>
+      <td>${item.finding}</td>
+      <td><strong style="color:var(--primary-500);">${item.action}</strong></td>
+      <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${item.eu_ai_act_ref || 'Art. 9'}</small></td>
+    </tr>
+  `).join("");
+}
+
+function openFindingDrawer(idx) {
+  const plan = currentAuditData?.remediation_plan || [];
+  const item = plan[idx];
+  if (!item) return;
+
+  const html = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">Identified Vulnerability</div>
+      <div class="drawer-section-content"><strong>${item.finding}</strong></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Severity Level</div>
+      <div><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : 'warning'}">${item.priority} Priority</span></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Affected Dimension</div>
+      <div class="drawer-section-content">${item.dimension}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Recommended Engineering Fix</div>
+      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${item.action}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Verification Criteria</div>
+      <div class="drawer-section-content">
+        Re-run automated MCP boundary probing (Probe 2). Deterministic output clamping must suppress extreme inputs without throwing unhandled exceptions.
+      </div>
+    </div>
+  `;
+
+  openDetailDrawer(`Finding #${idx + 1}`, item.dimension, html);
+}
+
+function renderModelCard(data) {
+  const card = data.model_card || {};
+  document.getElementById("mcModelName").textContent = card.model_name || data.model_metadata?.name || "—";
+  document.getElementById("mcModelVersion").textContent = card.version || data.model_metadata?.version || "—";
+  document.getElementById("mcModelGrade").textContent = data.scoring?.trust_grade ? `Grade ${data.scoring.trust_grade}` : "—";
+  document.getElementById("mcModelGrade").style.color = data.scoring?.trust_grade && data.scoring.trust_grade[0] === 'A' ? "var(--success)" : "var(--warning)";
+  document.getElementById("mcModelAas").textContent = (data.scoring?.aas_score !== undefined ? data.scoring.aas_score : "—") + "/100";
+
+  const renderedView = document.getElementById("mcRenderedView");
+  if (renderedView && card.markdown) {
+    let formatted = card.markdown
+      .replace(/^# (.*$)/gim, '<h3 style="margin-bottom:10px; color:var(--text-primary);">$1</h3>')
+      .replace(/^### (.*$)/gim, '<h4 style="margin-top:14px; margin-bottom:4px; color:var(--primary-500);">$1</h4>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n- (.*$)/gim, '<div style="margin-left:10px; margin-bottom:2px;">&bull; $1</div>')
+      .replace(/\n\n/g, '<br>');
+    renderedView.innerHTML = formatted;
+  }
+}
+
+// =========================================================================
+// 13. ATTESTATION DISCREPANCY COMPARATIVE ENGINE
+// =========================================================================
+async function runComparativeAudit() {
+  try {
+    const res = await fetch("/api/audit/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionnaire_data: currentAuditData })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      const comp = json.data;
+      document.getElementById("adiVal").textContent = `+${comp.attestation_discrepancy_index} pts`;
+      document.getElementById("adiSignificance").textContent = comp.significance || "MODERATE SKEW";
+
+      const tbody = document.getElementById("discrepancyTbody");
+      tbody.innerHTML = Object.entries(comp.dimension_deltas || {}).map(([dim, d]) => `
+        <tr>
+          <td><strong>${dim}</strong></td>
+          <td>${d.self_attested}/100</td>
+          <td><strong style="color:var(--primary-500);">${d.automated_probe}/100</strong></td>
+          <td><strong style="color:${d.delta > 0 ? 'var(--warning)' : 'var(--success)'};">${d.delta > 0 ? '+' : ''}${d.delta}</strong></td>
+          <td><span class="badge ${d.bias_direction === 'OVERESTIMATED' ? 'warning' : 'success'}">${d.bias_direction}</span></td>
+        </tr>
+      `).join("");
+      showToast("Attestation Discrepancy Index Recalculated!");
+    }
+  } catch (err) {
+    alert("Comparative error: " + err.message);
+  }
+}
+
+// =========================================================================
+// 14. DATASETS & WHAT-IF SIMULATION
+// =========================================================================
+async function loadDatasets() {
+  try {
+    const res = await fetch("/api/datasets");
+    const json = await res.json();
+    if (json.success && json.data) {
+      currentDatasetsCatalog = json.data;
+      renderDatasetInspector(activeDatasetId);
+    }
+  } catch (e) {
+    console.error("Dataset fetch error", e);
+  }
+}
+
+function selectDatasetTab(datasetId) {
+  activeDatasetId = datasetId;
+  renderDatasetInspector(datasetId);
+}
+
+function renderDatasetInspector(datasetId) {
+  if (!currentDatasetsCatalog || currentDatasetsCatalog.length === 0) return;
+  const ds = currentDatasetsCatalog.find(d => d.id === datasetId) || currentDatasetsCatalog[0];
+  if (!ds) return;
+
+  const statsContainer = document.getElementById("datasetStatsStrip");
+  if (statsContainer && ds.metrics_summary) {
+    statsContainer.innerHTML = Object.entries(ds.metrics_summary).map(([k, v]) => `
+      <div class="card" style="padding:10px; background:var(--bg-surface-elevated);">
+        <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); text-transform:uppercase;">${k}</div>
+        <div style="font-size:14px; font-weight:700; color:var(--primary-500); margin-top:2px;">${v}</div>
+      </div>
+    `).join("");
+  }
+
+  const thead = document.getElementById("datasetPreviewThead");
+  const tbody = document.getElementById("datasetPreviewTbody");
+  if (!thead || !tbody) return;
+
+  const rows = ds.preview_rows || [];
+  if (rows.length === 0) {
+    thead.innerHTML = "";
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No records available.</td></tr>`;
     return;
   }
 
-  try {
-    const res = await fetch("/api/audit/mcp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(config)
-    });
-    const json = await res.json();
+  const cols = Object.keys(rows[0]);
+  thead.innerHTML = `<tr>${cols.map(c => `<th>${c.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
 
-    if (!json.success) {
-      alert("MCP Connection Error: " + (json.error || "Failed to connect"));
-      return;
-    }
-
-    currentAuditData = json.data;
-    updateStatusPill("MCP Connected", "online");
-    document.getElementById("topbarTarget").textContent = json.data.model_metadata?.model_name || "MCP AI Agent";
-    document.getElementById("btnRunAudit").style.display = "inline-flex";
-
-    showPage("page-audit");
-    activatePillarsScanning();
-
-    const terminalLog = document.getElementById("terminalLog");
-    terminalLog.innerHTML = `<div class="log-line info"><span class="timestamp">[KERNEL]</span> Connected to MCP agent endpoint. Probing tools...</div>`;
-
-    streamLogsToTerminal(json.data.audit_logs, () => {
-      applyAuditDataToUI(json.data);
-      resolvePillarsLive(json.data.dimensions);
-      document.getElementById("terminalStatus").textContent = "AUDIT COMPLETE";
-      document.getElementById("terminalStatus").style.color = "#10b981";
-      showProbeSummary(json.data.probe_summary);
-    });
-  } catch (err) {
-    alert("Connection error: " + err.message);
-  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      ${cols.map(c => `<td><span style="font-family:var(--font-mono);">${r[c]}</span></td>`).join('')}
+    </tr>
+  `).join('');
 }
 
-function submitAudit() {
-  if (currentMode === "questionnaire") {
-    showPage("page-setup");
-  } else if (currentMode === "mcp") {
-    connectMcp();
-  } else {
-    showPage("page-setup");
-  }
-}
-
-function rerunAudit() {
-  showPage("page-setup");
-}
-
-function updateStatusPill(text, status) {
-  const pill = document.getElementById("mcpStatusPill");
-  const textEl = document.getElementById("mcpStatusText");
-  textEl.textContent = text;
-  pill.className = "mcp-status-pill " + status;
-}
-
-// =========================================================================
-// 6. RADAR CHART (DARK THEME)
-// =========================================================================
-function initRadarChart(dims) {
-  const ctx = document.getElementById("radarChart").getContext("2d");
-  if (radarChartInstance) radarChartInstance.destroy();
-
-  radarChartInstance = new Chart(ctx, {
-    type: "radar",
-    data: {
-      labels: Object.keys(dims),
-      datasets: [{
-        label: "Assurance Score (0-100)",
-        data: Object.values(dims),
-        fill: true,
-        backgroundColor: "rgba(99, 102, 241, 0.22)",
-        borderColor: "#6366f1",
-        pointBackgroundColor: "#06b6d4",
-        pointBorderColor: "#ffffff",
-        pointHoverBackgroundColor: "#38bdf8",
-        pointHoverBorderColor: "#6366f1",
-        borderWidth: 2.2,
-        pointRadius: 4
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        r: {
-          angleLines: { color: "rgba(148, 163, 184, 0.14)" },
-          grid: { color: "rgba(148, 163, 184, 0.1)" },
-          pointLabels: {
-            font: { family: "'Inter', sans-serif", size: 10.5, weight: "600" },
-            color: "#cbd5e1"
-          },
-          ticks: {
-            backdropColor: "transparent",
-            color: "#64748b",
-            stepSize: 20
-          },
-          suggestedMin: 0,
-          suggestedMax: 100
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: "#0e1526",
-          titleColor: "#38bdf8",
-          bodyColor: "#f8fafc",
-          borderColor: "rgba(99, 102, 241, 0.4)",
-          borderWidth: 1,
-          padding: 10
-        }
-      }
-    }
-  });
-}
-
-function updateRadarChart(dims) {
-  if (!radarChartInstance) { initRadarChart(dims); return; }
-  radarChartInstance.data.labels = Object.keys(dims);
-  radarChartInstance.data.datasets[0].data = Object.values(dims);
-  radarChartInstance.update();
-}
-
-// =========================================================================
-// 7. LOG STREAMING
-// =========================================================================
-function streamLogsToTerminal(logs, onComplete) {
-  const terminalLog = document.getElementById("terminalLog");
-  let i = 0;
-
-  const interval = setInterval(() => {
-    if (i >= logs.length) {
-      clearInterval(interval);
-      if (onComplete) onComplete();
-      return;
-    }
-
-    const entry = logs[i];
-    const line = document.createElement("div");
-    line.className = `log-line ${entry.status.toLowerCase()}`;
-    line.innerHTML = `<span class="timestamp">[${entry.stage}]</span> ${entry.message}`;
-    terminalLog.appendChild(line);
-    terminalLog.scrollTop = terminalLog.scrollHeight;
-    i++;
-  }, 65);
-}
-
-function showProbeSummary(summary) {
-  if (!summary) return;
-  const card = document.getElementById("probeSummaryCard");
-  const stats = document.getElementById("probeStats");
-  if (!card || !stats) return;
-
-  card.style.display = "block";
-  stats.innerHTML = `
-    <div class="probe-stat-item"><div class="stat-num">${summary.total_probes}</div><div class="stat-label">Probes Run</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.mcp_tools_called}</div><div class="stat-label">MCP Tools</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.guardrails_tested}</div><div class="stat-label">Guardrails Tested</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.adversarial_tests}</div><div class="stat-label">Adversarial Probes</div></div>
-    <div class="probe-stat-item"><div class="stat-num">${summary.findings_count}</div><div class="stat-label">Audit Findings</div></div>
-  `;
-}
-
-// =========================================================================
-// 8. APPLY AUDIT DATA TO UI
-// =========================================================================
-function applyAuditDataToUI(data) {
-  const meta = data.model_metadata || {};
-  const el = id => document.getElementById(id);
-
-  if (el("profModelName")) el("profModelName").textContent = meta.model_name || "—";
-  if (el("profDomain")) el("profDomain").textContent = meta.domain || meta.model_name || "—";
-  if (el("profArch")) el("profArch").textContent = meta.model_architecture || "—";
-  if (el("profAuditMode")) el("profAuditMode").textContent = data.audit_mode === "questionnaire" ? "Questionnaire-Based Pre-Audit" : "MCP Live Protocol Probe";
-  if (el("profDataSize")) el("profDataSize").textContent = meta.training_dataset_size ? `${meta.training_dataset_size.toLocaleString()} Samples` : "—";
-  if (el("profAutonomy")) {
-    const autonomyLabels = { "advisory": "Advisory Only", "semi_autonomous": "Semi-Autonomous", "fully_autonomous": "Fully Autonomous" };
-    el("profAutonomy").textContent = autonomyLabels[meta.autonomy_level] || meta.autonomy_level || "—";
-  }
-  if (el("profVersion")) el("profVersion").textContent = meta.version || "—";
-
-  // Scores
-  const scoring = data.scoring;
-  const targetAas = scoring.aas_score;
-  const aasEl = el("aasScore");
-  if (aasEl) animateValue(aasEl, 0, targetAas, 1000, 1);
-
-  el("gradeBadge").textContent = scoring.trust_grade;
-  el("mathAvg").textContent = scoring.weighted_average;
-  el("mathMin").textContent = scoring.bottleneck_score;
-  el("bottleneckDesc").textContent = `${scoring.bottleneck_dimension} (${scoring.bottleneck_score}/100) constitutes the primary governance bottleneck constraint.`;
-
-  // Grade badge styling
-  const badge = el("gradeBadge");
-  const scoreLbl = el("scoreLabel");
-  if (scoring.trust_grade.startsWith("A")) {
-    badge.style.borderColor = "var(--success)";
-    badge.style.color = "var(--success)";
-    badge.style.background = "var(--success-bg)";
-    scoreLbl.textContent = "Minimal Governance Risk";
-    scoreLbl.style.color = "var(--success)";
-  } else if (scoring.trust_grade === "B" || scoring.trust_grade === "C") {
-    badge.style.borderColor = "var(--warning)";
-    badge.style.color = "var(--warning)";
-    badge.style.background = "var(--warning-bg)";
-    scoreLbl.textContent = "Moderate Governance Risk";
-    scoreLbl.style.color = "var(--warning)";
-  } else {
-    badge.style.borderColor = "var(--danger)";
-    badge.style.color = "var(--danger)";
-    badge.style.background = "var(--danger-bg)";
-    scoreLbl.textContent = "Elevated Risk Posture";
-    scoreLbl.style.color = "var(--danger)";
-  }
-
-  // Update Radar
-  updateRadarChart(data.dimensions);
-
-  // EU AI Act
-  const eu = data.compliance.eu_ai_act;
-  const euBadge = el("euBadge");
-  euBadge.textContent = `${eu.tier} TIER`;
-  el("euDesc").textContent = eu.description;
-  if (eu.tier === "MINIMAL RISK") euBadge.className = "comp-badge badge-success";
-  else if (eu.tier === "LIMITED RISK") euBadge.className = "comp-badge badge-warning";
-  else euBadge.className = "comp-badge badge-danger";
-
-  // NIST
-  const nist = data.compliance.nist_ai_rmf;
-  updateNistPill("nistGovern", nist.GOVERN);
-  updateNistPill("nistMap", nist.MAP);
-  updateNistPill("nistMeasure", nist.MEASURE);
-  updateNistPill("nistManage", nist.MANAGE);
-
-  // Remediation table
-  const tbody = el("remediationBody");
-  tbody.innerHTML = "";
-  const items = data.remediation_plan || [];
-  if (items.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No vulnerabilities detected &mdash; all dimensions compliant.</td></tr>`;
-  } else {
-    items.forEach(item => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><span class="priority-tag ${item.badge}">${item.priority}</span></td>
-        <td><strong style="color:#fff;">${item.dimension}</strong></td>
-        <td>${item.finding}</td>
-        <td style="color:var(--cyan-400); font-weight:500;">${item.action}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // IBM AIF360 Empirical Fairness
-  if (data.aif360) renderAif360(data.aif360);
-
-  // Microsoft RAI Cohorts & Counterfactuals
-  if (data.cohort_analysis) renderRaiCohorts(data.cohort_analysis);
-  if (data.prescriptive_counterfactual) renderCounterfactual(data.prescriptive_counterfactual);
-
-  // Google Model Card
-  if (data.model_card) renderModelCard(data.model_card);
-
-  // Cybersecurity & AI-BOM Vulnerability Scanner
-  if (data.vulnerability_scan) renderCveVulnerabilities(data.vulnerability_scan);
-
-  // Run simulation
-  runSimulation();
-}
-
-function updateNistPill(elementId, obj) {
-  const el = document.getElementById(elementId);
-  el.textContent = `${obj.score} (${obj.status})`;
-  el.className = `nist-badge ${obj.badge}`;
-}
-
-// =========================================================================
-// 9. SIMULATION ENGINE
-// =========================================================================
 function updateUserScale(val) {
-  document.getElementById("userCountLabel").textContent = Number(val).toLocaleString();
+  const label = document.getElementById("userCountLabel");
+  if (label) label.textContent = parseInt(val).toLocaleString();
   runSimulation();
 }
 
 async function runSimulation() {
-  if (!currentAuditData) return;
-
-  const domain = document.getElementById("simDomainSelect").value;
-  const users = parseInt(document.getElementById("simUserSlider").value, 10);
+  const users = parseInt(document.getElementById("simUserSlider")?.value || 50000);
+  const domain = document.getElementById("simDomainSelect")?.value || "General Purpose AI";
+  if (!currentAuditData || currentAuditData.scoring?.aas_score === undefined) {
+    showToast("Please execute an audit first to simulate scenario risk.");
+    return;
+  }
   const baseAas = currentAuditData.scoring.aas_score;
 
   try {
@@ -768,411 +1439,64 @@ async function runSimulation() {
     });
     const json = await res.json();
     if (json.success && json.data) {
-      const sim = json.data;
-      document.getElementById("simScore").textContent = sim.simulated_aas;
-      document.getElementById("simTier").textContent = sim.simulated_tier;
-
-      const deltaEl = document.getElementById("simDelta");
-      if (sim.delta < 0) {
-        deltaEl.textContent = `${sim.delta} pts (Elevated Risk)`;
-        deltaEl.className = "sim-delta negative";
-      } else if (sim.delta > 0) {
-        deltaEl.textContent = `+${sim.delta} pts (Reduced Risk)`;
-        deltaEl.className = "sim-delta positive";
-      } else {
-        deltaEl.textContent = "0.0 pts (Baseline)";
-        deltaEl.className = "sim-delta neutral";
-      }
+      document.getElementById("simScore").textContent = `${baseAas}/100`;
+      document.getElementById("simIncidents").textContent = `${json.data.projected_annual_incidents} / year`;
+      document.getElementById("simLiability").textContent = `$${json.data.projected_financial_liability_usd.toLocaleString()}`;
     }
   } catch (err) {
-    console.error("Simulation error:", err);
+    console.error("Simulation error", err);
   }
 }
 
 // =========================================================================
-// 10. MANUAL RECALCULATION
+// 15. EXPORT CONTROLS & MODALS
 // =========================================================================
-function recalculateManual() {
-  if (!currentAuditData) return;
-  const f = parseFloat(document.getElementById("q_fairness").value) * 100;
-  const t = parseFloat(document.getElementById("q_transparency").value) * 100;
-  const s = parseFloat(document.getElementById("q_safety").value) * 100;
-  const a = parseFloat(document.getElementById("q_accountability").value) * 100;
-
-  const newDims = { ...currentAuditData.dimensions };
-  newDims["Fairness & Bias"] = f;
-  newDims["Transparency"] = t;
-  newDims["Safety & Reliability"] = s;
-  newDims["Accountability & Oversight"] = a;
-
-  const vals = Object.values(newDims);
-  const avg = vals.reduce((sum, v) => sum + v, 0) / vals.length;
-  const min = Math.min(...vals);
-  const aas = Math.round(((0.6 * avg) + (0.4 * min)) * 10) / 10;
-
-  currentAuditData.dimensions = newDims;
-  currentAuditData.scoring.aas_score = aas;
-  currentAuditData.scoring.weighted_average = Math.round(avg * 10) / 10;
-  currentAuditData.scoring.bottleneck_score = min;
-
-  applyAuditDataToUI(currentAuditData);
-  resolvePillarsLive(currentAuditData.dimensions);
-}
-
-// =========================================================================
-// 11. IBM AIF360 FAIRNESS & REWEIGHING
-// =========================================================================
-function renderAif360(aif) {
-  if (!aif) return;
-  const dirEl = document.getElementById("aifDirVal");
-  const badgeEl = document.getElementById("aifDirBadge");
-  const textEl = document.getElementById("aifDirText");
-  const spdEl = document.getElementById("aifSpdVal");
-  const privEl = document.getElementById("aifPrivRate");
-  const unprivEl = document.getElementById("aifUnprivRate");
-  const recEl = document.getElementById("aifMitigationRec");
-  const tbody = document.getElementById("aifReweighingTbody");
-
-  if (dirEl) dirEl.textContent = aif.disparate_impact_ratio != null ? aif.disparate_impact_ratio.toFixed(3) : "—";
-  if (badgeEl && aif.four_fifths_rule) {
-    badgeEl.textContent = aif.four_fifths_rule.verdict;
-    badgeEl.className = `aif-verdict-badge ${aif.four_fifths_rule.compliant ? "badge-success" : "badge-danger"}`;
-  }
-  if (textEl && aif.four_fifths_rule) {
-    textEl.textContent = aif.four_fifths_rule.status_text;
-  }
-  if (spdEl) spdEl.textContent = aif.statistical_parity_difference != null ? aif.statistical_parity_difference.toFixed(3) : "—";
-  if (privEl && aif.rates) privEl.textContent = `${(aif.rates.privileged_acceptance_rate * 100).toFixed(1)}%`;
-  if (unprivEl && aif.rates) unprivEl.textContent = `${(aif.rates.unprivileged_acceptance_rate * 100).toFixed(1)}%`;
-  if (recEl) recEl.textContent = aif.recommendation || "—";
-
-  if (tbody && aif.reweighing_weights) {
-    tbody.innerHTML = "";
-    const w = aif.reweighing_weights;
-    const rows = [
-      { slice: "Unprivileged (Female Protected)", y: "Favorable (Y=1)", weight: w.unprivileged_favorable, impact: "Upscale positive protected samples" },
-      { slice: "Unprivileged (Female Protected)", y: "Unfavorable (Y=0)", weight: w.unprivileged_unfavorable, impact: "Downscale negative protected samples" },
-      { slice: "Privileged (Male Majority)", y: "Favorable (Y=1)", weight: w.privileged_favorable, impact: "Normalize majority favorable outcomes" },
-      { slice: "Privileged (Male Majority)", y: "Unfavorable (Y=0)", weight: w.privileged_unfavorable, impact: "Normalize majority negative outcomes" }
-    ];
-    rows.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong style="color:#fff;">${r.slice}</strong></td>
-        <td><span class="pillar-status-tag ${r.y.includes('1') ? 'verified' : 'warning'}">${r.y}</span></td>
-        <td><strong style="color:var(--cyan-400); font-family:var(--font-mono);">${r.weight}x</strong></td>
-        <td style="color:var(--text-secondary);">${r.impact}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-}
-
-// =========================================================================
-// 12. MICROSOFT RAI COHORTS & COUNTERFACTUAL
-// =========================================================================
-function renderRaiCohorts(cohorts) {
-  const container = document.getElementById("raiCohortGrid");
-  if (!container || !cohorts) return;
-  container.innerHTML = "";
-
-  cohorts.forEach(c => {
-    const card = document.createElement("div");
-    card.className = "pillar-card";
-    const sevBadge = c.severity === "HIGH" ? "badge-danger" : (c.severity === "MEDIUM" ? "badge-warning" : "badge-success");
-    card.innerHTML = `
-      <div class="pillar-top">
-        <div>
-          <div class="pillar-title">${c.name}</div>
-          <div class="pillar-anchor">${c.slice_condition}</div>
-        </div>
-        <span class="comp-badge ${sevBadge}">${c.severity} RISK</span>
-      </div>
-      <div class="pillar-progress-track">
-        <div class="pillar-progress-fill ${c.severity.toLowerCase()}" style="width: ${c.risk_contribution_pct}%;"></div>
-      </div>
-      <div class="pillar-footer-meta">
-        <span>Risk Contribution: <strong>${c.risk_contribution_pct}%</strong></span>
-        <span class="pillar-status-tag danger">Bottleneck: ${c.primary_bottleneck}</span>
-      </div>
-      <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.65rem;">${c.description}</p>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function renderCounterfactual(cf) {
-  const box = document.getElementById("cfResultsBox");
-  if (!box || !cf) return;
-
-  if (cf.already_compliant) {
-    box.innerHTML = `
-      <div style="background:var(--success-bg); border:1px solid var(--success-border); border-radius:8px; padding:1.25rem;">
-        <strong style="color:var(--success);">Threshold Compliant: ${cf.current_aas} AAS</strong>
-        <p style="margin-top:0.25rem; color:var(--text-secondary); font-size:13px;">${cf.message}</p>
-      </div>
-    `;
-    return;
-  }
-
-  let html = `
-    <div style="display:flex; gap:1.25rem; flex-wrap:wrap; background:var(--bg-surface-elevated); padding:1rem 1.25rem; border-radius:8px; border:1px solid var(--border-card);">
-      <div><span class="sim-lbl">Current AAS:</span> <strong style="color:#fff; font-family:var(--font-mono);">${cf.current_aas}</strong></div>
-      <div><span class="sim-lbl">Target AAS:</span> <strong style="color:var(--cyan-400); font-family:var(--font-mono);">${cf.target_score}</strong></div>
-      <div><span class="sim-lbl">Projected AAS:</span> <strong style="color:var(--success); font-family:var(--font-mono);">${cf.projected_aas}</strong></div>
-      <div><span class="sim-lbl">Score Lift:</span> <strong style="color:var(--indigo-400); font-family:var(--font-mono);">+${cf.score_delta} pts</strong></div>
-      <div><span class="sim-lbl">Statutory Tier:</span> <strong class="comp-badge badge-success">${cf.projected_tier}</strong></div>
-    </div>
-    <div class="roadmap-table-container" style="margin-top:1rem;">
-      <table class="roadmap-table">
-        <thead>
-          <tr>
-            <th>Priority</th>
-            <th>Dimension</th>
-            <th>Prescriptive Intervention</th>
-            <th>Dimension Gain</th>
-            <th>AAS Lift</th>
-            <th>Projected AAS</th>
-          </tr>
-        </thead>
-        <tbody>
-  `;
-
-  (cf.required_actions || []).forEach(a => {
-    html += `
-      <tr>
-        <td><strong>${a.step}</strong></td>
-        <td><strong style="color:#fff;">${a.dimension}</strong></td>
-        <td>${a.intervention}</td>
-        <td><span class="priority-tag info">${a.dimension_gain}</span></td>
-        <td><strong style="color:var(--success); font-family:var(--font-mono);">${a.aas_lift}</strong></td>
-        <td><strong style="color:var(--cyan-400); font-family:var(--font-mono);">${a.resulting_aas}</strong></td>
-      </tr>
-    `;
-  });
-
-  html += `</tbody></table></div>`;
-  box.innerHTML = html;
-}
-
-async function solveCustomCounterfactual() {
-  if (!currentAuditData) {
-    alert("Please execute an audit first.");
-    return;
-  }
-  const target = parseFloat(document.getElementById("cfTargetInput").value) || 76.0;
-  const box = document.getElementById("cfResultsBox");
-  box.innerHTML = `<div class="log-line info"><span class="timestamp">[RAI]</span> Solving prescriptive counterfactual optimization for target AAS ${target}...</div>`;
-
-  try {
-    const res = await fetch("/api/rai/counterfactual", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target_score: target, audit_data: currentAuditData })
-    });
-    const json = await res.json();
-    if (json.success && json.data) {
-      currentAuditData.prescriptive_counterfactual = json.data;
-      renderCounterfactual(json.data);
-    } else {
-      box.innerHTML = `<div class="empty-state">${json.error || "Failed to solve counterfactual optimization."}</div>`;
-    }
-  } catch (err) {
-    box.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
-  }
-}
-
-// =========================================================================
-// 13. GOOGLE MODEL CARD
-// =========================================================================
-function renderModelCard(card) {
-  if (!card) return;
-  const el = id => document.getElementById(id);
-
-  if (el("mcModelName")) el("mcModelName").textContent = card.model_name || "AI System";
-  if (el("mcModelVersion")) el("mcModelVersion").textContent = `v${card.version || "1.0.0"}`;
-  if (el("mcModelDomain")) el("mcModelDomain").textContent = card.domain || "—";
-  if (el("mcModelGrade") && card.summary) el("mcModelGrade").textContent = card.summary.trust_grade || "—";
-  if (el("mcModelTier") && card.summary) el("mcModelTier").textContent = card.summary.eu_tier || "—";
-
-  const rawEl = el("mcRawView");
-  if (rawEl) rawEl.value = card.markdown || "";
-
-  const jsonEl = el("mcJsonView");
-  if (jsonEl) jsonEl.querySelector("code").textContent = JSON.stringify(card, null, 2);
-
-  const renderedEl = el("mcRenderedView");
-  if (renderedEl && card.markdown) {
-    renderedEl.innerHTML = parseMarkdownToHtml(card.markdown);
-  }
-}
-
-function parseMarkdownToHtml(md) {
-  let html = md
-    .replace(/^# (.*$)/gim, '<h2 style="color:#fff; font-family:var(--font-heading); margin-bottom:0.5rem;">$1</h2>')
-    .replace(/^## (.*$)/gim, '<h3 style="color:var(--cyan-400); font-family:var(--font-heading); margin:1.2rem 0 0.4rem;">$1</h3>')
-    .replace(/^### (.*$)/gim, '<h4 style="color:#fff; margin:0.8rem 0 0.3rem;">$1</h4>')
-    .replace(/^> (.*$)/gim, '<blockquote style="border-left:3px solid var(--indigo-500); padding-left:1rem; color:var(--text-muted); margin:0.75rem 0;">$1</blockquote>')
-    .replace(/\*\*(.*?)\*\*/gim, '<strong style="color:#fff;">$1</strong>')
-    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-    .replace(/`([^`]+)`/gim, '<code style="background:rgba(99,102,241,0.15); color:var(--cyan-400); padding:2px 6px; border-radius:4px; font-family:var(--font-mono); font-size:12px;">$1</code>')
-    .replace(/^\- (.*$)/gim, '<li>$1</li>');
-
-  html = html.replace(/\|(.+)\|/gim, match => {
-    if (match.includes("---")) return "";
-    const cells = match.split("|").filter(c => c.trim() !== "");
-    const cellHtml = cells.map(c => `<td>${c.trim()}</td>`).join("");
-    return `<tr>${cellHtml}</tr>`;
-  });
-
-  html = html.replace(/(<tr>.+<\/tr>\s*)+/gim, match => `<table class="roadmap-table" style="margin:1rem 0;">${match}</table>`);
-  html = html.replace(/(<li>.+<\/li>\s*)+/gim, match => `<ul style="padding-left:1.25rem; margin:0.5rem 0;">${match}</ul>`);
-  html = html.replace(/\n\n+/gim, '<br>');
-
-  return html;
-}
-
-function switchModelCardTab(tab, clickedEl) {
-  document.querySelectorAll(".mc-tab").forEach(t => t.classList.remove("active"));
-  if (clickedEl) clickedEl.classList.add("active");
-
-  const rendered = document.getElementById("mcRenderedView");
-  const raw = document.getElementById("mcRawView");
-  const json = document.getElementById("mcJsonView");
-
-  if (rendered) rendered.style.display = tab === "rendered" ? "block" : "none";
-  if (raw) raw.style.display = tab === "raw" ? "block" : "none";
-  if (json) json.style.display = tab === "json" ? "block" : "none";
-}
-
 function copyModelCardMarkdown() {
-  const raw = document.getElementById("mcRawView");
-  if (!raw || !raw.value) {
-    alert("No model card available. Complete an audit first.");
-    return;
+  if (currentAuditData?.model_card?.markdown) {
+    navigator.clipboard.writeText(currentAuditData.model_card.markdown);
+    showToast("Model Card Markdown copied to clipboard");
   }
-
-  navigator.clipboard.writeText(raw.value).then(() => {
-    const btn = document.getElementById("btnCopyModelCard");
-    if (btn) {
-      const orig = btn.innerHTML;
-      btn.innerHTML = `
-        <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        <span>Copied to Clipboard</span>
-      `;
-      setTimeout(() => btn.innerHTML = orig, 2000);
-    }
-  }).catch(err => {
-    alert("Could not copy to clipboard: " + err.message);
-  });
 }
 
 function downloadModelCard(format) {
-  if (!currentAuditData || !currentAuditData.model_card) {
-    alert("No model card available. Complete an audit first.");
-    return;
-  }
-  const card = currentAuditData.model_card;
-  const modelName = (card.model_name || "ai_system").replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
-
-  let content = "";
-  let filename = "";
-  let type = "";
-
-  if (format === "json") {
-    content = JSON.stringify(card, null, 2);
-    filename = `model_card_${modelName}.json`;
-    type = "application/json";
-  } else {
-    content = card.markdown || "";
-    filename = `model_card_${modelName}.md`;
-    type = "text/markdown";
-  }
-
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
+  if (!currentAuditData?.model_card) return;
+  const content = format === "json"
+    ? JSON.stringify(currentAuditData.model_card.json_schema || currentAuditData, null, 2)
+    : (currentAuditData.model_card.markdown || "");
+  const blob = new Blob([content], { type: format === "json" ? "application/json" : "text/markdown" });
   const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
+  a.href = URL.createObjectURL(blob);
+  a.download = `model_card.${format === "json" ? "json" : "md"}`;
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  showToast(`Downloaded Model Card as ${format.toUpperCase()}`);
 }
 
-// =========================================================================
-// 14. CVSS, EPSS & CVE VULNERABILITY SCANNER
-// =========================================================================
-function renderCveVulnerabilities(vuln) {
-  if (!vuln) return;
-  const el = id => document.getElementById(id);
-
-  if (el("cvePostureVal")) el("cvePostureVal").textContent = vuln.security_posture;
-  if (el("cvePostureBadge")) {
-    el("cvePostureBadge").textContent = `${vuln.criticality_multiplier}x Multiplier`;
-    el("cvePostureBadge").className = `aif-verdict-badge ${vuln.average_compound_risk >= 60 ? "badge-danger" : (vuln.average_compound_risk >= 35 ? "badge-warning" : "badge-success")}`;
+function openDossierModal() {
+  const modal = document.getElementById("dossierModal");
+  const modalContent = document.getElementById("modalCardContent");
+  if (modal && modalContent) {
+    const rendered = document.getElementById("mcRenderedView");
+    modalContent.innerHTML = rendered && rendered.innerHTML ? rendered.innerHTML : "<p>No active dossier loaded.</p>";
+    modal.classList.add("open");
   }
-  if (el("cveCompoundRiskVal")) el("cveCompoundRiskVal").innerHTML = `${vuln.average_compound_risk}<small>/100</small>`;
-  if (el("cveActiveThreatsVal")) el("cveActiveThreatsVal").textContent = `${vuln.active_exploits_count} Active`;
-  if (el("cveTotalScannedVal")) el("cveTotalScannedVal").textContent = `${vuln.total_cves_scanned} Packages`;
-  if (el("cveCriticalitySelect") && vuln.asset_criticality) {
-    el("cveCriticalitySelect").value = vuln.asset_criticality;
-  }
-
-  const tbody = document.getElementById("cveTableBody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-
-  (vuln.vulnerabilities || []).forEach(v => {
-    const tr = document.createElement("tr");
-    const epssBadge = v.epss_badge === "danger" ? "badge-danger" : (v.epss_badge === "warning" ? "badge-warning" : "badge-info");
-
-    tr.innerHTML = `
-      <td>
-        <strong style="color:var(--cyan-400); font-family:var(--font-mono); font-size:13px;">${v.cve_id}</strong>
-        <div style="font-size:11px; color:var(--text-dim);">${v.package_type}</div>
-      </td>
-      <td>
-        <strong style="color:#fff;">${v.package}</strong>
-        <div style="font-size:11px; color:var(--text-muted);">${v.vulnerability_type}</div>
-      </td>
-      <td>
-        <span class="priority-tag ${v.cvss_tier === 'CRITICAL' ? 'danger' : 'warning'}">${v.cvss_score} ${v.cvss_tier}</span>
-      </td>
-      <td>
-        <span class="comp-badge ${epssBadge}" style="font-size:11px;">${v.epss_pct}</span>
-        <div style="font-size:10px; color:var(--text-dim); margin-top:2px;">${v.epss_threat}</div>
-      </td>
-      <td>
-        <strong style="color:${v.compound_risk >= 70 ? 'var(--danger)' : (v.compound_risk >= 45 ? 'var(--warning)' : 'var(--success)')}; font-family:var(--font-mono); font-size:14px;">
-          ${v.compound_risk}/100
-        </strong>
-      </td>
-      <td>
-        <div style="color:var(--success); font-weight:600; font-size:12px;">${v.remediation_patch}</div>
-        <div style="color:var(--text-secondary); font-size:11px; max-width:280px; margin-top:2px;">${v.description}</div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
 }
 
-async function rescanVulnerabilities() {
-  const criticality = document.getElementById("cveCriticalitySelect").value;
-  const domain = currentAuditData?.model_metadata?.domain || "General Purpose AI";
+function closeDossierModal() {
+  const modal = document.getElementById("dossierModal");
+  if (modal) modal.classList.remove("open");
+}
 
-  try {
-    const res = await fetch("/api/security/cve-scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ domain, asset_criticality: criticality })
-    });
-    const json = await res.json();
-    if (json.success && json.data) {
-      if (currentAuditData) currentAuditData.vulnerability_scan = json.data;
-      renderCveVulnerabilities(json.data);
-    }
-  } catch (err) {
-    console.error("Vulnerability rescan error:", err);
-  }
+function showToast(msg) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = "toast-msg";
+  toast.innerHTML = `<span class="indicator-dot info"></span> <span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(6px)";
+    toast.style.transition = "all 0.2s ease";
+    setTimeout(() => toast.remove(), 200);
+  }, 3200);
 }

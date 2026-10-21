@@ -327,36 +327,79 @@ Requirement -> Evidence -> Test -> Result -> Risk -> Remediation
 
 
 ================================================================================
-SECTION 7: CODEBASE ARCHITECTURE & FILE MANIFEST
+SECTION 7: CODEBASE ARCHITECTURE & FILE MANIFEST (v4.0)
 ================================================================================
 
 PROJECT DIRECTORY: t:\Main\
 
-1. mcp_server_soil_ai.py
-   - Role: Target AI System & Tool Host wrapped in Model Context Protocol.
-   - Capabilities:
-     * `get_model_metadata()`: Model identity, dataset statistics, governance declarations.
-     * `predict_soil_and_fertilizer()`: Computes classification confidence, agronomic 
-       fertilizer dosage formulas, TreeSHAP feature attributions, and human review flags.
-     * `test_adversarial_perturbation()`: Evaluates model divergence under noise injection.
-     * `get_data_governance_record()`: Declares encryption, retention, and consent policies.
+1. demo_servers/ (good_server.py, moderate_server.py, poor_server.py)
+   - Role: Reproducible MCP server test targets exposing tools via stdio transport (MCP 2.x/1.x).
+   - Profiles:
+     * `good_server.py`: Well-secured server with full metadata, bounds clamping, input validation, encryption.
+     * `moderate_server.py`: Partially secured server with gaps in encryption and human oversight.
+     * `poor_server.py`: Insecure baseline server testing detection of missing validation and controls.
 
-2. aigrid_auditor.py
-   - Role: Core Automated Audit & Risk Assessment Engine.
+2. mcp_client.py
+   - Role: Generic Model Context Protocol client using official MCP SDK stdio transport.
    - Capabilities:
-     * Executes asynchronous live MCP tool probing (`run_live_audit`).
-     * Dynamically calculates all 7 Trustworthiness Dimensions without static numbers.
-     * Evaluates the Bottleneck Composite Score (AAS).
-     * Maps evidence to EU AI Act Articles and NIST AI RMF lifecycle functions.
-     * Implements Algorithm 5 (What-If Simulation Engine).
+     * `session()`: Async context manager ensuring clean subprocess lifecycle and task scope.
+     * `list_tools()`: Protocol-level enumeration of exposed tool schemas (JSON-RPC).
+     * `call_tool()`: Controlled tool invocation with timeout handling and audit logging.
 
-3. server.py
-   - Role: High-performance Flask REST API & Web Server.
-   - Endpoints:
-     * `GET  /`                 : Serves the White + Violet GRC dashboard.
-     * `POST /api/audit/mcp`    : Triggers live MCP audit and returns structured findings.
-     * `POST /api/simulate`     : Executes what-if domain and scaling recalculation.
-     * `GET  /api/status`       : Health check & engine status.
+3. mcp_probes.py
+   - Role: 8-probe security assessment suite generating structured Evidence objects.
+   - Probes:
+     * P01: Tool Discovery & Enumeration
+     * P02: Schema Validation & Type Safety
+     * P03: Permission & Capability Analysis
+     * P04: Input Boundary Testing (negative, overflow, edge cases)
+     * P05: Output Validation & Safety Clamping
+     * P06: Governance & Metadata Introspection
+     * P07: Error Handling & Stack Trace Leakage
+     * P08: Cryptographic Data Governance Verification
+
+4. evidence.py
+   - Role: Structured Evidence model & multi-tier weighting pipeline.
+   - Capabilities:
+     * Normalizes observations with confidence tiers (T1=1.0, T2=0.8, T3=0.6).
+     * Computes evidence-weighted dimension scores: score = sum(val*w) / sum(w).
+     * Computes dimension confidence: conf = 1 - 1/(1 + sum(w)).
+     * Aggregates 6 dimensions and computes Bottleneck-Penalized AAS.
+
+5. audit_store.py
+   - Role: SQLite-backed persistent audit trail (data/aigrid_audits.db).
+   - Capabilities:
+     * Persists audit runs, structured evidence items, and findings across server restarts.
+     * Provides audit history retrieval and longitudinal governance tracking.
+
+6. aigrid_auditor.py
+   - Role: Automated Dual-Mode Protocol Auditor & GRC Risk Engine.
+   - Capabilities:
+     * Executes real MCP protocol probing (Mode 1, Tier T1).
+     * Executes structured questionnaire assessment (Mode 2, Tier T3).
+     * Computes Attestation Discrepancy Index (ADI) comparing self-attestation vs. probe.
+
+7. compliance_engines.py
+   - Role: Transparent compliance, fairness, and threat mapping engines.
+   - Capabilities:
+     * Custom Fairness Metrics (DIR, SPD, Kamiran & Calders sample reweighing).
+     * Rule-Based Risk Cohort Slicing.
+     * Remediation Priority Ranker (prioritized by severity × dimension gap, without fake projections).
+     * EU AI Act Article-by-Article Evaluation (Articles 9-15).
+     * NIST AI RMF 1.0 Function & Subcategory Crosswalk.
+     * Threat Landscape Crosswalk (OWASP LLM/MCP Top 10, MITRE ATLAS).
+     * AI Supply Chain Vulnerability Scanner (CVE/EPSS registry snapshot).
+     * Google Model Card Generator (Mitchell et al., 2019 format).
+
+8. server.py
+   - Role: Hardened Flask REST API (v4.0).
+   - Features: Request body validation, sanitized error reporting, SQLite persistence, CORS security headers.
+
+9. tests/
+   - test_evidence.py: Unit tests for tier weights, weighted scoring, and AAS calculation.
+   - test_compliance.py: Unit tests for EU AI Act, NIST RMF, threat crosswalk, and model card.
+   - test_api.py: Integration tests for REST endpoints, validation errors, and audit history.
+   - test_experiments.py: Research validation tests for Experiment 1 (ADI) and Experiment 2 (alpha sensitivity).
 
 4. public/index.html
    - Role: Single-Page Application (SPA) UI with page-based navigation.

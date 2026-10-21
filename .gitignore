@@ -15,3 +15,6 @@ ENV/
 .DS_Store
 Thumbs.db
 *.bak
+
+# Testing & Cache
+.pytest_cache/

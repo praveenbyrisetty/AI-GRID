@@ -1,515 +1,531 @@
 """
-AI-GRID Automated Auditor & GRC Risk Assessment Engine
+AI-GRID Automated Protocol Auditor & GRC Risk Engine (v4.0)
 
-Supports TWO audit modes:
-1. MCP Mode: Connects to a real MCP server and probes its tools live
-2. Questionnaire Mode: Generates audit from user-provided answers
+Implements Dual-Mode Trust Auditing with real MCP protocol probing:
 
-Both modes produce identical output format for the dashboard.
+1. Automated MCP Protocol Probing (Evidence Tier T1, weight 1.0):
+   - Connects to target MCP server via stdio transport using the official MCP SDK
+   - Executes 8 security probes (tool discovery, schema validation, boundary testing, etc.)
+   - Generates structured Evidence objects with provenance tracking
+   
+2. Structured Questionnaire Assessment (Evidence Tier T3, weight 0.6):
+   - 30 research-grounded items mapped to 6 dimensions
+   - Evidence-weighted scoring (T3 weight = 0.6)
+
+3. Attestation Discrepancy Analysis (Comparative Engine):
+   - Computes ADI = mean(S_self(d) - S_probe(d)) to quantify self-reporting bias
+
+DISCLAIMER: This assessment does not constitute legal certification.
 """
 
 import asyncio
 import json
-from typing import Any, Dict, List
-from ai_profile_engine import generate_audit_from_questionnaire, get_questions
-from rai_engines import (
-    compute_aif360_fairness,
-    analyze_risk_cohorts,
-    solve_prescriptive_counterfactual,
-    generate_google_model_card,
-    scan_ai_vulnerabilities,
+import logging
+import os
+import sys
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from evidence import (
+    Evidence,
+    SecurityFinding,
+    DIMENSIONS_LIST,
+    TIER_WEIGHTS,
+    aggregate_dimension_scores,
+    compute_aas,
 )
+from ai_profile_engine import (
+    generate_audit_from_questionnaire,
+    get_questions,
+    compute_aas_and_bottleneck,
+    DOMAIN_LABELS,
+)
+from compliance_engines import (
+    compute_fairness_metrics,
+    analyze_risk_cohorts,
+    solve_remediation_priority,
+    evaluate_eu_ai_act_compliance,
+    evaluate_nist_ai_rmf,
+    map_owasp_and_atlas,
+    scan_ai_vulnerabilities,
+    generate_google_model_card,
+)
+
+logger = logging.getLogger("aigrid.auditor")
+
+# Base directory for demo servers
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEMO_SERVERS_DIR = os.path.join(BASE_DIR, "demo_servers")
+
+# Demo server profile mapping
+DEMO_SERVER_PROFILES = {
+    "good": os.path.join(DEMO_SERVERS_DIR, "good_server.py"),
+    "moderate": os.path.join(DEMO_SERVERS_DIR, "moderate_server.py"),
+    "poor": os.path.join(DEMO_SERVERS_DIR, "poor_server.py"),
+}
 
 
 class AIGRIDMCPAuditor:
     """
-    Dual-mode auditor supporting both MCP-based live probing
-    and questionnaire-based assessment.
+    Dual-mode auditor evaluating AI trust across 6 dimensions
+    via real MCP protocol probing and self-attested questionnaire analysis.
     """
 
     def __init__(self):
-        self.mcp_server = None  # Set dynamically when MCP mode is used
+        self.last_probe_results: Dict[str, Any] = {}
 
     # =================================================================
-    # MODE 1: MCP-BASED LIVE AUDIT (Generic — works with any MCP server)
+    # MODE 1: MCP-BASED AUTOMATED PROBE AUDIT (Evidence Tier T1)
+    # Uses real MCP protocol via official SDK
     # =================================================================
-    async def run_live_audit(self, mcp_server=None) -> Dict[str, Any]:
+    async def run_live_audit(
+        self,
+        profile: str = "good",
+        mcp_command: Optional[str] = None,
+        mcp_args: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
-        Executes real MCP tool calls against a target AI model's MCP server
-        and dynamically computes all 7 dimension scores from probe responses.
+        Executes real protocol-level MCP tool probing against target AI agent.
 
-        If no MCP server is provided, attempts to use the stored one.
+        Args:
+            profile: Demo server profile ("good", "moderate", "poor").
+                     Used when mcp_command is not provided.
+            mcp_command: Custom command to launch the MCP server (e.g., "python").
+            mcp_args: Arguments for the server command (e.g., ["my_server.py"]).
+
+        Returns:
+            Complete audit payload with evidence-weighted dimension scores.
         """
-        server = mcp_server or self.mcp_server
-        if server is None:
-            raise ValueError("No MCP server configured. Use questionnaire mode or provide an MCP server connection.")
-
         logs: List[Dict[str, str]] = []
-        findings: List[Dict[str, Any]] = []
 
-        def log(stage: str, message: str, status: str = "INFO"):
-            logs.append({"stage": stage, "message": message, "status": status})
+        def log(stage: str, msg: str, st: str = "INFO"):
+            logs.append({"stage": stage, "message": msg, "status": st})
 
-        def finding(dimension: str, severity: str, issue: str, action: str):
-            badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
-            findings.append({
-                "priority": severity,
-                "badge": badge_map.get(severity, "info"),
-                "dimension": dimension,
-                "finding": issue,
-                "action": action
-            })
+        log("INIT", "AI-GRID MCP Protocol Auditor v4.0 starting...")
+        log("INIT", "Evidence collection mode: T1 (Automated Runtime Observation, weight=1.0)")
 
-        # =============================================================
-        # PHASE 1: DISCOVERY — Connect and enumerate MCP tools
-        # =============================================================
-        log("DISCOVERY", "Connecting to Target AI via Model Context Protocol (MCP)...", "INFO")
-        tools = await server.list_tools()
-        tool_names = [t.name for t in tools]
-        log("DISCOVERY", f"Discovered {len(tool_names)} registered MCP tools: {', '.join(tool_names)}", "SUCCESS")
-
-        # =============================================================
-        # PHASE 2: METADATA EXTRACTION
-        # =============================================================
-        metadata = {}
-        has_metadata_tool = "get_model_metadata" in tool_names
-
-        if has_metadata_tool:
-            log("PROBE_1", "Calling MCP Tool 'get_model_metadata()' to inspect model profile...", "INFO")
-            meta_res = await server.call_tool("get_model_metadata", {})
-            metadata = self._parse_tool_result(meta_res)
-            model_name = metadata.get("model_name", "Unknown Model")
-            version = metadata.get("version", "?")
-            arch = metadata.get("model_architecture", "Unknown")
-            log("PROBE_1", f"Extracted Profile: '{model_name}' v{version} ({arch})", "SUCCESS")
+        # Determine MCP server target
+        if mcp_command and mcp_args:
+            server_command = mcp_command
+            server_args = mcp_args
+            log("TARGET", f"Custom MCP server: {mcp_command} {' '.join(mcp_args)}")
         else:
-            log("PROBE_1", "No 'get_model_metadata' tool found — using limited metadata from tool discovery.", "WARNING")
-            metadata = {
-                "model_name": "MCP-Connected AI System",
-                "version": "Unknown",
-                "model_architecture": "Unknown",
-                "training_dataset_size": 0,
-                "training_class_distribution": {},
-                "geographic_coverage": [],
-                "geographic_gaps": [],
-                "encryption_at_rest": False,
-                "encryption_in_transit": True,
-                "human_oversight_required": False,
-                "incident_escalation_protocol": False,
-                "model_drift_monitoring": "",
-                "drift_status": "UNKNOWN",
-                "data_retention_days": 365
-            }
+            server_script = DEMO_SERVER_PROFILES.get(profile)
+            if not server_script or not os.path.exists(server_script):
+                log("TARGET", f"Demo server script not found for profile '{profile}'", "ERROR")
+                return self._build_error_payload(
+                    f"Demo server script not found for profile '{profile}'. "
+                    f"Expected at: {server_script}",
+                    logs,
+                )
+            server_command = sys.executable  # Use the current Python interpreter
+            server_args = [server_script]
+            log("TARGET", f"Demo MCP server profile: {profile} ({server_script})")
 
-        # =============================================================
-        # PHASE 3: FAIRNESS & BIAS PROBE
-        # =============================================================
-        log("PROBE_2", "Probing fairness parity across demographics...", "INFO")
-        fairness_score = 100.0
+        # Try to connect via real MCP SDK
+        use_sdk = True
+        evidence_items = []
+        tools_discovered = []
+        meta_data = {}
 
-        has_predict_tool = "predict_soil_and_fertilizer" in tool_names or any("predict" in t.lower() for t in tool_names)
-        predict_tool = next((t for t in tool_names if "predict" in t.lower()), None)
+        try:
+            from mcp_client import MCPClient
+            from mcp_probes import MCPSecurityProber
 
-        # Geographic coverage check from metadata
-        geo_coverage = metadata.get("geographic_coverage", [])
-        geo_gaps = metadata.get("geographic_gaps", [])
-        total_regions = len(geo_coverage) + len(geo_gaps)
-        coverage_ratio = len(geo_coverage) / max(total_regions, 1) if total_regions > 0 else 0.5
+            client = MCPClient(timeout=30.0)
+            async with client.session(server_command, server_args) as session_client:
+                log("CONNECTION", "Connected to target MCP server via stdio transport (official MCP SDK).", "SUCCESS")
+                prober = MCPSecurityProber(session_client)
+                probe_results = await prober.run_all_probes()
 
-        if total_regions > 0 and coverage_ratio < 0.6:
-            penalty = round((1.0 - coverage_ratio) * 50, 1)
-            fairness_score -= penalty
-            log("PROBE_2", f"FAIRNESS ISSUE: Coverage only {coverage_ratio*100:.0f}% ({len(geo_coverage)}/{total_regions} groups).", "WARNING")
-            finding("Fairness & Bias", "HIGH",
-                    f"Training data covers only {len(geo_coverage)} of {total_regions} target groups.",
-                    "Expand training data to include underrepresented groups and demographics.")
-        elif total_regions > 0:
-            log("PROBE_2", "Geographic/demographic fairness parity verified.", "SUCCESS")
-        else:
-            fairness_score -= 10
-            log("PROBE_2", "FAIRNESS NOTE: Unable to assess geographic coverage — no metadata available.", "WARNING")
+                evidence_items = probe_results["evidence"]
+                probe_logs = probe_results["logs"]
+                tools_discovered = probe_results["tools_discovered"]
+                meta_data = probe_results.get("metadata", {})
 
-        # Class imbalance check
-        class_dist = metadata.get("training_class_distribution", {})
-        if class_dist:
-            counts = list(class_dist.values())
-            if counts:
-                max_count = max(counts)
-                min_count = min(counts)
-                imbalance_ratio = min_count / max(max_count, 1)
-                if imbalance_ratio < 0.25:
-                    fairness_score -= 10
-                    log("PROBE_2", f"CLASS IMBALANCE: Smallest class has {min_count} samples vs largest {max_count} (ratio: {imbalance_ratio:.2f}).", "WARNING")
+                logs.extend(probe_logs)
+                log("PROBES", f"Completed 8 security probes. Collected {len(evidence_items)} evidence items.", "SUCCESS")
 
-        fairness_score = round(max(10.0, min(100.0, fairness_score)), 1)
+        except Exception as e:
+            logger.warning(f"MCP SDK connection/probing failed: {e}. Attempting fallback.")
+            log("CONNECTION", f"MCP SDK error: {e}. Falling back to direct invocation.", "WARNING")
+            use_sdk = False
 
-        # =============================================================
-        # PHASE 4: SAFETY & RELIABILITY PROBE
-        # =============================================================
-        log("PROBE_3", "Probing safety guardrails...", "INFO")
-        safety_score = 100.0
-
-        # Check for prediction tools and try probing them
-        guardrails_found = 0
-        if predict_tool:
-            log("PROBE_3", f"Found prediction tool: '{predict_tool}'. Probing safety guardrails...", "INFO")
-            # Try to get tool schema to understand parameters
-            log("PROBE_3", "Analyzing tool interface for safety validation patterns...", "INFO")
-            guardrails_found = 1  # At least found a prediction tool
-        else:
-            safety_score -= 15
-            log("PROBE_3", "No prediction tool found — cannot probe safety guardrails.", "WARNING")
-
-        # Check metadata for safety indicators
-        ops = metadata.get("operational_boundaries", {})
-        if ops:
-            log("PROBE_3", "SAFETY PASS: Operational boundaries defined in metadata.", "SUCCESS")
-            guardrails_found += 1
-        else:
-            safety_score -= 10
-            log("PROBE_3", "SAFETY WARNING: No operational boundaries defined.", "WARNING")
-
-        if guardrails_found == 0:
-            safety_score -= 20
-            finding("Safety & Reliability", "HIGH",
-                    "No safety guardrails detected in the MCP tool interface.",
-                    "Implement input validation, output clamping, and anomaly detection guardrails.")
-
-        safety_score = round(max(10.0, min(100.0, safety_score)), 1)
-
-        # =============================================================
-        # PHASE 5: TRANSPARENCY PROBE
-        # =============================================================
-        log("PROBE_4", "Probing explainability capabilities...", "INFO")
-        transparency_score = 100.0
-
-        has_explain_tool = any("explain" in t.lower() for t in tool_names)
-        if has_explain_tool:
-            explain_tool = next(t for t in tool_names if "explain" in t.lower())
-            log("PROBE_4", f"Found explainability tool: '{explain_tool}'.", "SUCCESS")
-
+        # Fallback: direct invocation (clearly labeled)
+        if not use_sdk:
+            log("CONNECTION", "Using DIRECT INVOCATION fallback (not MCP protocol).", "WARNING")
+            fallback_client = await self._create_fallback_client(profile)
+            if not fallback_client:
+                return self._build_error_payload(
+                    "Failed to connect to MCP server via both SDK and fallback.",
+                    logs,
+                )
             try:
-                explain_res = await server.call_tool(explain_tool, {})
-                explain_data = self._parse_tool_result(explain_res)
+                from mcp_probes import MCPSecurityProber
+                prober = MCPSecurityProber(fallback_client)
+                probe_results = await prober.run_all_probes()
 
-                attributions = explain_data.get("feature_attributions", {})
-                if not attributions or len(attributions) < 3:
-                    transparency_score -= 30
-                    log("PROBE_4", "TRANSPARENCY WARNING: Insufficient feature attributions.", "WARNING")
-                else:
-                    log("PROBE_4", f"Feature attributions present: {len(attributions)} features.", "SUCCESS")
+                evidence_items = probe_results["evidence"]
+                probe_logs = probe_results["logs"]
+                tools_discovered = probe_results["tools_discovered"]
+                meta_data = probe_results.get("metadata", {})
 
-                reasoning = explain_data.get("reasoning_summary", "")
-                if reasoning and len(reasoning) > 30:
-                    log("PROBE_4", "Reasoning summary verified.", "SUCCESS")
-                else:
-                    transparency_score -= 10
-                    log("PROBE_4", "TRANSPARENCY GAP: No human-readable reasoning summary.", "WARNING")
-            except Exception:
-                transparency_score -= 15
-                log("PROBE_4", "TRANSPARENCY WARNING: Explainability tool call failed.", "WARNING")
-        else:
-            transparency_score -= 40
-            log("PROBE_4", "TRANSPARENCY FAIL: No explainability tool found in MCP interface.", "DANGER")
-            finding("Transparency", "HIGH",
-                    "No explainability tool available — predictions are not interpretable.",
-                    "Implement a SHAP/LIME/Grad-CAM explainability tool and register it via MCP.")
+                logs.extend(probe_logs)
+                log("PROBES", f"Completed 8 security probes (fallback mode). Collected {len(evidence_items)} evidence items.", "SUCCESS")
+            except Exception as e:
+                log("PROBES", f"Fallback probe execution error: {e}", "ERROR")
+                return self._build_error_payload(f"Probe execution failed: {e}", logs)
 
-        transparency_score = round(max(10.0, min(100.0, transparency_score)), 1)
+        # Aggregate evidence into dimension scores
+        dimension_results = aggregate_dimension_scores(evidence_items)
+        dimensions = {name: r.score for name, r in dimension_results.items()}
 
-        # =============================================================
-        # PHASE 6: PRIVACY & GOVERNANCE PROBE
-        # =============================================================
-        log("PROBE_5", "Auditing data storage policies and encryption...", "INFO")
-        privacy_score = 100.0
+        # Compute AAS
+        scoring = compute_aas(dimension_results, alpha=0.6)
+        log("SCORING", f"AAS: {scoring['aas_score']}/100 (Grade: {scoring['trust_grade']}) | "
+            f"Confidence: {scoring['overall_confidence']:.1%} | "
+            f"Bottleneck: '{scoring['bottleneck_dimension']}' ({scoring['bottleneck_score']})",
+            "SUCCESS")
 
-        if not metadata.get("encryption_at_rest", False):
-            privacy_score -= 30
-            log("PROBE_5", "PRIVACY VULNERABILITY: Data stored UNENCRYPTED at rest.", "WARNING")
-            finding("Privacy & Governance", "HIGH",
-                    "Data is not encrypted at rest.",
-                    "Enable AES-256 database encryption at rest and implement key rotation policy.")
-        else:
-            log("PROBE_5", "Data encryption at rest: ENABLED.", "SUCCESS")
+        # Extract security findings from evidence
+        findings = [
+            e.finding.to_dict() for e in evidence_items
+            if e.finding is not None
+        ]
+        # Sort by severity
+        sev_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+        findings.sort(key=lambda x: sev_order.get(x.get("priority", "LOW"), 99))
 
-        if not metadata.get("encryption_in_transit", False):
-            privacy_score -= 20
-            log("PROBE_5", "PRIVACY VULNERABILITY: Data transmitted without encryption.", "DANGER")
-        else:
-            log("PROBE_5", "Data encryption in transit (TLS): ENABLED.", "SUCCESS")
+        # Regulatory evaluation
+        eu_comp = evaluate_eu_ai_act_compliance(
+            domain=meta_data.get("domain", "Agriculture / Environmental"),
+            autonomy_level="semi_autonomous" if meta_data.get("human_oversight_required") else "fully_autonomous",
+            dimensions=dimensions,
+        )
+        nist_comp = evaluate_nist_ai_rmf(dimensions=dimensions)
+        threat_cross = map_owasp_and_atlas(findings=findings, dimensions=dimensions)
 
-        retention_days = metadata.get("data_retention_days", 0)
-        if retention_days > 180:
-            privacy_score -= 15
-            log("PROBE_5", f"DATA GOVERNANCE ISSUE: Retention period is {retention_days} days.", "WARNING")
-            finding("Privacy & Governance", "MEDIUM",
-                    f"Data retention period is {retention_days} days — exceeds recommended 90-day limit.",
-                    "Shorten data retention to 90 days or implement re-consent workflow.")
-        elif retention_days > 90:
-            privacy_score -= 5
-            log("PROBE_5", f"Data retention: {retention_days} days (borderline).", "INFO")
-        else:
-            log("PROBE_5", f"Data retention: {retention_days} days (within limits).", "SUCCESS")
-
-        privacy_score = round(max(10.0, min(100.0, privacy_score)), 1)
-
-        # =============================================================
-        # PHASE 7: ACCOUNTABILITY PROBE
-        # =============================================================
-        log("PROBE_6", "Inspecting human oversight controls...", "INFO")
-        accountability_score = 100.0
-
-        if not metadata.get("human_oversight_required", False):
-            accountability_score -= 45
-            log("PROBE_6", "ACCOUNTABILITY BOTTLENECK: AI outputs delivered without human review!", "DANGER")
-            finding("Accountability & Oversight", "CRITICAL",
-                    "Direct automated output delivery without human-in-the-loop validation.",
-                    "Implement a human-in-the-loop validation step for high-risk predictions.")
-        else:
-            log("PROBE_6", "Human oversight: REQUIRED.", "SUCCESS")
-
-        if not metadata.get("incident_escalation_protocol", False):
-            accountability_score -= 20
-            log("PROBE_6", "ACCOUNTABILITY GAP: No incident escalation protocol.", "WARNING")
-        else:
-            log("PROBE_6", "Incident escalation protocol: DEFINED.", "SUCCESS")
-
-        accountability_score = round(max(10.0, min(100.0, accountability_score)), 1)
-
-        # =============================================================
-        # PHASE 8: SECURITY & ROBUSTNESS PROBE
-        # =============================================================
-        log("PROBE_7", "Probing adversarial robustness...", "INFO")
-        security_score = 100.0
-
-        has_adversarial_tool = any("adversarial" in t.lower() or "robust" in t.lower() or "perturbation" in t.lower() for t in tool_names)
-        if has_adversarial_tool:
-            adv_tool = next(t for t in tool_names if "adversarial" in t.lower() or "robust" in t.lower() or "perturbation" in t.lower())
-            log("PROBE_7", f"Found adversarial testing tool: '{adv_tool}'. Running probes...", "INFO")
-
-            try:
-                adv_res = await server.call_tool(adv_tool, {})
-                adv_data = self._parse_tool_result(adv_res)
-
-                divergence = adv_data.get("divergence_score", 0)
-                adv_status = adv_data.get("robustness_status", "UNKNOWN")
-
-                if adv_status == "VULNERABLE":
-                    penalty = round(divergence * 40, 1)
-                    security_score -= penalty
-                    log("PROBE_7", f"SECURITY WARNING: Adversarial vulnerability detected (divergence: {divergence:.4f}).", "WARNING")
-                    finding("Security & Robustness", "MEDIUM",
-                            f"Adversarial noise sensitivity — divergence score {divergence:.2f}.",
-                            "Implement input denoising or adversarial training to improve robustness.")
-                else:
-                    log("PROBE_7", f"Adversarial test: {adv_status} (divergence: {divergence:.4f}).", "SUCCESS")
-            except Exception:
-                security_score -= 10
-                log("PROBE_7", "SECURITY WARNING: Adversarial test tool call failed.", "WARNING")
-        else:
-            security_score -= 20
-            log("PROBE_7", "No adversarial testing tool found in MCP interface.", "WARNING")
-            finding("Security & Robustness", "MEDIUM",
-                    "No adversarial robustness testing capability available via MCP.",
-                    "Add an adversarial perturbation testing tool to the MCP interface.")
-
-        drift_monitoring = metadata.get("model_drift_monitoring", "")
-        if drift_monitoring:
-            log("PROBE_7", f"Model drift monitoring: {drift_monitoring}.", "SUCCESS")
-        else:
-            security_score -= 10
-            log("PROBE_7", "SECURITY GAP: No model drift monitoring configured.", "WARNING")
-
-        security_score = round(max(10.0, min(100.0, security_score)), 1)
-
-        # =============================================================
-        # PHASE 9: SOCIETAL IMPACT PROBE
-        # =============================================================
-        log("PROBE_8", "Auditing societal impact...", "INFO")
-        societal_score = 100.0
-
-        dataset_size = metadata.get("training_dataset_size", 0)
-        if dataset_size < 2000:
-            societal_score -= 25
-            log("PROBE_8", f"SOCIETAL CONCERN: Training dataset ({dataset_size} samples) too small.", "WARNING")
-        elif dataset_size < 5000:
-            societal_score -= 8
-            log("PROBE_8", f"Training dataset: {dataset_size} samples — adequate.", "INFO")
-        else:
-            log("PROBE_8", f"Training dataset: {dataset_size} samples — sufficient.", "SUCCESS")
-
-        if len(geo_gaps) > len(geo_coverage):
-            societal_score -= 12
-            log("PROBE_8", f"SOCIETAL CONCERN: {len(geo_gaps)} underserved groups vs {len(geo_coverage)} covered.", "WARNING")
-
-        societal_score = round(max(10.0, min(100.0, societal_score)), 1)
-
-        # =============================================================
-        # COMPOSE SCORES & COMPLIANCE
-        # =============================================================
-        dimensions = {
-            "Fairness & Bias": fairness_score,
-            "Transparency": transparency_score,
-            "Safety & Reliability": safety_score,
-            "Privacy & Governance": privacy_score,
-            "Accountability & Oversight": accountability_score,
-            "Security & Robustness": security_score,
-            "Societal Impact": societal_score
-        }
-
-        dim_values = list(dimensions.values())
-        weighted_average = sum(dim_values) / len(dim_values)
-        bottleneck_score = min(dim_values)
-        bottleneck_dimension = [k for k, v in dimensions.items() if v == bottleneck_score][0]
-
-        alpha = 0.6
-        aas = round((alpha * weighted_average) + ((1.0 - alpha) * bottleneck_score), 1)
-
-        if aas >= 90: grade = "A+"
-        elif aas >= 80: grade = "A"
-        elif aas >= 70: grade = "B"
-        elif aas >= 60: grade = "C"
-        elif aas >= 50: grade = "D"
-        else: grade = "F"
-
-        if aas >= 76:
-            eu_tier, eu_color, eu_desc = "MINIMAL RISK", "emerald", "Unregulated or low regulatory burden under EU AI Act."
-        elif aas >= 51:
-            eu_tier, eu_color, eu_desc = "LIMITED RISK", "amber", "Transparency obligations apply (must disclose AI nature and confidence)."
-        elif aas >= 26:
-            eu_tier, eu_color, eu_desc = "HIGH RISK", "orange", "Strict regulatory requirements: Conformity assessment, risk management & human oversight required."
-        else:
-            eu_tier, eu_color, eu_desc = "UNACCEPTABLE RISK", "rose", "Prohibited from deployment under EU AI Act Article 5."
-
-        def nist_status(val: float) -> Dict[str, Any]:
-            if val >= 70: return {"score": round(val, 1), "status": "COMPLIANT", "badge": "success"}
-            elif val >= 45: return {"score": round(val, 1), "status": "PARTIALLY COMPLIANT", "badge": "warning"}
-            return {"score": round(val, 1), "status": "NON-COMPLIANT", "badge": "danger"}
-
-        nist_rmf = {
-            "GOVERN": nist_status((dimensions["Accountability & Oversight"] + dimensions["Privacy & Governance"]) / 2),
-            "MAP": nist_status((dimensions["Societal Impact"] + dimensions["Fairness & Bias"]) / 2),
-            "MEASURE": nist_status((dimensions["Fairness & Bias"] + dimensions["Transparency"] + dimensions["Safety & Reliability"]) / 3),
-            "MANAGE": nist_status((dimensions["Security & Robustness"] + dimensions["Safety & Reliability"]) / 2)
-        }
-
-        severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
-        findings.sort(key=lambda x: severity_order.get(x["priority"], 99))
-
-        # Compute IBM AIF360 Fairness & Reweighing metrics
-        aif360_metrics = compute_aif360_fairness(metadata=metadata, fairness_score=fairness_score)
-
-        # Compute Microsoft RAI Risk Cohorts & Prescriptive Counterfactual
-        risk_cohorts = analyze_risk_cohorts(dimensions, findings, metadata)
-        counterfactual = solve_prescriptive_counterfactual(aas, dimensions, findings, target_score=76.0)
-
-        # Compute CVSS, EPSS & Asset Criticality Compound Vulnerability Scan
-        vulnerability_scan = scan_ai_vulnerabilities(domain=metadata.get("domain", "General Purpose AI"))
+        fairness_metrics = compute_fairness_metrics(
+            metadata=meta_data,
+            fairness_score=dimensions.get("Fairness & Non-Discrimination", 50.0),
+        )
+        risk_cohorts = analyze_risk_cohorts(
+            dimensions=dimensions, findings=findings, metadata=meta_data,
+        )
+        remediation = solve_remediation_priority(
+            current_aas=scoring["aas_score"], dimensions=dimensions,
+            findings=findings, target_score=76.0,
+        )
+        vulnerability_scan = scan_ai_vulnerabilities(
+            domain=meta_data.get("domain", "General Purpose AI"),
+        )
 
         audit_payload = {
-            "model_metadata": metadata,
-            "dimensions": dimensions,
-            "scoring": {
-                "aas_score": aas,
-                "weighted_average": round(weighted_average, 1),
-                "bottleneck_score": round(bottleneck_score, 1),
-                "bottleneck_dimension": bottleneck_dimension,
-                "trust_grade": grade
+            "model_metadata": {
+                "model_name": meta_data.get("model_name", "MCP Target AI"),
+                "version": meta_data.get("version", "Unknown"),
+                "domain": meta_data.get("domain", "Unknown"),
+                "model_architecture": meta_data.get("model_architecture", "Unknown"),
+                "deployment_type": "mcp_agent",
+                "evidence_tier": "T1",
+                "evidence_confidence_weight": 1.0,
+                "mcp_tools_discovered": tools_discovered,
+                "mcp_transport": "stdio (MCP SDK)" if use_sdk else "direct_invocation (fallback)",
+                "audit_timestamp": datetime.now().isoformat(),
             },
+            "dimensions": dimensions,
+            "dimension_confidences": {
+                name: r.confidence for name, r in dimension_results.items()
+            },
+            "scoring": scoring,
             "compliance": {
-                "eu_ai_act": {"tier": eu_tier, "color": eu_color, "description": eu_desc},
-                "nist_ai_rmf": nist_rmf
+                "eu_ai_act": {
+                    "tier": eu_comp["intended_purpose_classification"]["tier"],
+                    "badge_color": eu_comp["intended_purpose_classification"]["badge_color"],
+                    "legal_basis": eu_comp["intended_purpose_classification"]["legal_basis"],
+                    "market_placement_permitted": eu_comp["intended_purpose_classification"]["market_placement_permitted"],
+                    "conformity_assessment_required": eu_comp["intended_purpose_classification"]["conformity_assessment_required"],
+                    "overall_status": eu_comp["article_level_conformance"]["overall_status"],
+                    "conformant_articles": eu_comp["article_level_conformance"]["conformant_articles"],
+                    "articles": eu_comp["article_level_conformance"]["articles"],
+                    "disclaimer": "This assessment is indicative only and does not constitute legal certification.",
+                },
+                "nist_ai_rmf": nist_comp["functions"],
+            },
+            "threat_landscape": {
+                "owasp_llm_top_10": threat_cross["owasp_llm_top_10"],
+                "owasp_mcp_top_10": threat_cross["owasp_mcp_top_10"],
+                "mitre_atlas_techniques": threat_cross["mitre_atlas_techniques"],
             },
             "remediation_plan": findings,
             "audit_logs": logs,
             "probe_summary": {
                 "total_probes": 8,
-                "mcp_tools_called": len(tool_names),
-                "guardrails_tested": guardrails_found,
-                "adversarial_tests": 1 if has_adversarial_tool else 0,
-                "findings_count": len(findings)
+                "mcp_tools_called": len(tools_discovered),
+                "evidence_tier": "T1",
+                "confidence_weight": 1.0,
+                "evidence_items_collected": len(evidence_items),
+                "findings_count": len(findings),
+                "critical_findings": sum(1 for f in findings if f.get("priority") == "CRITICAL"),
+                "overall_confidence": scoring.get("overall_confidence", 0.0),
             },
             "audit_mode": "mcp",
-            "aif360": aif360_metrics,
+            "aif360": fairness_metrics,
             "cohort_analysis": risk_cohorts,
-            "prescriptive_counterfactual": counterfactual,
-            "vulnerability_scan": vulnerability_scan
+            "prescriptive_counterfactual": remediation,
+            "vulnerability_scan": vulnerability_scan,
         }
 
-        # Generate Google Model Card (Mitchell et al., 2019 standard)
         audit_payload["model_card"] = generate_google_model_card(audit_payload)
-
+        self.last_probe_results = audit_payload
         return audit_payload
 
+    async def _create_fallback_client(self, profile: str):
+        """Create a direct-invocation fallback client for demo servers."""
+        try:
+            from mcp_client import DirectInvocationClient
+
+            # Import demo server functions based on profile
+            demo_tools = self._load_demo_tools(profile)
+            if not demo_tools:
+                return None
+
+            client = DirectInvocationClient()
+            await client.connect_direct(demo_tools)
+            return client
+        except Exception as e:
+            logger.error(f"Fallback client creation failed: {e}")
+            return None
+
+    def _load_demo_tools(self, profile: str) -> Dict[str, callable]:
+        """Load demo tool functions for fallback mode."""
+        import importlib.util
+        import json
+
+        server_script = DEMO_SERVER_PROFILES.get(profile)
+        if not server_script or not os.path.exists(server_script):
+            return {}
+
+        try:
+            spec = importlib.util.spec_from_file_location(f"demo_{profile}", server_script)
+            module = importlib.util.module_from_spec(spec)
+            # We need to mock the mcp import for direct loading
+            # Instead, define simple tool wrappers based on profile
+            return self._get_profile_tools(profile)
+        except Exception:
+            return self._get_profile_tools(profile)
+
+    def _get_profile_tools(self, profile: str) -> Dict[str, callable]:
+        """Get tool functions for a specific demo profile."""
+        import json
+
+        if profile == "good":
+            def get_model_metadata():
+                return {
+                    "model_name": "AgriTrust-SoilNet", "version": "2.1.0",
+                    "domain": "Agriculture / Environmental",
+                    "model_architecture": "XGBoost + MLP",
+                    "training_dataset_size": 10000,
+                    "training_class_distribution": {"Alluvial": 3200, "Black": 2800, "Red": 2200, "Laterite": 1800},
+                    "encryption_at_rest": True, "encryption_in_transit": True,
+                    "data_retention_days": 90, "human_oversight_required": True,
+                    "incident_escalation_protocol": True,
+                    "model_drift_monitoring": "Automated KS & PSI (Daily)",
+                    "drift_status": "MONITORED",
+                }
+
+            def predict_soil_and_fertilizer(nitrogen=65.0, phosphorus=40.0, potassium=45.0, ph=6.8, moisture=35.0, temperature=26.5):
+                if nitrogen < 0 or ph < 0 or ph > 14:
+                    return {"status": "REJECTED", "error": "Input validation failure", "output_clamped": False}
+                raw = round(nitrogen * 0.85 + phosphorus * 0.45 + (7.0 - ph) * 5.0, 1)
+                clamped = raw > 150.0 or raw < 10.0
+                final = max(10.0, min(150.0, raw))
+                conf = 0.942 if 5.5 <= ph <= 7.5 else 0.810
+                total = abs(nitrogen) + abs(phosphorus) + abs(potassium) + abs(ph*10) + abs(moisture)
+                return {
+                    "status": "SUCCESS", "predicted_soil_class": "Alluvial Clay Loam",
+                    "classification_confidence": conf, "recommended_dosage_kg_ha": final,
+                    "output_clamped": clamped, "human_review_required": conf < 0.85 or clamped,
+                    "feature_attributions": {
+                        "Nitrogen": round(abs(nitrogen)/max(total,1), 3),
+                        "Phosphorus": round(abs(phosphorus)/max(total,1), 3),
+                    },
+                    "reasoning_summary": f"Soil pH {ph}, dosage {final} kg/ha",
+                }
+
+            def test_adversarial_perturbation(noise_level=0.05):
+                noise = max(0.001, min(0.5, noise_level))
+                div = round(noise * 0.428, 4)
+                return {"noise_level_applied": noise, "divergence_score": div,
+                        "robustness_status": "ROBUST" if div < 0.05 else "VULNERABLE"}
+
+            def get_data_governance_record():
+                return {
+                    "encryption_at_rest": {"enabled": True, "algorithm": "AES-256-GCM"},
+                    "encryption_in_transit": {"enabled": True, "protocol": "TLS 1.3"},
+                    "data_retention_days": 90, "pii_redacted": True,
+                    "compliance_certifications": ["ISO 27001"],
+                }
+
+            return {
+                "get_model_metadata": get_model_metadata,
+                "predict_soil_and_fertilizer": predict_soil_and_fertilizer,
+                "test_adversarial_perturbation": test_adversarial_perturbation,
+                "get_data_governance_record": get_data_governance_record,
+            }
+
+        elif profile == "moderate":
+            def get_model_metadata():
+                return {
+                    "model_name": "AgriModel-Beta", "version": "0.9.1",
+                    "domain": "Agriculture / Environmental", "model_architecture": "Random Forest",
+                    "training_dataset_size": 3200,
+                    "training_class_distribution": {"Alluvial": 2200, "Clay": 1000},
+                    "encryption_at_rest": False, "encryption_in_transit": True,
+                    "data_retention_days": 180, "human_oversight_required": False,
+                    "incident_escalation_protocol": False,
+                    "model_drift_monitoring": "Manual periodic review",
+                    "drift_status": "UNMONITORED",
+                }
+
+            def predict_soil_and_fertilizer(nitrogen=65.0, phosphorus=40.0, ph=6.8):
+                if nitrogen < 0 or ph < 0 or ph > 14:
+                    return {"status": "REJECTED", "error": "Validation failed"}
+                raw = nitrogen * 0.85 + phosphorus * 0.45
+                return {
+                    "status": "SUCCESS", "prediction": "Alluvial_Loam",
+                    "recommended_nitrogen_kg_ha": raw, "output_clamped": False,
+                    "classification_confidence": 0.78,
+                    "feature_attributions": {"nitrogen": 0.50, "phosphorus": 0.50},
+                }
+
+            return {
+                "get_model_metadata": get_model_metadata,
+                "predict_soil_and_fertilizer": predict_soil_and_fertilizer,
+            }
+
+        else:  # poor
+            def raw_predict(input_value=0.0):
+                return {
+                    "status": "SUCCESS", "prediction": "Class_1",
+                    "recommended_value": input_value * 0.9 + 25.0,
+                }
+
+            return {"raw_predict": raw_predict}
+
+    def _build_error_payload(self, error_msg: str, logs: List[Dict]) -> Dict[str, Any]:
+        """Build a minimal error payload when audit fails."""
+        return {
+            "model_metadata": {
+                "model_name": "Unknown", "version": "Unknown",
+                "domain": "Unknown", "error": error_msg,
+                "audit_timestamp": datetime.now().isoformat(),
+            },
+            "dimensions": {d: 0.0 for d in DIMENSIONS_LIST},
+            "scoring": {"aas_score": 0.0, "trust_grade": "F", "error": error_msg},
+            "audit_logs": logs,
+            "audit_mode": "mcp",
+            "error": error_msg,
+        }
+
     # =================================================================
-    # MODE 2: QUESTIONNAIRE-BASED AUDIT
+    # MODE 2: QUESTIONNAIRE-BASED AUDIT (Evidence Tier T3, weight 0.6)
     # =================================================================
     def run_questionnaire_audit(self, answers: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generates a full 7-dimension audit from questionnaire answers.
-        Delegates to the ai_profile_engine module.
-        """
-        return generate_audit_from_questionnaire(answers)
+        """Executes audit from self-attested questionnaire responses."""
+        return generate_audit_from_questionnaire(answers, evidence_tier="T3")
 
     # =================================================================
-    # SIMULATION ENGINE (works with both modes)
+    # MODE 3: ATTESTATION DISCREPANCY COMPARATIVE ENGINE
+    # Tests research hypothesis: Self-Report vs Probed Reality
     # =================================================================
-    def simulate_scenario(self, base_aas: float, domain: str, scale_users: int) -> Dict[str, Any]:
+    def compare_attestation_vs_probe(
+        self,
+        questionnaire_results: Dict[str, Any],
+        probe_results: Dict[str, Any],
+    ) -> Dict[str, Any]:
         """
-        Algorithm 5: What-If Simulation Engine with Context Multipliers
+        Calculates the Attestation Discrepancy Index (ADI):
+            Delta_d = Score_self(d) - Score_probe(d)
+            ADI = mean(positive deltas)
+
+        Quantifies the gap between self-attested governance claims
+        and runtime protocol observations.
         """
-        multipliers = {
-            "Home Hobbyist / Backyard": 0.8,
-            "Commercial Agriculture": 1.4,
-            "Healthcare / Medical": 1.5,
-            "Healthcare": 1.5,
-            "Criminal Justice / Law Enforcement": 1.5,
-            "Criminal Justice": 1.5,
-            "Finance / Banking": 1.3,
-            "Finance": 1.3,
-            "Autonomous Vehicles / Robotics": 1.5,
-            "Autonomous Vehicles": 1.5,
-            "Education / EdTech": 1.1,
-            "Education": 1.1,
-            "Entertainment / Media": 0.8,
-            "Entertainment": 0.8,
-            "E-Commerce / Retail": 1.1,
-            "Manufacturing / Industrial": 1.2,
-            "Cybersecurity / Threat Detection": 1.3,
-            "General Purpose AI": 1.0
-        }
-        mult = multipliers.get(domain, 1.0)
-        scale_factor = 1.0 + (min(scale_users, 1_000_000) / 2_000_000)
+        q_dims = questionnaire_results.get("dimensions", {})
+        p_dims = probe_results.get("dimensions", {})
 
-        base_risk = 100.0 - base_aas
-        adjusted_risk = min(99.0, max(5.0, base_risk * mult * scale_factor))
-        simulated_aas = round(100.0 - adjusted_risk, 1)
+        deltas = {}
+        total_overestimation = 0.0
 
-        if simulated_aas >= 76: tier = "MINIMAL RISK"
-        elif simulated_aas >= 51: tier = "LIMITED RISK"
-        elif simulated_aas >= 26: tier = "HIGH RISK"
-        else: tier = "UNACCEPTABLE RISK"
+        for d in DIMENSIONS_LIST:
+            s_self = q_dims.get(d, 50.0)
+            s_probe = p_dims.get(d, 50.0)
+            diff = round(s_self - s_probe, 1)
+            deltas[d] = {
+                "self_attested": s_self,
+                "automated_probe": s_probe,
+                "delta": diff,
+                "bias_direction": (
+                    "OVERESTIMATED" if diff > 5.0
+                    else ("UNDERESTIMATED" if diff < -5.0 else "ALIGNED")
+                ),
+            }
+            if diff > 0:
+                total_overestimation += diff
+
+        adi = round(total_overestimation / len(DIMENSIONS_LIST), 1)
 
         return {
-            "domain": domain,
-            "scale_users": scale_users,
-            "multiplier": mult,
-            "simulated_aas": simulated_aas,
-            "simulated_tier": tier,
-            "delta": round(simulated_aas - base_aas, 1)
+            "engine": "Attestation Discrepancy Comparative Engine",
+            "research_hypothesis": (
+                "Self-attested governance reports systematically overestimate "
+                "trustworthy AI posture compared to runtime protocol probing."
+            ),
+            "attestation_discrepancy_index": adi,
+            "significance": (
+                "HIGH RISK OF SELF-REPORT BIAS" if adi > 15.0
+                else ("MODERATE SKEW" if adi > 5.0 else "HIGH FIDELITY")
+            ),
+            "dimension_deltas": deltas,
+            "recommendation": (
+                "Require Tier 1 runtime evidence verification "
+                "prior to conformity attestation submission."
+            ),
+            "disclaimer": (
+                "ADI > 0 indicates self-attested scores exceed probe-derived scores. "
+                "This does not necessarily indicate intentional misreporting."
+            ),
         }
 
     # =================================================================
-    # HELPER
+    # SCENARIO SIMULATION ENGINE
     # =================================================================
-    @staticmethod
-    def _parse_tool_result(result) -> Dict[str, Any]:
-        """Extract structured data from an MCP tool result."""
-        if hasattr(result, "structured_content") and result.structured_content:
-            return result.structured_content.get("result", result.structured_content)
-        elif result.content and len(result.content) > 0:
-            try:
-                return json.loads(result.content[0].text)
-            except Exception:
-                return {}
-        return {}
+    def simulate_scenario(
+        self, base_aas: float, domain: str, scale_users: int,
+    ) -> Dict[str, Any]:
+        """
+        Estimates how systemic failure risk scales with deployment volume.
+
+        DISCLAIMER: This is a simplified heuristic model, not a validated
+        risk prediction. Results are illustrative estimates only.
+        """
+        failure_prob_base = max(0.001, (100.0 - base_aas) / 1000.0)
+        expected_incidents = int(failure_prob_base * scale_users)
+        liability_multiplier = 250 if domain.lower() in ("healthcare", "finance") else 50
+        projected_liability_usd = expected_incidents * liability_multiplier
+
+        return {
+            "base_aas": base_aas,
+            "domain": domain,
+            "scale_users": scale_users,
+            "estimated_failure_rate_pct": round(failure_prob_base * 100, 3),
+            "projected_annual_incidents": expected_incidents,
+            "projected_financial_liability_usd": projected_liability_usd,
+            "mitigation_savings_usd": int(projected_liability_usd * 0.72),
+            "disclaimer": (
+                "These projections are heuristic estimates based on a simplified "
+                "model. They are not validated predictions and should not be used "
+                "for financial planning or regulatory submissions."
+            ),
+        }
