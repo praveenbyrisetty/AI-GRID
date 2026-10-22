@@ -64,15 +64,15 @@
             </span>
             <span class="nav-text">Attestation Discrepancy</span>
           </a>
-          <a class="nav-item" onclick="showPage('page-framework-map', this)" id="nav-framework-map" title="Interactive Framework Mapping">
+          <a class="nav-item" onclick="showPage('page-framework-map', this)" id="nav-framework-map" title="Interactive Framework Mapping" style="display: none !important;">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </span>
             <span class="nav-text">Framework Mapping</span>
           </a>
 
-          <div class="nav-section-label">Research &amp; Benchmarks</div>
-          <a class="nav-item" onclick="showPage('page-datasets', this)" id="nav-datasets" title="Empirical Datasets">
+          <div class="nav-section-label">Research &amp; Analysis</div>
+          <a class="nav-item" onclick="showPage('page-datasets', this)" id="nav-datasets" title="Empirical Datasets" style="display: none !important;">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
             </span>
@@ -98,11 +98,11 @@
             </span>
             <span class="nav-text">Remediation Roadmap</span>
           </a>
-          <a class="nav-item" onclick="showPage('page-modelcard', this)" id="nav-modelcard" title="Google Model Card">
+          <a class="nav-item" onclick="showPage('page-modelcard', this)" id="nav-modelcard" title="AI Governance Passport &amp; Technical Dossier">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </span>
-            <span class="nav-text">Google Model Card</span>
+            <span class="nav-text">AI Governance Reports</span>
           </a>
         </nav>
       </div>
@@ -134,28 +134,11 @@
         </div>
 
         <div class="topbar-right">
-          <!-- 1-Click Live Automated Probe -->
-          <button class="btn-primary sm" onclick="runQuickDemoAudit()" id="headerQuickProbeBtn" title="Execute automated wire probe against certified benchmark target">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>Live Probe (T1)</span>
-          </button>
-
           <!-- Launch Assessment Wizard -->
           <button class="btn-secondary sm" onclick="showPage('page-setup')" id="headerLaunchBtn" title="Launch custom MCP probe or research questionnaire">
             <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             <span>Audit Launchpad</span>
           </button>
-
-          <!-- Evidence Tier Badge -->
-          <div class="evidence-tier-pill" id="evidenceTierPill">
-            <span>TIER:</span> <strong id="evidenceTierText">—</strong>
-          </div>
-
-          <!-- Assessment Status Tag -->
-          <div class="status-tag" id="assessmentStatusTag">
-            <span class="indicator-dot"></span>
-            <span id="assessmentStatusText">Standby</span>
-          </div>
 
           <!-- Theme Switcher -->
           <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Corporate Light / Executive Dark">
@@ -164,21 +147,15 @@
           </button>
 
           <!-- Export Action -->
-          <button class="btn-secondary sm" onclick="openDossierModal()">
+          <button class="btn-secondary sm" onclick="openDossierModal()" title="Export Compliance Dossier">
             <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>Export Dossier</span>
+            <span>Export</span>
           </button>
         </div>
       </header>
 
-      <!-- REGULATORY & LEGAL NOTICE BANNER -->
-      <div class="regulatory-notice-banner" style="background: rgba(37, 99, 235, 0.08); border-bottom: 1px solid rgba(37, 99, 235, 0.2); padding: 7px 24px; font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 10;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-weight: 700; color: var(--primary-500); text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--font-mono); font-size: 10px;">Regulatory Notice:</span>
-          <span>AI-GRID technical evaluations are empirical governance indicators for risk assessment and do not constitute formal legal advice or regulatory certification under the EU AI Act (Regulation 2024/1689).</span>
-        </div>
-        <span style="font-family: var(--font-mono); font-size: 10px; color: var(--teal-accent); white-space: nowrap;">Engine: MCP stdio v4.0 &bull; T1/T2/T3</span>
-      </div>
+
+
 
       <!-- ============================================================= -->
       <!-- SCREEN 1: EXECUTIVE OVERVIEW (MAIN COCKPIT)                   -->
@@ -201,9 +178,9 @@
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span>Launch Custom Audit</span>
               </button>
-              <button class="btn-secondary sm" onclick="resetAuditState()" title="Reset cockpit to clean standby state">
+              <button class="btn-secondary sm" onclick="resetAuditState()" title="Reset cockpit and entire platform to clean standby state">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                <span>Reset Standby</span>
+                <span>Reset</span>
               </button>
             </div>
           </div>
@@ -863,9 +840,9 @@
       </div>
 
       <!-- ============================================================= -->
-      <!-- SCREEN 5: INTERACTIVE FRAMEWORK MAPPING (SECTION 13)          -->
+      <!-- SCREEN 5: INTERACTIVE FRAMEWORK MAPPING (HIDDEN)              -->
       <!-- ============================================================= -->
-      <div class="page" id="page-framework-map">
+      <div class="page" id="page-framework-map" style="display: none !important;">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
@@ -947,9 +924,9 @@
       </div>
 
       <!-- ============================================================= -->
-      <!-- SCREEN 6: BENCHMARK DATASETS (ANALYTICAL LAB)                 -->
+      <!-- SCREEN 6: BENCHMARK DATASETS (ANALYTICAL LAB - HIDDEN)       -->
       <!-- ============================================================= -->
-      <div class="page" id="page-datasets">
+      <div class="page" id="page-datasets" style="display: none !important;">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
@@ -1098,16 +1075,21 @@
       </div>
 
       <!-- ============================================================= -->
-      <!-- SCREEN 9: GOOGLE MODEL CARD                                   -->
+      <!-- SCREEN 9: AI GOVERNANCE PASSPORT & TECHNICAL DOSSIER          -->
       <!-- ============================================================= -->
       <div class="page" id="page-modelcard">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
-              <h2 class="page-header-title">Google Model Card</h2>
-              <p class="page-header-subtitle">Standardized technical passport and evidence dossier (Mitchell et al., 2019 &bull; IEEE P8000.1)</p>
+              <h2 class="page-header-title">AI Governance Passport &amp; Technical Dossier</h2>
+              <p class="page-header-subtitle">Standardized technical passport &amp; compliance dossier (ISO/IEC 42001 &bull; EU AI Act Annex IV &bull; IEEE P8000.1)</p>
             </div>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <select id="modelCardFormatSelect" class="form-select sm" onchange="changeModelCardFormat(this.value)" style="width:auto; padding:5px 10px; font-size:12px;" title="Select Reporting Standard Format">
+                <option value="standard" selected>Standard AI Passport (ISO 42001 / IEEE P8000.1)</option>
+                <option value="eu_ai_act">EU AI Act Technical Documentation (Annex IV)</option>
+                <option value="executive">Executive Board Summary (GRC Briefing)</option>
+              </select>
               <button class="btn-secondary sm" onclick="copyModelCardMarkdown()">Copy Markdown</button>
               <button class="btn-primary sm" onclick="downloadModelCard('json')">Export JSON</button>
             </div>
@@ -1121,7 +1103,7 @@
               <div class="card" style="padding:10px; background:var(--bg-surface-elevated);"><span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">AAS SCORE</span><div style="font-weight:700;" id="mcModelAas">—</div></div>
             </div>
             <div id="mcRenderedView" style="background:var(--bg-surface-elevated); padding:18px; border-radius:var(--radius-sm); border:1px solid var(--border-card); font-size:13px; line-height:1.7;">
-              <div style="text-align:center; padding:30px; color:var(--text-muted);">No model card generated. Complete an audit to generate Mitchell et al. Google Model Card.</div>
+              <div style="text-align:center; padding:30px; color:var(--text-muted);">No passport generated. Complete an audit to generate the AI Governance Passport.</div>
             </div>
           </section>
         </div>
@@ -1213,7 +1195,7 @@
       <div class="modal-header">
         <div>
           <h3 style="font-size:16px; font-weight:700;">Technical Conformity Dossier</h3>
-          <p style="font-size:12px; color:var(--text-secondary);">Regulation (EU) 2024/1689 Annex IV &bull; Mitchell et al. Google Model Card</p>
+          <p style="font-size:12px; color:var(--text-secondary);">Regulation (EU) 2024/1689 Annex IV &bull; ISO/IEC 42001 AI Governance Passport</p>
         </div>
         <button class="drawer-close-btn" onclick="closeDossierModal()">&times;</button>
       </div>

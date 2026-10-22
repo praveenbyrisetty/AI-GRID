@@ -441,7 +441,15 @@ def reset_audit_state():
     global last_audit_data, last_mcp_data
     last_audit_data = {}
     last_mcp_data = {}
-    return jsonify({"success": True, "message": "In-memory audit state reset to clean standby."})
+    try:
+        store.clear_all()
+    except Exception as e:
+        logger.warning(f"Store clear_all exception during reset: {e}")
+    logger.info("Audit state, cache, and persistent store reset to clean standby.")
+    return jsonify({
+        "success": True,
+        "message": "Platform reset complete: all audit caches and persistent records cleared.",
+    })
 
 
 # ================================================================

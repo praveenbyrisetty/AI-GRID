@@ -840,7 +840,7 @@ def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
     domain = meta.get("domain", "General Purpose")
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    markdown_card = f"""# AI-GRID Transparency Model Card
+    markdown_card = f"""# AI Governance Passport & Technical Dossier
 **System Name:** {model_name}
 **Version:** {version} | **Architecture:** {arch}
 **Operating Domain:** {domain}

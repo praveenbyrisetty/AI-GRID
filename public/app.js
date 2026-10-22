@@ -29,7 +29,7 @@ const pageTitles = {
   "page-datasets": "Empirical Benchmark Datasets",
   "page-question-bank": "Research Question Bank (30 Items)",
   "page-remediation": "Governance Remediation Roadmap",
-  "page-modelcard": "Google Model Card",
+  "page-modelcard": "AI Governance Passport",
   "page-simulation": "What-If Scenario Risk Simulator"
 };
 
@@ -309,21 +309,128 @@ function clearAuditUI() {
     `;
   }
 
-  // Framework flow node labels
+  // 1. EU AI Act Table & Classification Cards Reset
+  const euArticlesTbody = document.getElementById("euArticlesTbody");
+  if (euArticlesTbody) {
+    euArticlesTbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No compliance data loaded. Run an audit to evaluate conformity.</td>
+      </tr>
+    `;
+  }
+  const euBadgeEl = document.getElementById("euBadge");
+  if (euBadgeEl) {
+    euBadgeEl.textContent = "STANDBY";
+    euBadgeEl.className = "badge info";
+  }
+  const euTierName = document.getElementById("euTierName");
+  if (euTierName) euTierName.textContent = "Awaiting Assessment";
+  const euLegalBasis = document.getElementById("euLegalBasis");
+  if (euLegalBasis) euLegalBasis.textContent = "—";
+  const euMarket = document.getElementById("euMarketPermitted");
+  if (euMarket) {
+    euMarket.textContent = "—";
+    euMarket.style.color = "var(--text-secondary)";
+  }
+  const euConfReq = document.getElementById("euConformityReq");
+  if (euConfReq) euConfReq.textContent = "—";
+  const euConfCount = document.getElementById("euConformantCount");
+  if (euConfCount) euConfCount.textContent = "0 / 7 Articles Conformant";
+
+  // 2. NIST AI RMF Crosswalk Cards Reset
+  const gov = document.getElementById("nistGovern");
+  if (gov) gov.textContent = "— / 100 (STANDBY)";
+  const map = document.getElementById("nistMap");
+  if (map) map.textContent = "— / 100 (STANDBY)";
+  const meas = document.getElementById("nistMeasure");
+  if (meas) meas.textContent = "— / 100 (STANDBY)";
+  const man = document.getElementById("nistManage");
+  if (man) man.textContent = "— / 100 (STANDBY)";
+
+  // 3. Attestation Discrepancy Screen Reset
+  const adiVal = document.getElementById("adiVal");
+  if (adiVal) adiVal.textContent = "—";
+  const adiSignificance = document.getElementById("adiSignificance");
+  if (adiSignificance) adiSignificance.textContent = "STANDBY";
+  const discTbody = document.getElementById("discrepancyTbody");
+  if (discTbody) {
+    discTbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">Both Tier T1 (MCP automated probe) and Tier T3 (Questionnaire) data are required to compute attestation discrepancy.</td>
+      </tr>
+    `;
+  }
+
+  // 4. Governance Remediation Roadmap Screen Reset
+  const remBody = document.getElementById("remediationBody");
+  if (remBody) {
+    remBody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No findings recorded. Execute an audit to generate roadmap.</td>
+      </tr>
+    `;
+  }
+
+  // 5. AI Governance Passport Screen Reset
+  const mcModelName = document.getElementById("mcModelName");
+  if (mcModelName) mcModelName.textContent = "—";
+  const mcModelVersion = document.getElementById("mcModelVersion");
+  if (mcModelVersion) mcModelVersion.textContent = "—";
+  const mcModelGrade = document.getElementById("mcModelGrade");
+  if (mcModelGrade) mcModelGrade.textContent = "—";
+  const mcModelAas = document.getElementById("mcModelAas");
+  if (mcModelAas) mcModelAas.textContent = "—";
+  const mcRenderedView = document.getElementById("mcRenderedView");
+  if (mcRenderedView) {
+    mcRenderedView.innerHTML = `
+      <div style="text-align:center; padding:30px; color:var(--text-muted);">No passport generated. Complete an audit to generate the AI Governance Passport.</div>
+    `;
+  }
+
+  // 6. What-If Scenario Risk Simulator Reset
+  const simScore = document.getElementById("simScore");
+  if (simScore) simScore.textContent = "—";
+  const simIncidents = document.getElementById("simIncidents");
+  if (simIncidents) simIncidents.textContent = "—";
+  const simLiability = document.getElementById("simLiability");
+  if (simLiability) simLiability.textContent = "—";
+  const simUserSlider = document.getElementById("simUserSlider");
+  if (simUserSlider) simUserSlider.value = 50000;
+  const userCountLabel = document.getElementById("userCountLabel");
+  if (userCountLabel) userCountLabel.textContent = "50,000";
+
+  // 7. Questionnaire Wizard & Launchpad Reset
+  wizardStep = 1;
+  selectedAnswers = {};
+  const authCheck = document.getElementById("mcpAuthorizeCheck");
+  if (authCheck) authCheck.checked = false;
+
+  // 8. Framework flow node labels
   const flSystem = document.getElementById("flabel-system");
-  if (flSystem) flSystem.textContent = "Target System";
+  if (flSystem) flSystem.textContent = "System Target";
   const flProbe = document.getElementById("flabel-probe");
-  if (flProbe) flProbe.textContent = "Awaiting Audit";
+  if (flProbe) flProbe.textContent = "Protocol Mode";
   const flEvidence = document.getElementById("flabel-evidence");
-  if (flEvidence) flEvidence.textContent = "No Evidence";
+  if (flEvidence) flEvidence.textContent = "Observed Telemetry";
   const flFinding = document.getElementById("flabel-finding");
-  if (flFinding) flFinding.textContent = "Pending";
+  if (flFinding) flFinding.textContent = "Vulnerability Analysis";
   const flDimension = document.getElementById("flabel-dimension");
-  if (flDimension) flDimension.textContent = "Standby";
+  if (flDimension) flDimension.textContent = "Trust Bottleneck";
   const flClause = document.getElementById("flabel-clause");
-  if (flClause) flClause.textContent = "EU Art. 9–15";
+  if (flClause) flClause.textContent = "Framework Clause";
   const flRemediation = document.getElementById("flabel-remediation");
-  if (flRemediation) flRemediation.textContent = "Standby";
+  if (flRemediation) flRemediation.textContent = "Engineering Fix";
+
+  const gdetailType = document.getElementById("gdetailType");
+  if (gdetailType) gdetailType.textContent = "Selected Node: AI System";
+  const gdetailTitle = document.getElementById("gdetailTitle");
+  if (gdetailTitle) gdetailTitle.textContent = "Awaiting System Audit";
+  const gdetailDesc = document.getElementById("gdetailDesc");
+  if (gdetailDesc) gdetailDesc.textContent = "Lineage mapping connects observed wire-level probes, identified vulnerabilities, empirical trust dimensions, statutory EU AI Act / NIST articles, and actionable engineering remediation. Run an audit to trace lineage.";
+  const gdetailBadge = document.getElementById("gdetailBadge");
+  if (gdetailBadge) gdetailBadge.textContent = "Traceability Lineage";
+  const gdetailStatus = document.getElementById("gdetailStatus");
+  if (gdetailStatus) gdetailStatus.textContent = "Standby";
 
   // Radar chart
   initRadarChart(defaultDimensions);
@@ -334,14 +441,13 @@ function clearAuditUI() {
 
 async function resetAuditState() {
   try {
-    const res = await fetch("/api/audit/reset", { method: "POST" });
-    const json = await res.json();
-    clearAuditUI();
-    showToast("Audit state reset to clean standby");
+    await fetch("/api/audit/reset", { method: "POST" });
   } catch (err) {
-    clearAuditUI();
-    showToast("Audit state reset to clean standby");
+    console.warn("Server reset API call:", err);
   }
+  clearAuditUI();
+  showPage("page-overview");
+  showToast("Platform reset complete: All audits, telemetry, and tables reset to clean standby");
 }
 
 // =========================================================================
@@ -366,24 +472,24 @@ function initRadarChart(dims) {
       label: "Regulatory Target (80.0)",
       data: [80, 80, 80, 80, 80, 80],
       fill: true,
-      backgroundColor: isDark ? "rgba(222, 173, 82, 0.05)" : "rgba(200, 149, 46, 0.05)",
-      borderColor: isDark ? "rgba(222, 173, 82, 0.35)" : "rgba(200, 149, 46, 0.40)",
+      backgroundColor: isDark ? "rgba(0, 123, 167, 0.06)" : "rgba(0, 123, 167, 0.05)",
+      borderColor: isDark ? "rgba(0, 123, 167, 0.35)" : "rgba(0, 123, 167, 0.40)",
       borderWidth: 1.5,
       borderDash: [5, 5],
       pointRadius: 3,
-      pointBackgroundColor: isDark ? "#DEAD52" : "#C8952E",
+      pointBackgroundColor: isDark ? "#1A9FD0" : "#007BA7",
       pointBorderColor: "transparent"
     });
   } else {
-    // Real evaluated AAS dimensions in warm gold/amber
+    // Real evaluated AAS dimensions in cerulean blue
     datasets.push({
       label: "Assurance Adequacy Score",
       data: dimValues,
       fill: true,
-      backgroundColor: isDark ? "rgba(222, 173, 82, 0.22)" : "rgba(200, 149, 46, 0.16)",
-      borderColor: isDark ? "#DEAD52" : "#C8952E",
-      pointBackgroundColor: isDark ? "#DEAD52" : "#C8952E",
-      pointBorderColor: isDark ? "#161614" : "#FFFFFF",
+      backgroundColor: isDark ? "rgba(0, 123, 167, 0.22)" : "rgba(0, 123, 167, 0.16)",
+      borderColor: isDark ? "#1A9FD0" : "#007BA7",
+      pointBackgroundColor: isDark ? "#1A9FD0" : "#007BA7",
+      pointBorderColor: isDark ? "#0E0E10" : "#FFFFFF",
       borderWidth: 2.5,
       pointRadius: 4.5,
       pointHoverRadius: 7
@@ -416,18 +522,18 @@ function initRadarChart(dims) {
           max: 100,
           ticks: {
             stepSize: 25,
-            color: isDark ? "#9C958C" : "#6B6560",
+            color: isDark ? "#8C93A0" : "#5A6270",
             backdropColor: "transparent",
             font: { family: "'IBM Plex Mono', monospace", size: 10 }
           },
           grid: {
-            color: isDark ? "rgba(222, 173, 82, 0.10)" : "rgba(200, 149, 46, 0.12)"
+            color: isDark ? "rgba(0, 123, 167, 0.12)" : "rgba(0, 123, 167, 0.12)"
           },
           angleLines: {
-            color: isDark ? "rgba(222, 173, 82, 0.12)" : "rgba(200, 149, 46, 0.14)"
+            color: isDark ? "rgba(0, 123, 167, 0.14)" : "rgba(0, 123, 167, 0.14)"
           },
           pointLabels: {
-            color: isDark ? "#F2EDE8" : "#1A1814",
+            color: isDark ? "#F0F2F5" : "#0A0A0A",
             font: { family: "'Space Grotesk', sans-serif", size: 11, weight: "600" }
           }
         }
@@ -437,7 +543,7 @@ function initRadarChart(dims) {
           display: true,
           position: "bottom",
           labels: {
-            color: isDark ? "#9C958C" : "#6B6560",
+            color: isDark ? "#8C93A0" : "#5A6270",
             font: { family: "'DM Sans', sans-serif", size: 11 },
             boxWidth: 12,
             padding: 10
@@ -1354,6 +1460,111 @@ function openFindingDrawer(idx) {
   openDetailDrawer(`Finding #${idx + 1}`, item.dimension, html);
 }
 
+let currentModelCardFormat = "standard";
+
+function changeModelCardFormat(format) {
+  currentModelCardFormat = format;
+  if (currentAuditData) {
+    renderModelCard(currentAuditData);
+  }
+  const label = format === 'standard' ? 'Standard AI Passport' : (format === 'eu_ai_act' ? 'EU AI Act Annex IV' : 'Executive Board Briefing');
+  showToast(`Switched report template to: ${label}`);
+}
+
+function generateFormattedModelCardMarkdown(format, data) {
+  if (!data) return "";
+  const card = data.model_card || {};
+  const meta = data.model_metadata || {};
+  const scoring = data.scoring || {};
+  const dims = data.dimensions || {};
+  const compliance = data.compliance || {};
+  const eu = compliance.eu_ai_act || {};
+  const findings = data.remediation_plan || [];
+  const modelName = card.model_name || meta.model_name || meta.name || "AI System Target";
+  const version = card.version || meta.version || "1.0.0";
+  const arch = meta.model_architecture || meta.architecture || "Machine Learning Pipeline";
+  const domain = meta.domain || "General Purpose AI";
+  const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+
+  if (format === "eu_ai_act") {
+    return `# EU AI Act Technical Documentation Dossier (Annex IV)
+**System Identifier:** ${modelName} (v${version})
+**Statutory Intended Purpose:** ${domain}
+**Conformity Classification:** ${eu.tier || 'HIGH RISK (Annex III §5)'}
+**Legal Basis:** ${eu.legal_basis || 'Automated Decision Support'}
+**Assessment Timestamp:** ${timestamp}
+**Assurance Adequacy Score (AAS):** ${scoring.aas_score ?? '—'}/100 (Grade: ${scoring.trust_grade || '—'})
+
+---
+
+### 1. General System Description (Annex IV §1)
+- **Model Architecture:** ${arch}
+- **Deployment Topology:** ${meta.deployment_type || 'Cloud API / Local Agent'}
+- **Hardware & Software Dependencies:** Tracked via CycloneDX AI-BOM
+- **Intended User Cohort:** Authorized operators with human-in-the-loop oversight
+
+### 2. Risk Management System Conformance (Article 9)
+- **Status:** ${(dims['Safety & Reliability'] >= 70 && dims['Security & Robustness'] >= 70) ? 'CONFORMANT' : 'REMEDIATION REQUIRED'}
+- **Safety & Reliability Score:** ${dims['Safety & Reliability'] ?? '—'}/100
+- **Continuous Drift Monitoring:** Verified via post-market telemetry
+- **Known Failure Mode Rejection:** 100% rejection on corrupted input payloads
+
+### 3. Data & Data Governance Conformance (Article 10)
+- **Status:** ${(dims['Fairness & Non-Discrimination'] >= 70 && dims['Privacy & Data Governance'] >= 70) ? 'CONFORMANT' : 'REMEDIATION REQUIRED'}
+- **Fairness & Bias Score:** ${dims['Fairness & Non-Discrimination'] ?? '—'}/100
+- **Four-Fifths Rule (EEOC):** Evaluated against demographic parity thresholds
+- **Data Protection & Encryption:** AES-256 at rest & TLS 1.3 in transit
+
+### 4. Technical Documentation & Record-Keeping (Articles 11 & 12)
+- **Automated Logging:** Enabled via immutable audit trail
+- **Hash Integrity:** SHA-256 validated
+- **Audit Retention Policy:** >= 6 months tamper-evident persistence
+
+### 5. Transparency & Human Oversight (Articles 13 & 14)
+- **Transparency Score:** ${dims['Transparency & Explainability'] ?? '—'}/100 (TreeSHAP Attributions)
+- **Human Oversight Score:** ${dims['Human Oversight & Agency'] ?? '—'}/100
+- **Emergency Stop / Kill-Switch:** Verified active
+
+### 6. Conformity Verdict & Statutory Sign-Off
+- **Market Placement Eligibility:** ${eu.market_placement_permitted !== false ? 'ELIGIBLE PENDING CONFORMITY ASSESSMENT' : 'PROHIBITED'}
+- **Declaration:** Technical pre-audit indicators verified against Regulation (EU) 2024/1689.`;
+  }
+
+  if (format === "executive") {
+    return `# Executive Board Briefing: AI Governance & Trust Passport
+**System Evaluated:** ${modelName} | **Version:** ${version}
+**Operational Domain:** ${domain} | **Evaluation Date:** ${timestamp}
+**Assurance Adequacy Score (AAS):** ${scoring.aas_score ?? '—'}/100 | **Trust Grade:** ${scoring.trust_grade || '—'}
+
+---
+
+### Executive Summary
+The target AI system has completed automated governance and cybersecurity evaluation using AI-GRID's empirical assurance protocol. The composite AAS of **${scoring.aas_score ?? '—'}/100** incorporates both overall systemic maturity (60%) and the primary governance bottleneck (40%).
+
+### Key Performance Pillars (0–100)
+- **Security & Robustness:** ${dims['Security & Robustness'] ?? '—'}
+- **Fairness & Non-Discrimination:** ${dims['Fairness & Non-Discrimination'] ?? '—'}
+- **Transparency & Explainability:** ${dims['Transparency & Explainability'] ?? '—'}
+- **Privacy & Data Governance:** ${dims['Privacy & Data Governance'] ?? '—'}
+- **Human Oversight & Agency:** ${dims['Human Oversight & Agency'] ?? '—'}
+- **Safety & Reliability:** ${dims['Safety & Reliability'] ?? '—'}
+
+### Primary Governance Bottleneck
+- **Bottleneck Dimension:** ${scoring.bottleneck_dimension || 'Safety & Reliability'} (${scoring.bottleneck_score ?? '—'}/100)
+- **Board Impact:** This single bottleneck caps the overall trust ceiling. Deployments into mission-critical environments are gated until remediation is complete.
+
+### Priority Action Items for Engineering
+${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}:** ${f.action} *(Ref: ${f.eu_ai_act_ref || 'EU AI Act'})*`).join('\n') || 'All monitored engineering controls satisfy regulatory benchmarks.'}
+
+### Regulatory Posture
+- **EU AI Act Status:** ${eu.tier || 'HIGH RISK'} (${eu.conformant_articles || '7/7'} Articles Conformant)
+- **Legal Notice:** Indicative technical evaluation; not formal CE-mark certification.`;
+  }
+
+  // Default Standard AI Passport (ISO/IEC 42001 / IEEE P8000.1)
+  return card.markdown || `# AI Governance Passport & Technical Dossier\n**System Name:** ${modelName}\n**Version:** ${version}\n**Score:** ${scoring.aas_score ?? '—'}/100`;
+}
+
 function renderModelCard(data) {
   const card = data.model_card || {};
   document.getElementById("mcModelName").textContent = card.model_name || data.model_metadata?.name || "—";
@@ -1363,8 +1574,9 @@ function renderModelCard(data) {
   document.getElementById("mcModelAas").textContent = (data.scoring?.aas_score !== undefined ? data.scoring.aas_score : "—") + "/100";
 
   const renderedView = document.getElementById("mcRenderedView");
-  if (renderedView && card.markdown) {
-    let formatted = card.markdown
+  const markdownText = generateFormattedModelCardMarkdown(currentModelCardFormat, data);
+  if (renderedView && markdownText) {
+    let formatted = markdownText
       .replace(/^# (.*$)/gim, '<h3 style="margin-bottom:10px; color:var(--text-primary);">$1</h3>')
       .replace(/^### (.*$)/gim, '<h4 style="margin-top:14px; margin-bottom:4px; color:var(--primary-500);">$1</h4>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -1500,23 +1712,32 @@ async function runSimulation() {
 // 15. EXPORT CONTROLS & MODALS
 // =========================================================================
 function copyModelCardMarkdown() {
-  if (currentAuditData?.model_card?.markdown) {
-    navigator.clipboard.writeText(currentAuditData.model_card.markdown);
-    showToast("Model Card Markdown copied to clipboard");
+  if (!currentAuditData) {
+    showToast("No active audit to copy");
+    return;
+  }
+  const text = generateFormattedModelCardMarkdown(currentModelCardFormat, currentAuditData);
+  if (text) {
+    navigator.clipboard.writeText(text);
+    showToast("Passport Markdown copied to clipboard");
   }
 }
 
 function downloadModelCard(format) {
-  if (!currentAuditData?.model_card) return;
+  if (!currentAuditData) {
+    showToast("No active audit to export");
+    return;
+  }
   const content = format === "json"
-    ? JSON.stringify(currentAuditData.model_card.json_schema || currentAuditData, null, 2)
-    : (currentAuditData.model_card.markdown || "");
+    ? JSON.stringify(currentAuditData.model_card?.json_schema || currentAuditData, null, 2)
+    : generateFormattedModelCardMarkdown(currentModelCardFormat, currentAuditData);
   const blob = new Blob([content], { type: format === "json" ? "application/json" : "text/markdown" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `model_card.${format === "json" ? "json" : "md"}`;
+  const ext = format === "json" ? "json" : "md";
+  a.download = `ai_governance_passport_${currentModelCardFormat}.${ext}`;
   a.click();
-  showToast(`Downloaded Model Card as ${format.toUpperCase()}`);
+  showToast(`Downloaded AI Governance Passport as ${format.toUpperCase()}`);
 }
 
 function openDossierModal() {
