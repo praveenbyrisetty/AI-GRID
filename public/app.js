@@ -52,6 +52,38 @@ const defaultDimensions = {
 };
 
 // =========================================================================
+// SECURITY UTILITIES: XSS SANITIZATION & API AUTHENTICATION
+// =========================================================================
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getAuthHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  const key = localStorage.getItem("ai_grid_api_key") || "";
+  if (key) {
+    headers["X-API-Key"] = key;
+  }
+  return headers;
+}
+
+function handleAuthError(res) {
+  if (res && res.status === 401) {
+    const key = prompt("AIGRID_API_KEY required. Enter API key printed in server logs:");
+    if (key) {
+      localStorage.setItem("ai_grid_api_key", key.trim());
+      showToast("API key saved. Please retry your request.");
+    }
+  }
+}
+
+// =========================================================================
 // INITIALIZATION
 // =========================================================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -441,7 +473,14 @@ function clearAuditUI() {
 
 async function resetAuditState() {
   try {
-    await fetch("/api/audit/reset", { method: "POST" });
+    const res = await fetch("/api/audit/reset", {
+      method: "POST",
+      headers: getAuthHeaders()
+    });
+    if (res.status === 401) {
+      handleAuthError(res);
+      return;
+    }
   } catch (err) {
     console.warn("Server reset API call:", err);
   }
@@ -730,11 +769,11 @@ function applyAuditDataToUI(data, tierText) {
     if (topPlans.length > 0) {
       overviewRemTbody.innerHTML = topPlans.map(p => `
         <tr>
-          <td><span class="badge ${p.priority === 'CRITICAL' ? 'critical' : (p.priority === 'HIGH' ? 'warning' : 'info')}">${p.priority}</span></td>
-          <td>${p.finding}</td>
-          <td><strong>${p.dimension}</strong></td>
-          <td><strong style="color:var(--primary-500);">${p.action}</strong></td>
-          <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${p.eu_ai_act_ref || 'Art. 9'}</small></td>
+          <td><span class="badge ${p.priority === 'CRITICAL' ? 'critical' : (p.priority === 'HIGH' ? 'warning' : 'info')}">${escapeHtml(p.priority)}</span></td>
+          <td>${escapeHtml(p.finding)}</td>
+          <td><strong>${escapeHtml(p.dimension)}</strong></td>
+          <td><strong style="color:var(--primary-500);">${escapeHtml(p.action)}</strong></td>
+          <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(p.eu_ai_act_ref || 'Art. 9')}</small></td>
         </tr>
       `).join("");
     }
@@ -827,8 +866,8 @@ function renderTerminalLogs(logs) {
     return `
       <div class="log-entry">
         <span class="log-timestamp">${timeStr}</span>
-        <span class="log-badge ${badgeClass}">${l.stage || 'EVENT'}</span>
-        <span>${l.message}</span>
+        <span class="log-badge ${badgeClass}">${escapeHtml(l.stage || 'EVENT')}</span>
+        <span>${escapeHtml(l.message)}</span>
       </div>
     `;
   }).join("");
@@ -1133,14 +1172,18 @@ async function runQuickDemoAudit() {
   try {
     const res = await fetch("/api/audit/mcp", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ demo_profile: "good" })
     });
+    if (res.status === 401) {
+      handleAuthError(res);
+      return;
+    }
     const json = await res.json();
     if (json.success && json.data) {
       currentAuditData = json.data;
       const modeLabel = json.data.execution_mode === "DEMO_BENCHMARK"
-        ? "Tier T1 (Certified Demo Benchmark Reference)"
+        ? `Tier T1 (Certified Demo Benchmark &bull; ${escapeHtml(json.data.model_metadata?.model_name || 'AgriTrust')})`
         : "Tier T1 (Live MCP Protocol Audit)";
       applyAuditDataToUI(json.data, modeLabel);
       showToast("Benchmark Reference Audit Completed");
@@ -1158,17 +1201,11 @@ async function connectMcp() {
   let payload = {};
 
   if (isLive) {
-    const authCheck = document.getElementById("mcpAuthorizeCheck");
-    if (!authCheck || !authCheck.checked) {
-      alert("Explicit authorization is required before launching a live MCP server process.");
-      return;
-    }
     const cmdExec = (document.getElementById("mcpLiveExec")?.value || "python").trim();
     const cmdArgsStr = (document.getElementById("mcpLiveScript")?.value || "").trim();
     const cmdArgs = cmdArgsStr ? cmdArgsStr.split(" ").filter(Boolean) : [];
     payload = {
-      target_command: [cmdExec, ...cmdArgs],
-      authorized: true
+      target_command: [cmdExec, ...cmdArgs]
     };
   } else {
     const profile = document.getElementById("mcpProfileSelect")?.value || "good";
@@ -1179,14 +1216,18 @@ async function connectMcp() {
     showToast("Starting protocol audit execution...");
     const res = await fetch("/api/audit/mcp", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload)
     });
+    if (res.status === 401) {
+      handleAuthError(res);
+      return;
+    }
     const json = await res.json();
     if (json.success && json.data) {
       currentAuditData = json.data;
       const modeLabel = json.data.execution_mode === "DEMO_BENCHMARK"
-        ? `Tier T1 (Certified Demo Benchmark &bull; ${json.data.model_metadata?.model_name || 'AgriTrust'})`
+        ? `Tier T1 (Certified Demo Benchmark &bull; ${escapeHtml(json.data.model_metadata?.model_name || 'AgriTrust')})`
         : `Tier T1 (Live Wire MCP Protocol Probing &bull; Active Connection)`;
       applyAuditDataToUI(json.data, modeLabel);
       showToast("MCP Protocol Audit Completed!");
@@ -1379,9 +1420,13 @@ async function submitQuestionnaire() {
   try {
     const res = await fetch("/api/audit/questionnaire", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ answers: wizardAnswers })
     });
+    if (res.status === 401) {
+      handleAuthError(res);
+      return;
+    }
     const json = await res.json();
     if (json.success && json.data) {
       currentAuditData = json.data;
@@ -1402,12 +1447,12 @@ function renderEuArticlesTable(articles) {
   if (!tbody || !articles || articles.length === 0) return;
 
   tbody.innerHTML = articles.map(a => `
-    <tr onclick="openArticleDrawer('${a.article.replace(/[^0-9]/g, '')}')">
-      <td><strong>${a.article}</strong><br><small style="color:var(--text-secondary);">${a.title}</small></td>
-      <td><small>${a.requirement}</small></td>
+    <tr onclick="openArticleDrawer('${escapeHtml(a.article).replace(/[^0-9]/g, '')}')">
+      <td><strong>${escapeHtml(a.article)}</strong><br><small style="color:var(--text-secondary);">${escapeHtml(a.title)}</small></td>
+      <td><small>${escapeHtml(a.requirement)}</small></td>
       <td><strong>${a.score ?? '—'}/100</strong></td>
-      <td><span class="badge ${a.status === 'CONFORMANT' ? 'success' : (a.status === 'PARTIAL' ? 'warning' : 'critical')}">${a.status}</span></td>
-      <td><small style="color:var(--text-secondary);">${(a.mandatory_controls || []).join(" &bull; ")}</small></td>
+      <td><span class="badge ${a.status === 'CONFORMANT' ? 'success' : (a.status === 'PARTIAL' ? 'warning' : 'critical')}">${escapeHtml(a.status)}</span></td>
+      <td><small style="color:var(--text-secondary);">${(a.mandatory_controls || []).map(c => escapeHtml(c)).join(" &bull; ")}</small></td>
     </tr>
   `).join("");
 }
@@ -1418,11 +1463,11 @@ function renderRemediationTable(plan) {
 
   tbody.innerHTML = plan.map((item, idx) => `
     <tr onclick="openFindingDrawer(${idx})">
-      <td><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : (item.priority === 'HIGH' ? 'warning' : 'info')}">${item.priority}</span></td>
-      <td><strong>${item.dimension}</strong></td>
-      <td>${item.finding}</td>
-      <td><strong style="color:var(--primary-500);">${item.action}</strong></td>
-      <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${item.eu_ai_act_ref || 'Art. 9'}</small></td>
+      <td><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : (item.priority === 'HIGH' ? 'warning' : 'info')}">${escapeHtml(item.priority)}</span></td>
+      <td><strong>${escapeHtml(item.dimension)}</strong></td>
+      <td>${escapeHtml(item.finding)}</td>
+      <td><strong style="color:var(--primary-500);">${escapeHtml(item.action)}</strong></td>
+      <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref || 'Art. 9')}</small></td>
     </tr>
   `).join("");
 }
@@ -1435,19 +1480,19 @@ function openFindingDrawer(idx) {
   const html = `
     <div class="drawer-section">
       <div class="drawer-section-title">Identified Vulnerability</div>
-      <div class="drawer-section-content"><strong>${item.finding}</strong></div>
+      <div class="drawer-section-content"><strong>${escapeHtml(item.finding)}</strong></div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Severity Level</div>
-      <div><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : 'warning'}">${item.priority} Priority</span></div>
+      <div><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : 'warning'}">${escapeHtml(item.priority)} Priority</span></div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Affected Dimension</div>
-      <div class="drawer-section-content">${item.dimension}</div>
+      <div class="drawer-section-content">${escapeHtml(item.dimension)}</div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Recommended Engineering Fix</div>
-      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${item.action}</div>
+      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${escapeHtml(item.action)}</div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Verification Criteria</div>
@@ -1576,7 +1621,8 @@ function renderModelCard(data) {
   const renderedView = document.getElementById("mcRenderedView");
   const markdownText = generateFormattedModelCardMarkdown(currentModelCardFormat, data);
   if (renderedView && markdownText) {
-    let formatted = markdownText
+    let safeText = escapeHtml(markdownText);
+    let formatted = safeText
       .replace(/^# (.*$)/gim, '<h3 style="margin-bottom:10px; color:var(--text-primary);">$1</h3>')
       .replace(/^### (.*$)/gim, '<h4 style="margin-top:14px; margin-bottom:4px; color:var(--primary-500);">$1</h4>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -1593,9 +1639,13 @@ async function runComparativeAudit() {
   try {
     const res = await fetch("/api/audit/compare", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ questionnaire_data: currentAuditData })
     });
+    if (res.status === 401) {
+      handleAuthError(res);
+      return;
+    }
     const json = await res.json();
     if (json.success && json.data) {
       const comp = json.data;
@@ -1605,11 +1655,11 @@ async function runComparativeAudit() {
       const tbody = document.getElementById("discrepancyTbody");
       tbody.innerHTML = Object.entries(comp.dimension_deltas || {}).map(([dim, d]) => `
         <tr>
-          <td><strong>${dim}</strong></td>
+          <td><strong>${escapeHtml(dim)}</strong></td>
           <td>${d.self_attested}/100</td>
           <td><strong style="color:var(--primary-500);">${d.automated_probe}/100</strong></td>
           <td><strong style="color:${d.delta > 0 ? 'var(--warning)' : 'var(--success)'};">${d.delta > 0 ? '+' : ''}${d.delta}</strong></td>
-          <td><span class="badge ${d.bias_direction === 'OVERESTIMATED' ? 'warning' : 'success'}">${d.bias_direction}</span></td>
+          <td><span class="badge ${d.bias_direction === 'OVERESTIMATED' ? 'warning' : 'success'}">${escapeHtml(d.bias_direction)}</span></td>
         </tr>
       `).join("");
       showToast("Attestation Discrepancy Index Recalculated!");

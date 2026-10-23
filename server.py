@@ -15,9 +15,13 @@ Features:
 """
 
 import asyncio
+from collections import defaultdict
+import hmac
 import logging
 import os
+import secrets
 import sys
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -65,8 +69,68 @@ CORS(
     supports_credentials=False,
 )
 
-ALLOWED_LIVE_EXECUTABLES = {"python", "python3", "python.exe", "node", "node.exe"}
+ALLOWED_LIVE_EXECUTABLES = {"python", "python3", "python.exe"}
 DISALLOWED_SHELL_CHARS = {";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r"}
+DISALLOWED_INTERPRETER_FLAGS = {"-c", "-m", "-e", "-r", "--eval"}
+
+# Base and approved scripts directories
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+APPROVED_SCRIPTS_DIR = os.path.realpath(os.environ.get("AIGRID_APPROVED_DIR", os.path.join(BASE_DIR, "demo_servers")))
+ALLOWED_SCRIPTS = {
+    "good_server.py",
+    "moderate_server.py",
+    "poor_server.py",
+}
+_extra_allowed = os.environ.get("AIGRID_ALLOWED_SCRIPTS", "")
+if _extra_allowed:
+    ALLOWED_SCRIPTS.update(s.strip() for s in _extra_allowed.split(",") if s.strip())
+
+# API Key Authentication
+API_KEY = os.environ.get("AIGRID_API_KEY")
+if not API_KEY:
+    API_KEY = secrets.token_hex(24)
+    print(f"[SECURITY] Generated random API key: {API_KEY}")
+
+# Rate Limiting for audit routes
+AUDIT_RATE_LIMIT = int(os.environ.get("AIGRID_RATE_LIMIT", "30"))
+AUDIT_RATE_WINDOW = 60.0  # seconds
+_client_audit_timestamps: Dict[str, List[float]] = defaultdict(list)
+
+
+def is_rate_limited(client_id: str) -> bool:
+    now = time.time()
+    timestamps = _client_audit_timestamps[client_id]
+    valid = [t for t in timestamps if now - t < AUDIT_RATE_WINDOW]
+    _client_audit_timestamps[client_id] = valid
+    if len(valid) >= AUDIT_RATE_LIMIT:
+        return True
+    _client_audit_timestamps[client_id].append(now)
+    return False
+
+
+@app.before_request
+def enforce_audit_security():
+    """Enforces API key authentication and rate limiting on all POST /api/audit/* routes."""
+    if request.method == "POST" and request.path.startswith("/api/audit/"):
+        client_key = request.headers.get("X-API-Key")
+        if not client_key:
+            auth_header = request.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer "):
+                client_key = auth_header[7:].strip()
+
+        if not client_key or not hmac.compare_digest(client_key, API_KEY):
+            return jsonify({
+                "success": False,
+                "error": "Unauthorized: Invalid or missing API Key for audit execution."
+            }), 401
+
+        if not app.config.get("TESTING"):
+            client_ip = request.remote_addr or "unknown"
+            if is_rate_limited(client_ip):
+                return jsonify({
+                    "success": False,
+                    "error": "Rate limit exceeded. Please wait before submitting another audit."
+                }), 429
 
 auditor = AIGRIDMCPAuditor()
 store = AuditStore()
@@ -131,6 +195,8 @@ def static_files(path):
     safe_path = os.path.normpath(path)
     if safe_path.startswith("..") or os.path.isabs(safe_path):
         return jsonify({"success": False, "error": "Invalid path"}), 400
+    if safe_path == "api" or safe_path.startswith("api\\") or safe_path.startswith("api/"):
+        return jsonify({"success": False, "error": "Not Found"}), 404
 
     full_path = os.path.join("public", safe_path)
     if os.path.exists(full_path) and os.path.isfile(full_path):
@@ -241,81 +307,20 @@ def run_mcp_audit():
     if err:
         return jsonify({
             "success": False,
-            "error": f"Invalid request body: {err}. You must explicitly provide 'demo_profile': 'good'|'moderate'|'poor' or 'target_command' with 'authorized': true."
+            "error": f"Invalid request body: {err}. Specify 'demo_profile' ('good', 'moderate', 'poor') or an approved target script."
         }), 400
 
     if not body:
         return jsonify({
             "success": False,
-            "error": "Request body cannot be empty. Specify either 'demo_profile' ('good', 'moderate', 'poor') or 'target_command' with 'authorized': true."
+            "error": "Request body cannot be empty. Specify either 'demo_profile' ('good', 'moderate', 'poor') or an approved target script."
         }), 400
-
-    # Optional API key authentication if configured
-    required_api_key = os.environ.get("AIGRID_API_KEY")
-    if required_api_key:
-        client_key = request.headers.get("X-API-Key") or request.headers.get("Authorization", "").replace("Bearer ", "")
-        if client_key != required_api_key:
-            return jsonify({
-                "success": False,
-                "error": "Unauthorized: Invalid or missing API Key for audit execution."
-            }), 401
 
     demo_profile = body.get("demo_profile") or body.get("profile")
     target_command = body.get("target_command")
 
-    # Mode 1: Live Custom Target Probing
-    if target_command is not None:
-        if not body.get("authorized"):
-            return jsonify({
-                "success": False,
-                "error": "Live MCP protocol audits require explicit authorization. Include 'authorized': true in the request body."
-            }), 403
-
-        if not isinstance(target_command, list) or len(target_command) == 0:
-            return jsonify({
-                "success": False,
-                "error": "'target_command' must be a non-empty list of command arguments (e.g. ['python', 'my_server.py'])."
-            }), 400
-
-        cmd_exec = str(target_command[0]).strip()
-        cmd_args = [str(a).strip() for a in target_command[1:]]
-
-        exec_base = os.path.basename(cmd_exec).lower()
-        if exec_base not in ALLOWED_LIVE_EXECUTABLES:
-            return jsonify({
-                "success": False,
-                "error": f"Executable '{cmd_exec}' is not permitted for live probing. Allowed: {sorted(list(ALLOWED_LIVE_EXECUTABLES))}"
-            }), 400
-
-        for arg in cmd_args:
-            if any(c in arg for c in DISALLOWED_SHELL_CHARS):
-                return jsonify({
-                    "success": False,
-                    "error": f"Command argument contains disallowed shell character: '{arg}'"
-                }), 400
-
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                results = loop.run_until_complete(
-                    auditor.run_live_audit(mcp_command=cmd_exec, mcp_args=cmd_args)
-                )
-            finally:
-                loop.close()
-
-            results["disclaimer"] = DISCLAIMER_TEXT
-            audit_id = store.save_audit(results)
-            results["audit_id"] = audit_id
-            last_mcp_data = results
-            last_audit_data = results
-            return jsonify({"success": True, "data": results, "audit_id": audit_id})
-        except Exception as e:
-            logger.exception("Error executing live MCP target audit")
-            return jsonify({"success": False, "error": f"Live MCP protocol audit failed: {e}"}), 500
-
-    # Mode 2: Certified Demo Benchmark Profile
-    elif demo_profile is not None:
+    # Mode 1: Certified Demo Benchmark Profile
+    if demo_profile is not None:
         if not isinstance(demo_profile, str) or demo_profile not in ("good", "moderate", "poor"):
             return jsonify({
                 "success": False,
@@ -326,7 +331,9 @@ def run_mcp_audit():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                results = loop.run_until_complete(auditor.run_live_audit(profile=demo_profile))
+                results = loop.run_until_complete(
+                    asyncio.wait_for(auditor.run_live_audit(profile=demo_profile), timeout=45.0)
+                )
             finally:
                 loop.close()
 
@@ -336,14 +343,109 @@ def run_mcp_audit():
             last_mcp_data = results
             last_audit_data = results
             return jsonify({"success": True, "data": results, "audit_id": audit_id})
+        except asyncio.TimeoutError:
+            return jsonify({"success": False, "error": "Demo benchmark audit timed out after 45 seconds"}), 504
         except Exception as e:
             logger.exception("Error executing demo MCP benchmark audit")
             return jsonify({"success": False, "error": f"Demo benchmark audit failed: {e}"}), 500
 
+    # Mode 2: Allowlisted Target Script (arbitrary target_command removed; 'authorized' dropped as control)
+    elif target_command is not None:
+        if not isinstance(target_command, list) or len(target_command) == 0:
+            return jsonify({
+                "success": False,
+                "error": "'target_command' must be a list containing an approved script path."
+            }), 400
+
+        # Reject interpreter flags anywhere in target_command
+        for arg in target_command:
+            arg_str = str(arg).strip().lower()
+            for flag in DISALLOWED_INTERPRETER_FLAGS:
+                if arg_str == flag or arg_str.startswith(flag + "=") or arg_str.startswith(flag + ":"):
+                    return jsonify({
+                        "success": False,
+                        "error": f"Interpreter flag '{flag}' is strictly disallowed."
+                    }), 400
+
+        # Extract target script argument
+        script_arg = None
+        for arg in target_command:
+            arg_s = str(arg).strip()
+            base = os.path.basename(arg_s).lower()
+            if base in ("python", "python3", "python.exe"):
+                continue
+            script_arg = arg_s
+            break
+
+        if not script_arg:
+            return jsonify({
+                "success": False,
+                "error": "No target script specified in target_command."
+            }), 400
+
+        for ch in DISALLOWED_SHELL_CHARS:
+            if ch in script_arg:
+                return jsonify({
+                    "success": False,
+                    "error": f"Script argument contains disallowed shell character: '{ch}'"
+                }), 400
+
+        # Resolve realpath
+        if os.path.isabs(script_arg):
+            candidate_path = os.path.realpath(script_arg)
+        else:
+            c1 = os.path.realpath(os.path.join(APPROVED_SCRIPTS_DIR, script_arg))
+            c2 = os.path.realpath(os.path.join(BASE_DIR, script_arg))
+            candidate_path = c1 if os.path.exists(c1) else c2
+
+        # Verify realpath is inside APPROVED_SCRIPTS_DIR
+        try:
+            common = os.path.commonpath([APPROVED_SCRIPTS_DIR, candidate_path])
+        except ValueError:
+            common = ""
+
+        if common != APPROVED_SCRIPTS_DIR or not os.path.isfile(candidate_path):
+            return jsonify({
+                "success": False,
+                "error": "Target script is outside the approved directory or does not exist."
+            }), 403
+
+        script_basename = os.path.basename(candidate_path)
+        if script_basename not in ALLOWED_SCRIPTS:
+            return jsonify({
+                "success": False,
+                "error": f"Script '{script_basename}' is not in the configured allowlist."
+            }), 403
+
+        cmd_exec = sys.executable
+        cmd_args = [candidate_path]
+
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                results = loop.run_until_complete(
+                    asyncio.wait_for(auditor.run_live_audit(mcp_command=cmd_exec, mcp_args=cmd_args), timeout=45.0)
+                )
+            finally:
+                loop.close()
+
+            results["disclaimer"] = DISCLAIMER_TEXT
+            audit_id = store.save_audit(results)
+            results["audit_id"] = audit_id
+            last_mcp_data = results
+            last_audit_data = results
+            return jsonify({"success": True, "data": results, "audit_id": audit_id})
+        except asyncio.TimeoutError:
+            return jsonify({"success": False, "error": "Live MCP protocol audit timed out after 45 seconds"}), 504
+        except Exception as e:
+            logger.exception("Error executing live MCP target audit")
+            return jsonify({"success": False, "error": f"Live MCP protocol audit failed: {e}"}), 500
+
     else:
         return jsonify({
             "success": False,
-            "error": "Missing audit target specification. You must explicitly provide either 'demo_profile': 'good'|'moderate'|'poor' or 'target_command': ['<executable>', '<arg1>', ...] with 'authorized': true."
+            "error": "Missing audit target specification. Specify 'demo_profile' ('good', 'moderate', 'poor') or an approved target script."
         }), 400
 
 
@@ -438,6 +540,8 @@ def get_audit_by_id(audit_id: str):
 # ================================================================
 @app.route("/api/audit/reset", methods=["GET", "POST"])
 def reset_audit_state():
+    if request.method != "POST":
+        return jsonify({"success": False, "error": "Method Not Allowed. /api/audit/reset requires POST."}), 405
     global last_audit_data, last_mcp_data
     last_audit_data = {}
     last_mcp_data = {}
@@ -615,11 +719,12 @@ def get_sensitivity_analysis():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("AIGRID_HOST", "127.0.0.1")
     print("=================================================================")
     print(f" AI-GRID Trust Assurance & GRC Server (v4.0) Running on port {port}")
-    print(f" Dashboard URL: http://localhost:{port}")
+    print(f" Dashboard URL: http://{host}:{port}")
     print(" Modes: Structured Questionnaire (T3) | MCP Automated Probe (T1)")
     print(" Frameworks: EU AI Act (Arts 9-15) | NIST AI RMF | OWASP MCP Top 10")
     print(" Persistence: SQLite (data/aigrid_audits.db)")
     print("=================================================================")
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host=host, port=port, debug=False)

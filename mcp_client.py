@@ -29,6 +29,22 @@ from typing import Any, Dict, List, Optional, Tuple
 logger = logging.getLogger("aigrid.mcp_client")
 
 
+def get_minimal_env(extra_env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """
+    Returns a minimal, isolated environment dictionary containing only essential
+    system paths and variables, preventing secret leakage (e.g. API keys) to the audited server.
+    """
+    safe_keys = {
+        "PATH", "SYSTEMROOT", "WINDIR", "PYTHONPATH", "TEMP", "TMP",
+        "HOMEDRIVE", "HOMEPATH", "USERPROFILE", "LANG", "LC_ALL"
+    }
+    clean_env = {k: os.environ[k] for k in safe_keys if k in os.environ}
+    clean_env["PYTHONUNBUFFERED"] = "1"
+    if extra_env:
+        clean_env.update({k: v for k, v in extra_env.items() if not k.startswith("AIGRID_")})
+    return clean_env
+
+
 @dataclass
 class MCPToolSchema:
     """Parsed tool information from MCP server discovery."""
@@ -114,9 +130,7 @@ class MCPClient:
         if (command == sys.executable or "python" in os.path.basename(command).lower()) and "-u" not in cmd_args:
             cmd_args.insert(0, "-u")
 
-        run_env = {"PYTHONUNBUFFERED": "1", **os.environ}
-        if env:
-            run_env.update(env)
+        run_env = get_minimal_env(env)
 
         params = StdioServerParameters(command=command, args=cmd_args, env=run_env)
         self._log_protocol("SENT", "connect_stdio", {"command": command, "args": cmd_args})
@@ -160,9 +174,7 @@ class MCPClient:
             if (command == sys.executable or "python" in os.path.basename(command).lower()) and "-u" not in cmd_args:
                 cmd_args.insert(0, "-u")
 
-            run_env = {"PYTHONUNBUFFERED": "1", **os.environ}
-            if env:
-                run_env.update(env)
+            run_env = get_minimal_env(env)
 
             self._log_protocol("SENT", "connect_stdio", {"command": command, "args": cmd_args})
 
