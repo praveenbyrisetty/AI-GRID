@@ -18,3 +18,7 @@ Thumbs.db
 
 # Testing & Cache
 .pytest_cache/
+
+# Databases
+*.db
+data/*.db

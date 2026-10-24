@@ -1,7 +1,8 @@
 /**
  * AI-GRID Enterprise Control Plane (v4.0)
- * Dual-Mode Controller: Structured Research Questionnaire (T3) + MCP Automated Probe (T1)
- * High-Assurance 6 Trust Dimensions | EU AI Act (Art. 9-15) | Attestation Discrepancy | Framework Mapping
+ * High-Assurance AI Governance & Compliance Auditing Platform
+ * Grounded in QB4AIRA (Lee et al., 2024), EU AI Act (Regulation (EU) 2024/1689 Articles 9-15),
+ * NIST AI 100-1 (AI RMF), and 6 Empirical Trust Dimensions.
  */
 
 // =========================================================================
@@ -9,50 +10,176 @@
 // =========================================================================
 let radarChartInstance = null;
 let currentAuditData = null;
-let currentMode = "mcp";
 let wizardStep = 1;
 let totalWizardSteps = 7;
 let wizardAnswers = {};
 let questionsData = null;
-let currentDatasetsCatalog = [];
-let activeDatasetId = "german_credit";
 let isTerminalPaused = false;
-let currentAlpha = 0.60;
-let isGraphListView = false;
 
 const pageTitles = {
   "page-overview": "AI Assurance Overview",
-  "page-setup": "Audit Launchpad",
+  "page-setup": "AI Governance Questionnaire",
   "page-compliance": "EU AI Act Regulatory Compliance",
-  "page-discrepancy": "Attestation Discrepancy Analysis",
-  "page-framework-map": "Interactive Framework Mapping",
-  "page-datasets": "Empirical Benchmark Datasets",
-  "page-question-bank": "Research Question Bank (30 Items)",
+  "page-history": "Audit Records & History",
+  "page-question-bank": "Research Question Bank (35 Items)",
   "page-remediation": "Governance Remediation Roadmap",
-  "page-modelcard": "AI Governance Passport",
-  "page-simulation": "What-If Scenario Risk Simulator"
+  "page-modelcard": "AI Governance Passport"
 };
 
 const PILLAR_KEYS = {
   "Security & Robustness": "security",
+  "Safety & Reliability": "safety",
   "Fairness & Non-Discrimination": "fairness",
   "Transparency & Explainability": "transparency",
   "Privacy & Data Governance": "privacy",
-  "Human Oversight & Accountability": "oversight",
-  "Safety & Reliability": "safety"
+  "Human Oversight & Agency": "oversight",
+  "Accountability & Governance": "accountability"
 };
 
 const defaultDimensions = {
   "Security & Robustness": 0,
+  "Safety & Reliability": 0,
   "Fairness & Non-Discrimination": 0,
   "Transparency & Explainability": 0,
   "Privacy & Data Governance": 0,
-  "Human Oversight & Accountability": 0,
-  "Safety & Reliability": 0
+  "Human Oversight & Agency": 0,
+  "Accountability & Governance": 0
 };
 
 // =========================================================================
-// SECURITY UTILITIES: XSS SANITIZATION & API AUTHENTICATION
+// REFERENCE PRESET PROFILES (GROUNDED IN ANNEX III & EMPIRICAL CONTROLS)
+// =========================================================================
+const PRESET_PROFILES = {
+  healthcare: {
+    model_name: "ClinicalRisk-CardioNet",
+    model_version: "2.4.0",
+    domain: "healthcare",
+    architecture: "ResNet-50 + Gradient Boosted Ensembles",
+    deployment_type: "private_cloud",
+    q1_adversarial_tested: "comprehensive",
+    q2_drift_monitoring: "automated",
+    q3_sbom_tracking: "formal_sbom",
+    q4_red_teaming: "independent",
+    q5_api_auth_ratelimit: "mTLS_ratelimited",
+    q6_demographic_coverage: "comprehensive",
+    q7_class_balance: "balanced",
+    q8_coverage_gaps: "none",
+    q9_dataset_size: "large",
+    q10_fairness_audit: "formal_audit",
+    q11_xai_engine: "full_xai",
+    q12_attribution_count: "comprehensive",
+    q13_reasoning_summaries: "yes",
+    q14_model_card_doc: "published_card",
+    q15_uncertainty_scores: "calibrated_intervals",
+    q16_encryption_rest: "aes256_kms",
+    q17_encryption_transit: "tls13_strict",
+    q18_data_retention: "strict_90",
+    q19_pii_handling: "automated_redaction",
+    q20_governance_policy: "formal_policy",
+    q21_human_oversight: "mandatory_hitl",
+    q22_autonomy_level: "advisory",
+    q24_kill_switch: "instant_killswitch",
+    q24b_operator_training: "certified_training",
+    q24c_override_capability: "instant_override",
+    q23_incident_escalation: "formal_escalation",
+    q25_decision_logging: "append_only_signed",
+    q25b_technical_dossier: "full_annex_iv",
+    q25c_post_market_monitoring: "active_monitoring",
+    q25d_governance_charter: "formal_charter",
+    q26_input_validation: "comprehensive_rejection",
+    q27_guardrail_count: "3plus",
+    q28_output_clamping: "hard_clamping",
+    q29_contextual_advisory: "yes_dynamic",
+    q30_failure_mode_testing: "formal_failure_suite"
+  },
+  finance: {
+    model_name: "FinOpt-CreditScore",
+    model_version: "1.8.2",
+    domain: "finance",
+    architecture: "XGBoost Classifier + SHAP TreeExplainer",
+    deployment_type: "hybrid",
+    q1_adversarial_tested: "basic",
+    q2_drift_monitoring: "automated",
+    q3_sbom_tracking: "formal_sbom",
+    q4_red_teaming: "internal",
+    q5_api_auth_ratelimit: "basic_key",
+    q6_demographic_coverage: "partial",
+    q7_class_balance: "moderate",
+    q8_coverage_gaps: "minor",
+    q9_dataset_size: "large",
+    q10_fairness_audit: "formal_audit",
+    q11_xai_engine: "full_xai",
+    q12_attribution_count: "comprehensive",
+    q13_reasoning_summaries: "yes",
+    q14_model_card_doc: "published_card",
+    q15_uncertainty_scores: "calibrated_intervals",
+    q16_encryption_rest: "aes256_kms",
+    q17_encryption_transit: "tls13_strict",
+    q18_data_retention: "strict_90",
+    q19_pii_handling: "automated_redaction",
+    q20_governance_policy: "formal_policy",
+    q21_human_oversight: "mandatory_hitl",
+    q22_autonomy_level: "semi_autonomous",
+    q24_kill_switch: "graceful_drain",
+    q24b_operator_training: "basic_briefing",
+    q24c_override_capability: "instant_override",
+    q23_incident_escalation: "formal_escalation",
+    q25_decision_logging: "append_only_signed",
+    q25b_technical_dossier: "full_annex_iv",
+    q25c_post_market_monitoring: "active_monitoring",
+    q25d_governance_charter: "formal_charter",
+    q26_input_validation: "basic_types",
+    q27_guardrail_count: "1to2",
+    q28_output_clamping: "soft_warning",
+    q29_contextual_advisory: "static_disclaimer",
+    q30_failure_mode_testing: "partial_tests"
+  },
+  assistant: {
+    model_name: "AssistAI-Copilot",
+    model_version: "3.1.0",
+    domain: "other",
+    architecture: "Decoder-only LLM (Transformer)",
+    deployment_type: "cloud_api",
+    q1_adversarial_tested: "basic",
+    q2_drift_monitoring: "manual",
+    q3_sbom_tracking: "basic_requirements",
+    q4_red_teaming: "internal",
+    q5_api_auth_ratelimit: "basic_key",
+    q6_demographic_coverage: "partial",
+    q7_class_balance: "moderate",
+    q8_coverage_gaps: "minor",
+    q9_dataset_size: "moderate",
+    q10_fairness_audit: "informal",
+    q11_xai_engine: "partial_xai",
+    q12_attribution_count: "limited",
+    q13_reasoning_summaries: "technical_only",
+    q14_model_card_doc: "internal_readme",
+    q15_uncertainty_scores: "raw_softmax",
+    q16_encryption_rest: "standard_disk",
+    q17_encryption_transit: "tls12_mixed",
+    q18_data_retention: "moderate_180",
+    q19_pii_handling: "basic_filtering",
+    q20_governance_policy: "general_it",
+    q21_human_oversight: "optional_hotl",
+    q22_autonomy_level: "semi_autonomous",
+    q24_kill_switch: "graceful_drain",
+    q24b_operator_training: "basic_briefing",
+    q24c_override_capability: "post_hoc_ticket",
+    q23_incident_escalation: "informal_slack",
+    q25_decision_logging: "standard_cloudwatch",
+    q25b_technical_dossier: "partial_docs",
+    q25c_post_market_monitoring: "reactive_support",
+    q25d_governance_charter: "ad_hoc_committee",
+    q26_input_validation: "basic_types",
+    q27_guardrail_count: "1to2",
+    q28_output_clamping: "soft_warning",
+    q29_contextual_advisory: "static_disclaimer",
+    q30_failure_mode_testing: "partial_tests"
+  }
+};
+
+// =========================================================================
+// SECURITY UTILITIES: XSS SANITIZATION & AUTOMATIC SESSION AUTH
 // =========================================================================
 function escapeHtml(str) {
   if (str === null || str === undefined) return "";
@@ -64,6 +191,18 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+async function syncSessionAuth() {
+  try {
+    const res = await fetch("/api/status");
+    const json = await res.json();
+    if (json && json.session_token) {
+      localStorage.setItem("ai_grid_api_key", json.session_token);
+    }
+  } catch (e) {
+    console.warn("Could not sync session token", e);
+  }
+}
+
 function getAuthHeaders(extraHeaders = {}) {
   const headers = { ...extraHeaders };
   const key = localStorage.getItem("ai_grid_api_key") || "";
@@ -73,13 +212,10 @@ function getAuthHeaders(extraHeaders = {}) {
   return headers;
 }
 
-function handleAuthError(res) {
+async function handleAuthError(res) {
   if (res && res.status === 401) {
-    const key = prompt("AIGRID_API_KEY required. Enter API key printed in server logs:");
-    if (key) {
-      localStorage.setItem("ai_grid_api_key", key.trim());
-      showToast("API key saved. Please retry your request.");
-    }
+    await syncSessionAuth();
+    showToast("Session authenticated. Please re-run audit.");
   }
 }
 
@@ -87,6 +223,9 @@ function handleAuthError(res) {
 // INITIALIZATION
 // =========================================================================
 document.addEventListener("DOMContentLoaded", () => {
+  // 0. Auto-sync session authentication token seamlessly
+  syncSessionAuth();
+
   // 1. Initialize Theme: Executive Dark by default, or user's stored preference
   const savedTheme = localStorage.getItem("ai_grid_theme") || "dark";
   if (savedTheme === "dark") {
@@ -99,9 +238,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. Initialize Radar Chart with standby dimensions
   initRadarChart(defaultDimensions);
 
-  // 3. Load Questions & Datasets catalogs from backend
+  // 3. Load Questions catalog from backend
   loadQuestions();
-  loadDatasets();
+  loadAuditHistory();
 
   // 4. Check if an active audit exists on server, otherwise maintain standby state
   checkCurrentAuditStatus();
@@ -171,7 +310,6 @@ function toggleTheme() {
   localStorage.setItem("ai_grid_theme", newTheme);
   updateThemeButtonUI(newTheme);
 
-  // Re-render radar chart with updated theme colors
   if (currentAuditData && currentAuditData.dimensions) {
     initRadarChart(currentAuditData.dimensions);
   } else {
@@ -202,10 +340,7 @@ async function checkCurrentAuditStatus() {
     const json = await res.json();
     if (json.success && json.active && json.data) {
       currentAuditData = json.data;
-      const tierLabel = json.data.evidence_tier === "T1"
-        ? "Tier T1 (Automated MCP Probe)"
-        : "Tier T3 (Self-Attested Questionnaire)";
-      applyAuditDataToUI(json.data, tierLabel);
+      applyAuditDataToUI(json.data, "Tier T3 (Self-Attested Questionnaire)");
     } else {
       clearAuditUI();
     }
@@ -278,28 +413,56 @@ function clearAuditUI() {
 
   // Verdict banner
   const headline = document.getElementById("verdictHeadlineText");
-  if (headline) headline.textContent = "AWAITING SYSTEM AUDIT • CONTROL PLANE READY";
+  if (headline) headline.textContent = "AWAITING GOVERNANCE AUDIT • CONTROL PLANE READY";
 
   const subText = document.getElementById("verdictSubText");
-  if (subText) subText.innerHTML = `No active assessment executed. Connect live Model Context Protocol (MCP) tool endpoints (Tier T1) or complete the research questionnaire (Tier T3) to dynamically evaluate assurance adequacy.
-    <div style="margin-top: 10px; display:flex; gap:10px;">
-      <button class="btn-primary sm" onclick="runQuickDemoAudit()">
+  if (subText) subText.innerHTML = `No active assessment executed. Complete the 30-question research-grounded questionnaire (QB4AIRA, EU AI Act, NIST AI 100-1) or load a reference profile to evaluate assurance adequacy.
+    <div style="margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn-primary sm" onclick="showPage('page-setup')">
         <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <span>Execute Automated MCP Probe Now</span>
+        <span>Open Questionnaire Wizard &rarr;</span>
       </button>
-      <button class="btn-secondary sm" onclick="showPage('page-setup')">
-        <span>Structured Questionnaire (T3) &rarr;</span>
+      <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')">
+        <span>Load Clinical AI Preset</span>
+      </button>
+      <button class="btn-secondary sm" onclick="loadPresetProfile('finance')">
+        <span>Load Credit Scoring Preset</span>
       </button>
     </div>`;
 
   const bannerDisc = document.getElementById("bannerDiscrepancyVal");
-  if (bannerDisc) bannerDisc.textContent = "—";
+  if (bannerDisc) bannerDisc.textContent = "Standby";
 
   const bannerBasis = document.getElementById("bannerEvidenceBasis");
-  if (bannerBasis) bannerBasis.textContent = "Awaiting Probe";
+  if (bannerBasis) bannerBasis.textContent = "Questionnaire (T3)";
 
   const bannerHash = document.getElementById("bannerHashIntegrity");
-  if (bannerHash) bannerHash.textContent = "Standby";
+  if (bannerHash) bannerHash.textContent = "EU AI Act / NIST AI 100-1";
+
+  // Summary Posture Card
+  const ovBadge = document.getElementById("overviewStatusBadge");
+  if (ovBadge) {
+    ovBadge.textContent = "AWAITING AUDIT";
+    ovBadge.className = "badge info";
+  }
+  const sumTarget = document.getElementById("summaryTargetName");
+  if (sumTarget) sumTarget.textContent = "Awaiting Assessment Target";
+  const sumSub = document.getElementById("summaryTargetSub");
+  if (sumSub) sumSub.textContent = "Select a reference preset or complete the questionnaire";
+  const sumTier = document.getElementById("summaryTierBadge");
+  if (sumTier) {
+    sumTier.textContent = "ANNEX III §5";
+    sumTier.className = "badge info";
+  }
+  Object.values(PILLAR_KEYS).forEach(pid => {
+    const smini = document.getElementById(`smini_${pid}`);
+    const sminiFill = document.getElementById(`sminiFill_${pid}`);
+    if (smini) smini.textContent = "— / 100";
+    if (sminiFill) {
+      sminiFill.style.width = "0%";
+      sminiFill.className = "summary-pillar-fill";
+    }
+  });
 
   // Dimension Cards
   Object.values(PILLAR_KEYS).forEach(pid => {
@@ -324,7 +487,7 @@ function clearAuditUI() {
       <div class="log-entry">
         <span class="log-timestamp">[00:00:00]</span>
         <span class="log-badge PROBE">STANDBY</span>
-        <span>AI-GRID Control Plane online. Awaiting MCP connection or questionnaire execution...</span>
+        <span>AI-GRID Control Plane online. Awaiting questionnaire execution or preset selection...</span>
       </div>
     `;
   }
@@ -341,7 +504,7 @@ function clearAuditUI() {
     `;
   }
 
-  // 1. EU AI Act Table & Classification Cards Reset
+  // EU AI Act Table & Classification Cards Reset
   const euArticlesTbody = document.getElementById("euArticlesTbody");
   if (euArticlesTbody) {
     euArticlesTbody.innerHTML = `
@@ -369,31 +532,26 @@ function clearAuditUI() {
   const euConfCount = document.getElementById("euConformantCount");
   if (euConfCount) euConfCount.textContent = "0 / 7 Articles Conformant";
 
-  // 2. NIST AI RMF Crosswalk Cards Reset
-  const gov = document.getElementById("nistGovern");
-  if (gov) gov.textContent = "— / 100 (STANDBY)";
-  const map = document.getElementById("nistMap");
-  if (map) map.textContent = "— / 100 (STANDBY)";
-  const meas = document.getElementById("nistMeasure");
-  if (meas) meas.textContent = "— / 100 (STANDBY)";
-  const man = document.getElementById("nistManage");
-  if (man) man.textContent = "— / 100 (STANDBY)";
-
-  // 3. Attestation Discrepancy Screen Reset
-  const adiVal = document.getElementById("adiVal");
-  if (adiVal) adiVal.textContent = "—";
-  const adiSignificance = document.getElementById("adiSignificance");
-  if (adiSignificance) adiSignificance.textContent = "STANDBY";
-  const discTbody = document.getElementById("discrepancyTbody");
-  if (discTbody) {
-    discTbody.innerHTML = `
+  // NIST AI RMF Crosswalk Cards Reset
+  ["Govern", "Map", "Measure", "Manage"].forEach(fn => {
+    const el = document.getElementById(`nist${fn}`);
+    if (el) el.textContent = "— / 100";
+    const statusEl = document.getElementById(`nist${fn}Status`);
+    if (statusEl) {
+      statusEl.textContent = "STANDBY";
+      statusEl.className = "badge info";
+    }
+  });
+  const nistBody = document.getElementById("nistSubcategoriesTbody");
+  if (nistBody) {
+    nistBody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">Both Tier T1 (MCP automated probe) and Tier T3 (Questionnaire) data are required to compute attestation discrepancy.</td>
+        <td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No compliance data loaded. Run an audit or select a reference profile to evaluate NIST AI RMF conformity.</td>
       </tr>
     `;
   }
 
-  // 4. Governance Remediation Roadmap Screen Reset
+  // Governance Remediation Roadmap Screen Reset
   const remBody = document.getElementById("remediationBody");
   if (remBody) {
     remBody.innerHTML = `
@@ -403,7 +561,7 @@ function clearAuditUI() {
     `;
   }
 
-  // 5. AI Governance Passport Screen Reset
+  // AI Governance Passport Screen Reset
   const mcModelName = document.getElementById("mcModelName");
   if (mcModelName) mcModelName.textContent = "—";
   const mcModelVersion = document.getElementById("mcModelVersion");
@@ -419,56 +577,8 @@ function clearAuditUI() {
     `;
   }
 
-  // 6. What-If Scenario Risk Simulator Reset
-  const simScore = document.getElementById("simScore");
-  if (simScore) simScore.textContent = "—";
-  const simIncidents = document.getElementById("simIncidents");
-  if (simIncidents) simIncidents.textContent = "—";
-  const simLiability = document.getElementById("simLiability");
-  if (simLiability) simLiability.textContent = "—";
-  const simUserSlider = document.getElementById("simUserSlider");
-  if (simUserSlider) simUserSlider.value = 50000;
-  const userCountLabel = document.getElementById("userCountLabel");
-  if (userCountLabel) userCountLabel.textContent = "50,000";
-
-  // 7. Questionnaire Wizard & Launchpad Reset
-  wizardStep = 1;
-  selectedAnswers = {};
-  const authCheck = document.getElementById("mcpAuthorizeCheck");
-  if (authCheck) authCheck.checked = false;
-
-  // 8. Framework flow node labels
-  const flSystem = document.getElementById("flabel-system");
-  if (flSystem) flSystem.textContent = "System Target";
-  const flProbe = document.getElementById("flabel-probe");
-  if (flProbe) flProbe.textContent = "Protocol Mode";
-  const flEvidence = document.getElementById("flabel-evidence");
-  if (flEvidence) flEvidence.textContent = "Observed Telemetry";
-  const flFinding = document.getElementById("flabel-finding");
-  if (flFinding) flFinding.textContent = "Vulnerability Analysis";
-  const flDimension = document.getElementById("flabel-dimension");
-  if (flDimension) flDimension.textContent = "Trust Bottleneck";
-  const flClause = document.getElementById("flabel-clause");
-  if (flClause) flClause.textContent = "Framework Clause";
-  const flRemediation = document.getElementById("flabel-remediation");
-  if (flRemediation) flRemediation.textContent = "Engineering Fix";
-
-  const gdetailType = document.getElementById("gdetailType");
-  if (gdetailType) gdetailType.textContent = "Selected Node: AI System";
-  const gdetailTitle = document.getElementById("gdetailTitle");
-  if (gdetailTitle) gdetailTitle.textContent = "Awaiting System Audit";
-  const gdetailDesc = document.getElementById("gdetailDesc");
-  if (gdetailDesc) gdetailDesc.textContent = "Lineage mapping connects observed wire-level probes, identified vulnerabilities, empirical trust dimensions, statutory EU AI Act / NIST articles, and actionable engineering remediation. Run an audit to trace lineage.";
-  const gdetailBadge = document.getElementById("gdetailBadge");
-  if (gdetailBadge) gdetailBadge.textContent = "Traceability Lineage";
-  const gdetailStatus = document.getElementById("gdetailStatus");
-  if (gdetailStatus) gdetailStatus.textContent = "Standby";
-
   // Radar chart
   initRadarChart(defaultDimensions);
-
-  // ERM Sensitivity
-  updateAlphaSlider(currentAlpha);
 }
 
 async function resetAuditState() {
@@ -485,8 +595,9 @@ async function resetAuditState() {
     console.warn("Server reset API call:", err);
   }
   clearAuditUI();
+  loadAuditHistory();
   showPage("page-overview");
-  showToast("Platform reset complete: All audits, telemetry, and tables reset to clean standby");
+  showToast("Platform reset complete: All audits and telemetry reset to clean standby");
 }
 
 // =========================================================================
@@ -499,17 +610,16 @@ function initRadarChart(dims) {
   if (radarChartInstance) radarChartInstance.destroy();
 
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-  const dimValues = dims ? Object.values(dims) : [0, 0, 0, 0, 0, 0];
-  const dimLabels = dims ? Object.keys(dims) : Object.keys(defaultDimensions);
+  const dimLabels = dims ? Object.keys(dims).filter(k => k !== "Human Oversight & Accountability") : Object.keys(defaultDimensions);
+  const dimValues = dims ? dimLabels.map(k => dims[k] ?? 0) : dimLabels.map(() => 0);
   const isStandby = dimValues.every(v => v === 0);
 
   const datasets = [];
 
   if (isStandby) {
-    // Elegant baseline reference envelope (80.0 Conformity Target)
     datasets.push({
       label: "Regulatory Target (80.0)",
-      data: [80, 80, 80, 80, 80, 80],
+      data: dimLabels.map(() => 80),
       fill: true,
       backgroundColor: isDark ? "rgba(0, 123, 167, 0.06)" : "rgba(0, 123, 167, 0.05)",
       borderColor: isDark ? "rgba(0, 123, 167, 0.35)" : "rgba(0, 123, 167, 0.40)",
@@ -520,7 +630,6 @@ function initRadarChart(dims) {
       pointBorderColor: "transparent"
     });
   } else {
-    // Real evaluated AAS dimensions in cerulean blue
     datasets.push({
       label: "Assurance Adequacy Score",
       data: dimValues,
@@ -534,10 +643,9 @@ function initRadarChart(dims) {
       pointHoverRadius: 7
     });
 
-    // Reference target at 80
     datasets.push({
       label: "Conformity Target (80.0)",
-      data: [80, 80, 80, 80, 80, 80],
+      data: dimLabels.map(() => 80),
       fill: false,
       borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.18)",
       borderWidth: 1,
@@ -608,66 +716,19 @@ function initRadarChart(dims) {
 }
 
 // =========================================================================
-// 5. ERM SCORING SENSITIVITY EXPLORER CONTROLLER
-// =========================================================================
-function updateAlphaSlider(val) {
-  currentAlpha = parseFloat(val);
-  const alphaValEl = document.getElementById("alphaValueDisplay");
-  const meanWeightEl = document.getElementById("alphaMeanWeight");
-  const minWeightEl = document.getElementById("alphaMinWeight");
-  const resultEl = document.getElementById("alphaAasResult");
-  const noteEl = document.getElementById("alphaInsightNote");
-
-  if (alphaValEl) alphaValEl.textContent = `α = ${currentAlpha.toFixed(2)}`;
-  if (meanWeightEl) meanWeightEl.textContent = `${Math.round(currentAlpha * 100)}%`;
-  if (minWeightEl) minWeightEl.textContent = `${Math.round((1 - currentAlpha) * 100)}%`;
-
-  const dims = currentAuditData?.dimensions || defaultDimensions;
-  const vals = Object.values(dims);
-  const allZero = vals.every(v => v === 0);
-  if (allZero) {
-    if (resultEl) resultEl.textContent = "—";
-    if (noteEl) {
-      noteEl.innerHTML = "Execute an audit to inspect sensitivity across empirical trust dimensions under varying risk appetites.";
-      noteEl.style.borderLeftColor = "var(--border-card)";
-    }
-    return;
-  }
-
-  const mean = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
-  const min = Math.min(...vals);
-  const recalculatedAas = (currentAlpha * mean) + ((1 - currentAlpha) * min);
-
-  if (resultEl) resultEl.textContent = recalculatedAas.toFixed(1);
-
-  if (noteEl) {
-    if (currentAlpha >= 0.85) {
-      noteEl.innerHTML = `<strong>Arithmetic Mean Dominance (&alpha; = ${currentAlpha.toFixed(2)}):</strong> Outlier vulnerabilities (min: ${min.toFixed(1)}) are masked by higher dimensions, concealing critical single-point failure risks.`;
-      noteEl.style.borderLeftColor = "var(--critical)";
-    } else if (currentAlpha <= 0.25) {
-      noteEl.innerHTML = `<strong>Bottleneck Dominance (&alpha; = ${currentAlpha.toFixed(2)}):</strong> AAS score is strictly bounded by lowest pillar (${min.toFixed(1)}), penalizing high overall system maturity (${mean.toFixed(1)}).`;
-      noteEl.style.borderLeftColor = "var(--warning)";
-    } else {
-      noteEl.innerHTML = `<strong>Balanced ERM Formulation (&alpha; = ${currentAlpha.toFixed(2)}):</strong> Weighted Mean (${mean.toFixed(1)}) balanced with Bottleneck Constraint (${min.toFixed(1)}) to enforce high-assurance robustness.`;
-      noteEl.style.borderLeftColor = "var(--primary-500)";
-    }
-  }
-}
-
-// =========================================================================
-// 6. UI DATA APPLICATION & COCKPIT SYNC
+// 5. UI DATA APPLICATION & COCKPIT SYNC
 // =========================================================================
 function applyAuditDataToUI(data, tierText) {
   if (!data) return;
 
   // 1. Evidence Tier & Assessment Status
   const tierEl = document.getElementById("evidenceTierText");
-  if (tierEl) tierEl.innerHTML = tierText || (data.evidence_tier === 'T1' ? 'Tier T1 (Automated MCP Probe)' : 'Tier T3 (Self-Attested Questionnaire)');
+  if (tierEl) tierEl.innerHTML = tierText || "Tier T3 (Self-Attested Questionnaire)";
 
   const statusTag = document.getElementById("assessmentStatusTag");
   const statusText = document.getElementById("assessmentStatusText");
   if (statusTag) statusTag.className = "status-tag completed";
-  if (statusText) statusText.textContent = "Evidence Reviewed";
+  if (statusText) statusText.textContent = "Attestations Evaluated";
 
   const targetEl = document.getElementById("sidebarContextTarget");
   if (targetEl) targetEl.textContent = "Target: " + (data.model_metadata?.model_name || data.model_metadata?.name || data.model_card?.model_name || "Active System");
@@ -680,7 +741,7 @@ function applyAuditDataToUI(data, tierText) {
   document.getElementById("kpiAasMath").textContent = `Mean: ${sc.weighted_average} | Min: ${sc.bottleneck_score} (α=0.6)`;
 
   const confBadge = document.getElementById("kpiConfidenceBadge");
-  if (confBadge) confBadge.textContent = `CONFIDENCE ${(sc.evidence_weight || 1.0).toFixed(2)}`;
+  if (confBadge) confBadge.textContent = `CONFIDENCE ${(sc.evidence_weight || 0.60).toFixed(2)}`;
 
   document.getElementById("kpiBottleneckScore").textContent = sc.bottleneck_score ?? "—";
   document.getElementById("kpiBottleneckName").textContent = `${sc.bottleneck_dimension || 'Safety & Reliability'} (Caps trust ceiling)`;
@@ -706,34 +767,25 @@ function applyAuditDataToUI(data, tierText) {
   document.getElementById("kpiEuStatus").textContent = `${eu.conformant_articles || '6/7'} Articles Technical Conformity`;
   document.getElementById("kpiEuBadge").textContent = eu.tier && eu.tier.includes("HIGH") ? "ANNEX III" : "MINIMAL";
 
-  // 3. Status Banner
-  const subText = document.getElementById("verdictSubText");
-  const headlineText = document.getElementById("verdictHeadlineText");
-  if (subText && headlineText) {
-    if (sc.trust_grade && sc.trust_grade[0] === 'A') {
-      headlineText.textContent = "ASSESSMENT COMPLETED • EVIDENCE REVIEWED";
-      subText.textContent = `Evaluated via ${data.evidence_tier === 'T1' ? 'Model Context Protocol wire probes (Tier T1)' : '30-Item Research Questionnaire (Tier T3)'}. Technical compliance evaluated against EU AI Act Articles 9–15 and NIST AI RMF 1.0.`;
-    } else {
-      headlineText.textContent = "ASSESSMENT COMPLETED • FINDINGS REQUIRE ATTENTION";
-      subText.textContent = `Identified governance bottleneck in ${sc.bottleneck_dimension || 'Safety & Reliability'}. Prioritized engineering remediation required.`;
-    }
+  // 3. Summary Posture Card Updates
+  const ovBadge = document.getElementById("overviewStatusBadge");
+  if (ovBadge) {
+    const grade = sc.trust_grade || "C";
+    ovBadge.textContent = `AUDITED • GRADE ${grade}`;
+    ovBadge.className = "badge " + (grade.startsWith("A") ? "success" : (grade.startsWith("B") ? "info" : "warning"));
   }
-
-  const bannerDisc = document.getElementById("bannerDiscrepancyVal");
-  if (bannerDisc) {
-    bannerDisc.textContent = data.evidence_tier === 'T1' ? "+0.0 pts (Verified)" : "T3 Self-Attested";
+  const sumTarget = document.getElementById("summaryTargetName");
+  if (sumTarget) sumTarget.textContent = data.model_name || "Enterprise AI Target";
+  const sumSub = document.getElementById("summaryTargetSub");
+  if (sumSub) {
+    const domain = data.domain || "Clinical AI";
+    const arch = data.target_system?.architecture || "Production Classifier";
+    sumSub.textContent = `${domain} · Arch: ${arch} · Tier: T3 Evidence`;
   }
-  const bannerBasis = document.getElementById("bannerEvidenceBasis");
-  if (bannerBasis) {
-    bannerBasis.textContent = data.evidence_tier === 'T1'
-      ? `${data.tools_count || 4} Live MCP Tools`
-      : "30 Attestation Questions";
-  }
-  const bannerHash = document.getElementById("bannerHashIntegrity");
-  if (bannerHash) {
-    bannerHash.textContent = data.integrity_hash
-      ? `${data.integrity_hash.substring(0, 12)}... (Validated)`
-      : "SHA-256 Validated";
+  const sumTier = document.getElementById("summaryTierBadge");
+  if (sumTier) {
+    sumTier.textContent = eu.tier || "ANNEX III §5";
+    sumTier.className = "badge " + (eu.tier && eu.tier.includes("HIGH") ? "warning" : "success");
   }
 
   // 4. Radar Chart & Dimension Cards
@@ -754,6 +806,15 @@ function applyAuditDataToUI(data, tierText) {
         if (tagEl) {
           tagEl.textContent = score >= 80 ? "CONFORMANT" : (score >= 60 ? "SUB-OPTIMAL" : "BOTTLENECK");
           tagEl.className = "badge " + (score >= 80 ? "success" : (score >= 60 ? "warning" : "critical"));
+        }
+
+        // Summary mini pillar row
+        const smini = document.getElementById(`smini_${pid}`);
+        const sminiFill = document.getElementById(`sminiFill_${pid}`);
+        if (smini) smini.textContent = `${score.toFixed(1)} / 100`;
+        if (sminiFill) {
+          sminiFill.style.width = `${Math.min(100, Math.max(0, score))}%`;
+          sminiFill.className = "summary-pillar-fill " + (score >= 80 ? "high" : (score >= 60 ? "medium" : "low"));
         }
       }
     });
@@ -800,56 +861,18 @@ function applyAuditDataToUI(data, tierText) {
   const euConfCount = document.getElementById("euConformantCount");
   if (euConfCount) euConfCount.textContent = `${eu.conformant_articles || '6/7'} Articles Conformant`;
 
-  // 8. NIST Crosswalk Cards
-  if (data.compliance?.nist_rmf) {
-    const nist = data.compliance.nist_rmf;
-    const gov = document.getElementById("nistGovern");
-    if (gov && nist.GOVERN) gov.textContent = `${nist.GOVERN.score.toFixed(1)}/100 (${nist.GOVERN.status})`;
-    const map = document.getElementById("nistMap");
-    if (map && nist.MAP) map.textContent = `${nist.MAP.score.toFixed(1)}/100 (${nist.MAP.status})`;
-    const meas = document.getElementById("nistMeasure");
-    if (meas && nist.MEASURE) meas.textContent = `${nist.MEASURE.score.toFixed(1)}/100 (${nist.MEASURE.status})`;
-    const man = document.getElementById("nistManage");
-    if (man && nist.MANAGE) man.textContent = `${nist.MANAGE.score.toFixed(1)}/100 (${nist.MANAGE.status})`;
-  }
+  // 8. NIST AI RMF 1.0 Crosswalk & Subcategories Table
+  renderNistSection(data.compliance?.nist_rmf || data.compliance?.nist_ai_rmf);
 
   // 9. Remediation Roadmap
   renderRemediationTable(data.remediation_plan || []);
 
   // 10. Model Card
   renderModelCard(data);
-
-  // 11. Framework Flow Node labels
-  const flSystem = document.getElementById("flabel-system");
-  if (flSystem) flSystem.textContent = data.model_metadata?.model_name || data.model_metadata?.name || data.model_card?.model_name || "Target System";
-  const flProbe = document.getElementById("flabel-probe");
-  if (flProbe) flProbe.textContent = data.evidence_tier === 'T1' ? 'MCP Tool Probe' : 'Questionnaire';
-  const flEvidence = document.getElementById("flabel-evidence");
-  if (flEvidence) flEvidence.textContent = data.evidence_tier === 'T1' ? `${data.tools_count || 4} Tools Probed` : '30 Attestations';
-  const flFinding = document.getElementById("flabel-finding");
-  if (flFinding) {
-    const f = data.remediation_plan?.[0]?.finding;
-    flFinding.textContent = f ? (f.length > 18 ? f.substring(0, 18) + '...' : f) : "Verified Bounds";
-  }
-  const flDimension = document.getElementById("flabel-dimension");
-  if (flDimension) flDimension.textContent = `${sc.bottleneck_dimension || 'Safety'} (${sc.bottleneck_score ?? '—'})`;
-  const flClause = document.getElementById("flabel-clause");
-  if (flClause) flClause.textContent = data.remediation_plan?.[0]?.eu_ai_act_ref || "EU Art. 15(1)";
-  const flRemediation = document.getElementById("flabel-remediation");
-  if (flRemediation) {
-    const a = data.remediation_plan?.[0]?.action;
-    flRemediation.textContent = a ? (a.length > 18 ? a.substring(0, 18) + '...' : a) : "Maintain Safeguards";
-  }
-
-  // Sync Framework node detail box
-  selectGraphNode("system", document.getElementById("gnode-system"));
-
-  // 12. Update ERM Slider Calculation
-  updateAlphaSlider(currentAlpha);
 }
 
 // =========================================================================
-// 7. TERMINAL EVENT STREAM CONTROLLER
+// 6. TERMINAL EVENT STREAM CONTROLLER
 // =========================================================================
 function renderTerminalLogs(logs) {
   const term = document.getElementById("terminalLog");
@@ -892,8 +915,19 @@ function copyTerminalLogs() {
   }
 }
 
+function toggleAuditTrailDrawer() {
+  const drawer = document.getElementById("auditTrailDrawer");
+  const btn = document.getElementById("btnToggleTrail");
+  if (!drawer) return;
+  const isHidden = drawer.style.display === "none" || !drawer.style.display;
+  drawer.style.display = isHidden ? "block" : "none";
+  if (btn) {
+    btn.classList.toggle("active", isHidden);
+  }
+}
+
 // =========================================================================
-// 8. UNIVERSAL DETAIL DRAWER (SLIDE-OUT INSPECTOR)
+// 7. UNIVERSAL DETAIL DRAWER (SLIDE-OUT INSPECTOR)
 // =========================================================================
 function openDetailDrawer(title, subtitle, htmlContent) {
   const drawer = document.getElementById("detailDrawer");
@@ -922,20 +956,22 @@ function closeDetailDrawer() {
 function openDimensionDrawer(dimKey) {
   const titles = {
     security: "Security & Robustness",
+    safety: "Safety & Reliability",
     fairness: "Fairness & Non-Discrimination",
     transparency: "Transparency & Explainability",
     privacy: "Privacy & Data Governance",
     oversight: "Human Oversight & Agency",
-    safety: "Safety & Reliability"
+    accountability: "Accountability & Governance"
   };
 
   const anchors = {
-    security: "EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP MCP Top 10",
+    security: "EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP LLM Top 10",
+    safety: "EU AI Act Art. 9 & 15(1) &bull; NIST MANAGE 2.2 &bull; Deterministic Output Clamping",
     fairness: "EU AI Act Art. 10(2) &bull; EEOC 80% Rule &bull; Kamiran & Calders (2012)",
     transparency: "EU AI Act Art. 13 &bull; NIST MAP 1.5 &bull; TreeSHAP Attributions",
     privacy: "EU AI Act Art. 10(5) &bull; GDPR Art. 25/32 &bull; Cryptographic Controls",
     oversight: "EU AI Act Art. 14 &bull; NIST GOVERN 1.4 &bull; Mandatory HITL Kill-Switch",
-    safety: "EU AI Act Art. 9 &bull; NIST MANAGE 2.2 &bull; Deterministic Output Clamping"
+    accountability: "EU AI Act Art. 11/12/72 &bull; ISO/IEC 42001 &bull; WORM Audit Logs & Escalation SLA"
   };
 
   const hasAudit = currentAuditData && currentAuditData.dimensions && currentAuditData.dimensions[titles[dimKey]] !== undefined;
@@ -945,7 +981,7 @@ function openDimensionDrawer(dimKey) {
     ? (currentScore >= 80
         ? '<span class="badge success">CONFORMANT</span> No critical security vulnerabilities or regulatory deficits detected in this dimension.'
         : '<span class="badge warning">DEFICIT DETECTED</span> Sub-optimal boundary clamping or attestation gap requires engineering remediation before production release.')
-    : '<span class="badge info">AWAITING AUDIT</span> Execute an automated MCP probe (Tier T1) or complete the questionnaire (Tier T3) to evaluate empirical adequacy.';
+    : '<span class="badge info">AWAITING AUDIT</span> Complete the 35-item questionnaire or load a reference profile to evaluate empirical adequacy.';
 
   const html = `
     <div class="drawer-section">
@@ -959,7 +995,7 @@ function openDimensionDrawer(dimKey) {
     <div class="drawer-section">
       <div class="drawer-section-title">Evidence &amp; Verification Methodology</div>
       <div class="drawer-section-content">
-        Evaluated via wire-level Model Context Protocol probes (Tier T1) and research-grounded questionnaire items (Tier T3). Evaluates extreme boundary handling, adversarial noise perturbation, and formal data retention controls.
+        Evaluated via 35 structured questionnaire controls grounded in QB4AIRA (Lee et al., 2024), EU AI Act Articles 9–15, and NIST AI 100-1 across 7 Trust Dimensions. Evaluates adversarial stress testing, cryptographic protections, human-in-the-loop kill-switches, and deterministic boundary guardrails.
       </div>
     </div>
     <div class="drawer-section">
@@ -1008,240 +1044,145 @@ function openArticleDrawer(artNum) {
   openDetailDrawer(item.article, item.title, html);
 }
 
-// =========================================================================
-// 9. SECTION 13: INTERACTIVE FRAMEWORK MAPPING CONTROLLER
-// =========================================================================
-function selectGraphNode(nodeKey, el) {
-  document.querySelectorAll(".graph-node").forEach(n => n.classList.remove("active"));
-  if (el) el.classList.add("active");
+function renderNistSection(nist) {
+  if (!nist) return;
 
-  const detailBox = document.getElementById("graphNodeDetailBox");
-  const typeEl = document.getElementById("gdetailType");
-  const titleEl = document.getElementById("gdetailTitle");
-  const descEl = document.getElementById("gdetailDesc");
-  const badgeEl = document.getElementById("gdetailBadge");
-  const statusEl = document.getElementById("gdetailStatus");
+  const fnKeys = ["GOVERN", "MAP", "MEASURE", "MANAGE"];
+  const capMap = { GOVERN: "Govern", MAP: "Map", MEASURE: "Measure", MANAGE: "Manage" };
 
-  if (!detailBox) return;
+  fnKeys.forEach(fnKey => {
+    const fnData = nist[fnKey];
+    const capName = capMap[fnKey];
+    const scoreEl = document.getElementById(`nist${capName}`);
+    const statusEl = document.getElementById(`nist${capName}Status`);
 
-  const modelName = currentAuditData?.model_metadata?.model_name || currentAuditData?.model_metadata?.name || currentAuditData?.model_card?.model_name || "System Under Evaluation";
-  const tier = currentAuditData?.evidence_tier || "T1";
-  const bottleneck = currentAuditData?.scoring?.bottleneck_dimension || "Safety & Reliability";
-  const bscore = currentAuditData?.scoring?.bottleneck_score !== undefined ? currentAuditData.scoring.bottleneck_score : "—";
-  const topPlan = currentAuditData?.remediation_plan?.[0];
-
-  const nodeData = {
-    system: {
-      type: "Target AI System",
-      title: modelName,
-      desc: currentAuditData
-        ? `Production AI system evaluated under domain '${currentAuditData.model_metadata?.domain || "General"}'. Architecture: ${currentAuditData.model_metadata?.architecture || "Machine Learning Pipeline"}. Assessed under EU AI Act Annex III statutory requirements.`
-        : "Connect a live MCP tool server or submit the research questionnaire to trace system governance lineage.",
-      badge: currentAuditData ? "Annex III §5" : "Standby",
-      status: currentAuditData ? "Under Active Audit" : "Awaiting Audit"
-    },
-    probe: {
-      type: "Assessment Protocol",
-      title: tier === "T1" ? "Automated MCP Wire Probe (Tier T1)" : "Structured Attestation Questionnaire (Tier T3)",
-      desc: tier === "T1"
-        ? "Executes dynamic list_tools() wire introspection, input perturbation tests, and boundary checks directly across JSON-RPC protocols."
-        : "Comprehensive 30-item technical attestation questionnaire mapped to QB4AIRA, EU AI Act Articles 9–15, and NIST AI RMF 1.0.",
-      badge: `Evidence Tier ${tier}`,
-      status: tier === "T1" ? "Weight: 1.00 (High Confidence)" : "Weight: 0.60 (Self-Attested)"
-    },
-    evidence: {
-      type: "Observed Evidence",
-      title: tier === "T1" ? "MCP Telemetry & Boundary Logs" : "Attested Operational Answers",
-      desc: currentAuditData?.audit_logs?.length
-        ? `Captured ${currentAuditData.audit_logs.length} wire-level audit telemetry events. Evaluated output clamping, adversarial divergence, and cryptographic data governance.`
-        : "Awaiting telemetry events or questionnaire submission.",
-      badge: currentAuditData ? "Telemetry Captured" : "Awaiting Telemetry",
-      status: currentAuditData ? "Verified" : "Standby"
-    },
-    finding: {
-      type: "Security & Assurance Finding",
-      title: topPlan ? topPlan.finding : "Vulnerability Assessment",
-      desc: topPlan
-        ? `Identified vulnerability in ${topPlan.dimension}: ${topPlan.finding}. Priority: ${topPlan.priority}. Recommended action: ${topPlan.action}.`
-        : "No active findings recorded. Execute audit to discover vulnerabilities.",
-      badge: topPlan ? `${topPlan.priority} Severity` : "Pending",
-      status: topPlan ? "Action Required" : "Standby"
-    },
-    dimension: {
-      type: "Empirical Trust Dimension",
-      title: `${bottleneck} (${bscore}/100)`,
-      desc: currentAuditData
-        ? `Identified as the primary bottleneck constraint (D_min = ${bscore}). Penalizes composite Assurance Adequacy Score via 40% bottleneck weighting in ERM.`
-        : "Evaluates 6 international pillars (Security, Fairness, Transparency, Privacy, Oversight, Safety).",
-      badge: "Primary Bottleneck",
-      status: (typeof bscore === 'number' && bscore < 80) ? "Deficit Constraint" : "Conformant"
-    },
-    clause: {
-      type: "Statutory Framework Clause",
-      title: topPlan?.eu_ai_act_ref || "EU AI Act Article 15",
-      desc: "High-risk AI systems shall be designed and developed in such a way that they achieve an appropriate level of accuracy, robustness, cybersecurity, and safety throughout their lifecycle.",
-      badge: "Regulation (EU) 2024/1689",
-      status: topPlan?.eu_ai_act_ref || "Article 15"
-    },
-    remediation: {
-      type: "Actionable Remediation",
-      title: topPlan ? topPlan.action : "Engineering Remediation",
-      desc: topPlan
-        ? `Recommended engineering intervention: ${topPlan.action}. Verify compliance by re-executing protocol probes against the endpoint.`
-        : "Awaiting audit findings to generate prioritized remediation tasks.",
-      badge: "Remediation Task",
-      status: topPlan ? "Fix Ready" : "Standby"
+    if (scoreEl) {
+      if (fnData && fnData.score != null) {
+        scoreEl.textContent = `${fnData.score.toFixed(1)} / 100`;
+      } else {
+        scoreEl.textContent = "— / 100";
+      }
     }
+
+    if (statusEl && fnData) {
+      const st = fnData.status || "STANDBY";
+      statusEl.textContent = st;
+      statusEl.className = "badge " + (st === "COMPLIANT" ? "success" : (st === "PARTIALLY COMPLIANT" ? "warning" : (st === "NON-COMPLIANT" ? "critical" : "info")));
+    }
+  });
+
+  const tbody = document.getElementById("nistSubcategoriesTbody");
+  if (!tbody) return;
+
+  let allRows = [];
+  fnKeys.forEach(fnKey => {
+    const fnData = nist[fnKey];
+    if (fnData && Array.isArray(fnData.subcategories)) {
+      fnData.subcategories.forEach(sub => {
+        allRows.push({ ...sub, functionName: fnKey });
+      });
+    }
+  });
+
+  if (allRows.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No subcategories evaluated. Complete an audit to generate crosswalk.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = allRows.map(sub => {
+    const st = sub.status || "STANDBY";
+    const badgeClass = st === "COMPLIANT" ? "success" : (st === "PARTIALLY COMPLIANT" ? "warning" : (st === "NON-COMPLIANT" ? "critical" : "info"));
+    const scoreText = sub.score != null ? `${sub.score.toFixed(1)}` : "—";
+
+    return `
+      <tr data-nist-function="${escapeHtml(sub.functionName)}" onclick="openNistSubcategoryDrawer('${escapeHtml(sub.id)}')">
+        <td><strong style="font-family:var(--font-mono); color:var(--primary-400);">${escapeHtml(sub.id)}</strong></td>
+        <td><span class="badge info">${escapeHtml(sub.functionName)}</span></td>
+        <td>${escapeHtml(sub.name)}</td>
+        <td style="text-align:right; font-family:var(--font-mono); font-weight:700;">${scoreText}</td>
+        <td style="text-align:center;"><span class="badge ${badgeClass}">${escapeHtml(st)}</span></td>
+        <td style="text-align:center;"><button class="btn-secondary sm" onclick="event.stopPropagation(); openNistSubcategoryDrawer('${escapeHtml(sub.id)}')">Inspect</button></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function filterNistByFunction(func, btn) {
+  document.querySelectorAll("#nistRmfSection .btn-secondary.sm").forEach(b => b.classList.remove("active"));
+  if (btn && btn.tagName === "BUTTON") btn.classList.add("active");
+
+  const rows = document.querySelectorAll("#nistSubcategoriesTbody tr");
+  rows.forEach(r => {
+    const rowFn = r.getAttribute("data-nist-function");
+    if (!rowFn || func === "all") {
+      r.style.display = "";
+    } else {
+      r.style.display = rowFn === func ? "" : "none";
+    }
+  });
+}
+
+function openNistSubcategoryDrawer(subId) {
+  const nist = currentAuditData?.compliance?.nist_rmf || currentAuditData?.compliance?.nist_ai_rmf;
+  let targetSub = null;
+  let targetFn = "NIST AI 100-1";
+
+  if (nist) {
+    for (const [fnKey, fnData] of Object.entries(nist)) {
+      if (fnData && Array.isArray(fnData.subcategories)) {
+        const found = fnData.subcategories.find(s => s.id === subId);
+        if (found) {
+          targetSub = found;
+          targetFn = fnKey;
+          break;
+        }
+      }
+    }
+  }
+
+  const item = targetSub || {
+    id: subId,
+    name: "NIST Playbook Subcategory",
+    score: null,
+    status: "STANDBY"
   };
 
-  const d = nodeData[nodeKey] || nodeData.system;
-  if (typeEl) typeEl.textContent = `Selected Node: ${d.type}`;
-  if (titleEl) titleEl.textContent = d.title;
-  if (descEl) descEl.textContent = d.desc;
-  if (badgeEl) badgeEl.textContent = d.badge;
-  if (statusEl) statusEl.textContent = d.status;
-}
+  const scoreText = item.score != null ? `${item.score.toFixed(1)} / 100` : "— / 100";
+  const badgeClass = item.status === "COMPLIANT" ? "success" : (item.status === "PARTIALLY COMPLIANT" ? "warning" : "info");
 
-function resetFrameworkGraph() {
-  const first = document.getElementById("gnode-system");
-  selectGraphNode("system", first);
-  showToast("Framework graph highlight reset");
-}
+  const html = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">NIST Core Function</div>
+      <div class="drawer-section-content"><span class="badge info">${targetFn}</span> &bull; NIST AI 100-1 (AI RMF 1.0)</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Playbook Subcategory Requirement</div>
+      <div class="drawer-section-content" style="font-size:14px; font-weight:600; line-height:1.5;">${escapeHtml(item.name)}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Empirical Score &amp; Status</div>
+      <div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
+        <span style="font-size:22px; font-weight:700; font-family:var(--font-mono); color:var(--primary-500);">${scoreText}</span>
+        <span class="badge ${badgeClass}">${escapeHtml(item.status)}</span>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Regulatory &amp; Engineering Guidance</div>
+      <div class="drawer-section-content" style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
+        Demonstrate technical conformity through documented policies, empirical evaluations, continuous drift monitoring, and adversarial testing as specified in the NIST AI RMF Playbook.
+      </div>
+    </div>
+  `;
 
-function toggleGraphListView() {
-  isGraphListView = !isGraphListView;
-  const flowNodes = document.getElementById("frameworkFlowNodes");
-  const btn = document.getElementById("btnGraphListToggle");
-  if (!flowNodes) return;
-
-  if (isGraphListView) {
-    flowNodes.style.flexDirection = "column";
-    flowNodes.style.alignItems = "stretch";
-    if (btn) btn.textContent = "Switch to Flow View";
-  } else {
-    flowNodes.style.flexDirection = "row";
-    flowNodes.style.alignItems = "center";
-    if (btn) btn.textContent = "Switch to List View";
-  }
-}
-
-// =========================================================================
-// 10. LAUNCH AUDIT & QUESTIONNAIRE CONTROLLER
-// =========================================================================
-function selectMode(mode) {
-  currentMode = mode;
-  document.getElementById("modeSelectionCard").style.display = "none";
-  if (mode === "mcp") {
-    document.getElementById("mcpConnectionCard").style.display = "block";
-    document.getElementById("wizardCard").style.display = "none";
-  } else {
-    document.getElementById("wizardCard").style.display = "block";
-    document.getElementById("mcpConnectionCard").style.display = "none";
-    wizardStep = 1;
-    renderWizardStep();
-  }
-}
-
-function backToModeSelection() {
-  document.getElementById("modeSelectionCard").style.display = "block";
-  document.getElementById("wizardCard").style.display = "none";
-  document.getElementById("mcpConnectionCard").style.display = "none";
-}
-
-function toggleMcpAuditType() {
-  const isLive = document.getElementById("mcpTypeLive")?.checked;
-  const demoGroup = document.getElementById("mcpDemoGroup");
-  const liveGroup = document.getElementById("mcpLiveGroup");
-  const btnText = document.getElementById("mcpSubmitBtnText");
-
-  if (demoGroup && liveGroup) {
-    if (isLive) {
-      demoGroup.style.display = "none";
-      liveGroup.style.display = "block";
-      if (btnText) btnText.textContent = "Execute Live Protocol Audit";
-    } else {
-      demoGroup.style.display = "block";
-      liveGroup.style.display = "none";
-      if (btnText) btnText.textContent = "Execute Benchmark Probe Audit";
-    }
-  }
-}
-
-async function runQuickDemoAudit() {
-  showToast("Initiating Tier T1 automated wire probe against certified benchmark...");
-  try {
-    const res = await fetch("/api/audit/mcp", {
-      method: "POST",
-      headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ demo_profile: "good" })
-    });
-    if (res.status === 401) {
-      handleAuthError(res);
-      return;
-    }
-    const json = await res.json();
-    if (json.success && json.data) {
-      currentAuditData = json.data;
-      const modeLabel = json.data.execution_mode === "DEMO_BENCHMARK"
-        ? `Tier T1 (Certified Demo Benchmark &bull; ${escapeHtml(json.data.model_metadata?.model_name || 'AgriTrust')})`
-        : "Tier T1 (Live MCP Protocol Audit)";
-      applyAuditDataToUI(json.data, modeLabel);
-      showToast("Benchmark Reference Audit Completed");
-      showPage("page-overview");
-    } else {
-      showToast("Notice: " + (json.error || "Unable to retrieve probe data"));
-    }
-  } catch (err) {
-    showToast("Probe Error: " + err.message);
-  }
-}
-
-async function connectMcp() {
-  const isLive = document.getElementById("mcpTypeLive")?.checked;
-  let payload = {};
-
-  if (isLive) {
-    const cmdExec = (document.getElementById("mcpLiveExec")?.value || "python").trim();
-    const cmdArgsStr = (document.getElementById("mcpLiveScript")?.value || "").trim();
-    const cmdArgs = cmdArgsStr ? cmdArgsStr.split(" ").filter(Boolean) : [];
-    payload = {
-      target_command: [cmdExec, ...cmdArgs]
-    };
-  } else {
-    const profile = document.getElementById("mcpProfileSelect")?.value || "good";
-    payload = { demo_profile: profile };
-  }
-
-  try {
-    showToast("Starting protocol audit execution...");
-    const res = await fetch("/api/audit/mcp", {
-      method: "POST",
-      headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(payload)
-    });
-    if (res.status === 401) {
-      handleAuthError(res);
-      return;
-    }
-    const json = await res.json();
-    if (json.success && json.data) {
-      currentAuditData = json.data;
-      const modeLabel = json.data.execution_mode === "DEMO_BENCHMARK"
-        ? `Tier T1 (Certified Demo Benchmark &bull; ${escapeHtml(json.data.model_metadata?.model_name || 'AgriTrust')})`
-        : `Tier T1 (Live Wire MCP Protocol Probing &bull; Active Connection)`;
-      applyAuditDataToUI(json.data, modeLabel);
-      showToast("MCP Protocol Audit Completed!");
-      showPage("page-overview");
-    } else {
-      alert("Audit Failed: " + (json.error || "Unable to execute audit"));
-    }
-  } catch (err) {
-    alert("MCP Probe Error: " + err.message);
-  }
+  openDetailDrawer(item.id, item.name, html);
 }
 
 // =========================================================================
-// 11. QUESTIONNAIRE WIZARD CONTROLLER
+// 8. QUESTIONNAIRE WIZARD & REFERENCE PRESETS CONTROLLER
 // =========================================================================
 async function loadQuestions() {
   try {
@@ -1251,6 +1192,7 @@ async function loadQuestions() {
       questionsData = json.data;
       totalWizardSteps = json.data.steps.length;
       renderFullQuestionBank(json.data.steps);
+      renderWizardStep();
     }
   } catch (err) {
     console.error("Questions load error", err);
@@ -1275,7 +1217,7 @@ function renderFullQuestionBank(steps) {
             <td><small style="color:var(--text-secondary); font-family:var(--font-mono);">${q.research_source || 'NIST AI RMF'}</small></td>
             <td><span class="badge success">${q.eu_ai_act_ref || 'Art. 9'}</span></td>
             <td><small style="color:var(--text-muted);">${q.nist_rmf_ref || 'MEASURE'}</small></td>
-            <td><small style="color:var(--teal-accent);">${q.owasp_ref || 'OWASP MCP'}</small></td>
+            <td><small style="color:var(--teal-accent);">${q.owasp_ref || 'OWASP LLM'}</small></td>
           </tr>
         `;
       }
@@ -1338,7 +1280,7 @@ function openQuestionDrawer(qId) {
       <div class="drawer-section-content">
         <div>&bull; EU AI Act: <strong>${matchedQ.eu_ai_act_ref || 'Article 9'}</strong></div>
         <div>&bull; NIST AI RMF: <strong>${matchedQ.nist_rmf_ref || 'MEASURE'}</strong></div>
-        <div>&bull; OWASP Threat: <strong>${matchedQ.owasp_ref || 'MCP Top 10'}</strong></div>
+        <div>&bull; OWASP Threat: <strong>${matchedQ.owasp_ref || 'OWASP LLM Top 10'}</strong></div>
       </div>
     </div>
   `;
@@ -1418,6 +1360,7 @@ function wizardPrev() {
 
 async function submitQuestionnaire() {
   try {
+    showToast("Compiling governance questionnaire & computing assurance scores...");
     const res = await fetch("/api/audit/questionnaire", {
       method: "POST",
       headers: getAuthHeaders({ "Content-Type": "application/json" }),
@@ -1431,16 +1374,65 @@ async function submitQuestionnaire() {
     if (json.success && json.data) {
       currentAuditData = json.data;
       applyAuditDataToUI(json.data, "Tier T3 (Self-Attested Questionnaire)");
-      showToast("Questionnaire Compiled Successfully!");
+      loadAuditHistory();
+      showToast("Questionnaire Audit Completed Successfully!");
       showPage("page-overview");
+    } else {
+      alert("Audit Failed: " + (json.error || "Unable to process questionnaire"));
     }
   } catch (err) {
     alert("Questionnaire Error: " + err.message);
   }
 }
 
+async function loadPresetProfile(presetKey) {
+  const preset = PRESET_PROFILES[presetKey];
+  if (!preset) {
+    showToast(`Preset '${presetKey}' not found.`);
+    return;
+  }
+  wizardAnswers = { ...preset };
+  renderWizardStep();
+
+  try {
+    showToast(`Loading preset: ${preset.model_name}...`);
+    const res = await fetch("/api/audit/questionnaire", {
+      method: "POST",
+      headers: getAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ answers: wizardAnswers })
+    });
+    if (res.status === 401) {
+      handleAuthError(res);
+      return;
+    }
+    const json = await res.json();
+    if (json.success && json.data) {
+      currentAuditData = json.data;
+      applyAuditDataToUI(json.data, `Tier T3 (Reference Preset: ${preset.model_name})`);
+      loadAuditHistory();
+      showToast(`Loaded ${preset.model_name} reference profile!`);
+      showPage("page-overview");
+    } else {
+      showToast("Notice: " + (json.error || "Unable to evaluate preset"));
+    }
+  } catch (err) {
+    showToast("Audit Error: " + err.message);
+  }
+}
+
+function clearWizardAnswers() {
+  wizardAnswers = {};
+  wizardStep = 1;
+  renderWizardStep();
+  showToast("Questionnaire form cleared to default standby.");
+}
+
+function runQuickDemoAudit() {
+  loadPresetProfile("healthcare");
+}
+
 // =========================================================================
-// 12. TABLES & RENDERERS
+// 9. TABLES & RENDERERS
 // =========================================================================
 function renderEuArticlesTable(articles) {
   const tbody = document.getElementById("euArticlesTbody");
@@ -1497,7 +1489,7 @@ function openFindingDrawer(idx) {
     <div class="drawer-section">
       <div class="drawer-section-title">Verification Criteria</div>
       <div class="drawer-section-content">
-        Re-run automated MCP boundary probing (Probe 2). Deterministic output clamping must suppress extreme inputs without throwing unhandled exceptions.
+        Validate technical control attestation and verify deterministic boundary guardrails. Verify that extreme inputs are constrained without unhandled runtime exceptions.
       </div>
     </div>
   `;
@@ -1505,6 +1497,9 @@ function openFindingDrawer(idx) {
   openDetailDrawer(`Finding #${idx + 1}`, item.dimension, html);
 }
 
+// =========================================================================
+// 10. AI GOVERNANCE PASSPORT & MODEL CARD
+// =========================================================================
 let currentModelCardFormat = "standard";
 
 function changeModelCardFormat(format) {
@@ -1544,7 +1539,7 @@ function generateFormattedModelCardMarkdown(format, data) {
 
 ### 1. General System Description (Annex IV §1)
 - **Model Architecture:** ${arch}
-- **Deployment Topology:** ${meta.deployment_type || 'Cloud API / Local Agent'}
+- **Deployment Topology:** ${meta.deployment_type || 'Dedicated Cloud / On-Premises'}
 - **Hardware & Software Dependencies:** Tracked via CycloneDX AI-BOM
 - **Intended User Cohort:** Authorized operators with human-in-the-loop oversight
 
@@ -1606,7 +1601,6 @@ ${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}
 - **Legal Notice:** Indicative technical evaluation; not formal CE-mark certification.`;
   }
 
-  // Default Standard AI Passport (ISO/IEC 42001 / IEEE P8000.1)
   return card.markdown || `# AI Governance Passport & Technical Dossier\n**System Name:** ${modelName}\n**Version:** ${version}\n**Score:** ${scoring.aas_score ?? '—'}/100`;
 }
 
@@ -1633,133 +1627,60 @@ function renderModelCard(data) {
 }
 
 // =========================================================================
-// 13. ATTESTATION DISCREPANCY COMPARATIVE ENGINE
+// 11. PERSISTENT AUDIT RECORDS & HISTORY CONTROLLER
 // =========================================================================
-async function runComparativeAudit() {
+async function loadAuditHistory() {
+  const tbody = document.getElementById("auditHistoryTbody");
+  if (!tbody) return;
   try {
-    const res = await fetch("/api/audit/compare", {
-      method: "POST",
-      headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ questionnaire_data: currentAuditData })
-    });
-    if (res.status === 401) {
-      handleAuthError(res);
-      return;
-    }
+    const res = await fetch("/api/audit/history?limit=50");
     const json = await res.json();
-    if (json.success && json.data) {
-      const comp = json.data;
-      document.getElementById("adiVal").textContent = `+${comp.attestation_discrepancy_index} pts`;
-      document.getElementById("adiSignificance").textContent = comp.significance || "MODERATE SKEW";
-
-      const tbody = document.getElementById("discrepancyTbody");
-      tbody.innerHTML = Object.entries(comp.dimension_deltas || {}).map(([dim, d]) => `
+    if (json.success && json.data && json.data.length > 0) {
+      tbody.innerHTML = json.data.map(item => `
         <tr>
-          <td><strong>${escapeHtml(dim)}</strong></td>
-          <td>${d.self_attested}/100</td>
-          <td><strong style="color:var(--primary-500);">${d.automated_probe}/100</strong></td>
-          <td><strong style="color:${d.delta > 0 ? 'var(--warning)' : 'var(--success)'};">${d.delta > 0 ? '+' : ''}${d.delta}</strong></td>
-          <td><span class="badge ${d.bias_direction === 'OVERESTIMATED' ? 'warning' : 'success'}">${escapeHtml(d.bias_direction)}</span></td>
+          <td><code style="font-size:11px; color:var(--text-muted);">${escapeHtml(item.audit_id).substring(0, 8)}...</code></td>
+          <td><small style="color:var(--text-secondary); font-family:var(--font-mono);">${escapeHtml((item.created_at || '').replace('T', ' ').substring(0, 19))}</small></td>
+          <td><strong>${escapeHtml(item.model_name)}</strong> <small style="color:var(--text-muted);">(v${escapeHtml(item.model_version || '1.0')})</small></td>
+          <td><span class="badge info">${escapeHtml(item.domain || 'General')}</span></td>
+          <td><strong style="color:var(--primary-500); font-family:var(--font-mono); font-size:14px;">${item.aas_score !== null && item.aas_score !== undefined ? Number(item.aas_score).toFixed(1) : '—'}</strong>/100</td>
+          <td><span class="badge ${item.trust_grade && item.trust_grade[0] === 'A' ? 'success' : 'warning'}">${escapeHtml(item.trust_grade || '—')}</span></td>
+          <td><small><strong>${escapeHtml(item.bottleneck_dimension || '—')}</strong> (${item.bottleneck_score !== null && item.bottleneck_score !== undefined ? Number(item.bottleneck_score).toFixed(1) : '—'})</small></td>
+          <td>
+            <button class="btn-secondary sm" onclick="inspectAuditRecord('${escapeHtml(item.audit_id)}')" title="Load this audit into cockpit">
+              Inspect &rarr;
+            </button>
+          </td>
         </tr>
       `).join("");
-      showToast("Attestation Discrepancy Index Recalculated!");
+    } else {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);">No stored audit records found. Complete a questionnaire audit to generate history.</td></tr>`;
     }
   } catch (err) {
-    alert("Comparative error: " + err.message);
+    console.error("Error loading audit history:", err);
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--critical);">Failed to load audit history: ${escapeHtml(err.message)}</td></tr>`;
   }
 }
 
-// =========================================================================
-// 14. DATASETS & WHAT-IF SIMULATION
-// =========================================================================
-async function loadDatasets() {
+async function inspectAuditRecord(auditId) {
   try {
-    const res = await fetch("/api/datasets");
+    showToast(`Loading audit record ${auditId.substring(0, 8)}...`);
+    const res = await fetch(`/api/audit/${encodeURIComponent(auditId)}`);
     const json = await res.json();
     if (json.success && json.data) {
-      currentDatasetsCatalog = json.data;
-      renderDatasetInspector(activeDatasetId);
-    }
-  } catch (e) {
-    console.error("Dataset fetch error", e);
-  }
-}
-
-function selectDatasetTab(datasetId) {
-  activeDatasetId = datasetId;
-  renderDatasetInspector(datasetId);
-}
-
-function renderDatasetInspector(datasetId) {
-  if (!currentDatasetsCatalog || currentDatasetsCatalog.length === 0) return;
-  const ds = currentDatasetsCatalog.find(d => d.id === datasetId) || currentDatasetsCatalog[0];
-  if (!ds) return;
-
-  const statsContainer = document.getElementById("datasetStatsStrip");
-  if (statsContainer && ds.metrics_summary) {
-    statsContainer.innerHTML = Object.entries(ds.metrics_summary).map(([k, v]) => `
-      <div class="card" style="padding:10px; background:var(--bg-surface-elevated);">
-        <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); text-transform:uppercase;">${k}</div>
-        <div style="font-size:14px; font-weight:700; color:var(--primary-500); margin-top:2px;">${v}</div>
-      </div>
-    `).join("");
-  }
-
-  const thead = document.getElementById("datasetPreviewThead");
-  const tbody = document.getElementById("datasetPreviewTbody");
-  if (!thead || !tbody) return;
-
-  const rows = ds.preview_rows || [];
-  if (rows.length === 0) {
-    thead.innerHTML = "";
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No records available.</td></tr>`;
-    return;
-  }
-
-  const cols = Object.keys(rows[0]);
-  thead.innerHTML = `<tr>${cols.map(c => `<th>${c.replace(/_/g, ' ')}</th>`).join('')}</tr>`;
-
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      ${cols.map(c => `<td><span style="font-family:var(--font-mono);">${r[c]}</span></td>`).join('')}
-    </tr>
-  `).join('');
-}
-
-function updateUserScale(val) {
-  const label = document.getElementById("userCountLabel");
-  if (label) label.textContent = parseInt(val).toLocaleString();
-  runSimulation();
-}
-
-async function runSimulation() {
-  const users = parseInt(document.getElementById("simUserSlider")?.value || 50000);
-  const domain = document.getElementById("simDomainSelect")?.value || "General Purpose AI";
-  if (!currentAuditData || currentAuditData.scoring?.aas_score === undefined) {
-    showToast("Please execute an audit first to simulate scenario risk.");
-    return;
-  }
-  const baseAas = currentAuditData.scoring.aas_score;
-
-  try {
-    const res = await fetch("/api/simulate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ base_aas: baseAas, domain, scale_users: users })
-    });
-    const json = await res.json();
-    if (json.success && json.data) {
-      document.getElementById("simScore").textContent = `${baseAas}/100`;
-      document.getElementById("simIncidents").textContent = `${json.data.projected_annual_incidents} / year`;
-      document.getElementById("simLiability").textContent = `$${json.data.projected_financial_liability_usd.toLocaleString()}`;
+      currentAuditData = json.data;
+      applyAuditDataToUI(json.data, "Tier T3 (Self-Attested Questionnaire)");
+      showToast("Historical audit loaded into control plane!");
+      showPage("page-overview");
+    } else {
+      alert("Failed to load audit record: " + (json.error || "Unknown error"));
     }
   } catch (err) {
-    console.error("Simulation error", err);
+    alert("Error fetching audit record: " + err.message);
   }
 }
 
 // =========================================================================
-// 15. EXPORT CONTROLS & MODALS
+// 12. EXPORT CONTROLS, MODALS, & TOAST
 // =========================================================================
 function copyModelCardMarkdown() {
   if (!currentAuditData) {

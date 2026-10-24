@@ -2,13 +2,13 @@
 AI-GRID Compliance & Responsible AI Engines (v4.0)
 
 Provides transparently named audit engines:
-1. Custom Fairness Metrics Engine (DIR, SPD, Kamiran & Calders sample reweighing)
+1. Custom Fairness Metrics Engine (DIR, SPD computation from dataset)
    NOTE: Computes DIR/SPD directly from CSV data. Does NOT use the IBM AIF360 library.
 2. Rule-Based Risk Cohort Analysis Engine (subgroup risk slicing)
    NOTE: Uses rule-based cohort classification. Does NOT use Microsoft Fairlearn.
 3. Remediation Priority Ranker (severity-based finding prioritization)
 4. EU AI Act Article-by-Article Compliance Engine (Articles 9 to 15 + Annex III classification)
-5. NIST AI RMF 1.0 Subcategory Mapper (GOVERN, MAP, MEASURE, MANAGE)
+5. NIST AI RMF 1.0 Subcategory Mapper (NIST AI 100-1: GOVERN, MAP, MEASURE, MANAGE)
 6. OWASP Top 10 for LLMs & OWASP MCP Top 10 Risk Mapper
 7. MITRE ATLAS Adversarial Threat Technique Mapper
 8. AI Software Supply Chain CVE & EPSS Compound Risk Scanner (static registry)
@@ -19,6 +19,7 @@ guaranteed regulatory compliance. Professional review is recommended.
 """
 
 import csv
+import io
 import os
 import math
 from datetime import datetime
@@ -33,15 +34,13 @@ AI_CVE_REGISTRY_PATH = os.path.join(DATA_DIR, "ai_cve_epss_registry.csv")
 
 # =====================================================================
 # 1. CUSTOM FAIRNESS METRICS ENGINE (DIR/SPD Computation)
-# Uses UCI Machine Learning Repository: Statlog (German Credit Data)
-# NOTE: Does NOT use the IBM AIF360 library. Computes metrics directly.
+# Reference: UCI Machine Learning Repository: Statlog (German Credit Data)
 # =====================================================================
 
 def load_german_credit_baseline() -> Dict[str, Any]:
     """
     Loads empirical records from UCI Statlog (German Credit Data)
-    to compute base rates, Disparate Impact Ratio, Statistical Parity Difference,
-    and Kamiran & Calders (2012) sample reweighing weights.
+    as a reference benchmark example of demographic parity calculations.
     """
     if not os.path.exists(GERMAN_CREDIT_PATH):
         raise FileNotFoundError(f"Empirical dataset not found at {GERMAN_CREDIT_PATH}")
@@ -119,72 +118,137 @@ def load_german_credit_baseline() -> Dict[str, Any]:
         "p_fav_unpriv": round(p_fav_unpriv, 3),
         "empirical_dir": dir_empirical,
         "empirical_spd": spd_empirical,
-        "weights": weights
+        "weights": weights,
     }
 
 
 def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
                              metadata: Optional[Dict[str, Any]] = None,
-                             fairness_score: float = 85.0) -> Dict[str, Any]:
+                             fairness_score: Optional[float] = None,
+                             predictions_csv: Optional[str] = None) -> Dict[str, Any]:
     """
-    Computes algorithmic fairness indicators using custom DIR/SPD computation.
-    Evaluates against the EEOC 80% Four-Fifths Rule (DIR >= 0.80) and zero parity (SPD = 0).
-    NOTE: Does NOT use the IBM AIF360 library. Metrics are computed directly from CSV data.
+    Computes algorithmic fairness indicators (DIR, SPD) from data.
+    - If user supplies a predictions CSV: metrics are computed strictly from that data.
+    - If no predictions CSV is provided: target model metrics are NOT fabricated;
+      the engine reports 'NO_EVALUATION_DATASET_PROVIDED' and provides UCI German Credit
+      strictly as an illustrative reference benchmark example.
     """
     baseline = load_german_credit_baseline()
 
-    class_balance = "moderate"
-    if answers:
-        class_balance = answers.get("class_balance", "moderate")
-    elif metadata and "training_class_distribution" in metadata:
-        counts = list(metadata["training_class_distribution"].values())
-        if counts and max(counts) / max(min(counts), 1) > 3.0:
-            class_balance = "severe"
-        elif counts and max(counts) / max(min(counts), 1) > 1.5:
-            class_balance = "moderate"
+    csv_data = None
+    if predictions_csv:
+        if os.path.exists(predictions_csv):
+            with open(predictions_csv, mode="r", encoding="utf-8") as f:
+                csv_data = f.read()
         else:
-            class_balance = "balanced"
+            csv_data = predictions_csv
 
-    bias_modifier = {"balanced": 0.05, "moderate": 0.0, "severe": -0.12}.get(class_balance, 0.0)
-    score_factor = (fairness_score - 70.0) / 100.0
+    if csv_data:
+        reader = csv.DictReader(io.StringIO(csv_data.strip()))
+        rows = list(reader)
+        if rows:
+            protected_col = next((c for c in rows[0].keys() if c.lower() in ("gender", "sex", "race", "ethnicity", "age")), None)
+            outcome_col = next((c for c in rows[0].keys() if c.lower() in ("prediction", "predicted", "outcome", "credit_risk", "label", "target", "approved")), None)
+            label_col = next((c for c in rows[0].keys() if c.lower() in ("true_label", "ground_truth", "actual")), None)
 
-    dir_val = round(max(0.40, min(1.05, baseline["empirical_dir"] + bias_modifier + (score_factor * 0.1))), 3)
-    spd_val = round(max(-0.45, min(0.02, baseline["empirical_spd"] + (bias_modifier * 0.8) + (score_factor * 0.08))), 3)
-    eod_val = round(spd_val * 0.85, 3)
+            if protected_col and outcome_col:
+                priv_fav = 0
+                priv_total = 0
+                unpriv_fav = 0
+                unpriv_total = 0
+                unpriv_true_pos = 0
+                unpriv_pos_total = 0
+                priv_true_pos = 0
+                priv_pos_total = 0
 
-    is_dir_compliant = dir_val >= 0.80
-    is_spd_compliant = abs(spd_val) <= 0.10
+                vals = set(r[protected_col].strip().lower() for r in rows if r.get(protected_col))
+                priv_val = "male" if "male" in vals else ("white" if "white" in vals else sorted(list(vals))[0])
 
-    mitigated_dir = round(min(1.0, dir_val + (1.0 - dir_val) * 0.78), 3)
-    mitigated_spd = round(spd_val * 0.22, 3)
+                for r in rows:
+                    p_val = r.get(protected_col, "").strip().lower()
+                    out_val = str(r.get(outcome_col, "")).strip().lower()
+                    is_fav = out_val in ("1", "true", "positive", "approved", "favorable", "high")
 
+                    is_priv = (p_val == priv_val)
+                    if is_priv:
+                        priv_total += 1
+                        if is_fav: priv_fav += 1
+                    else:
+                        unpriv_total += 1
+                        if is_fav: unpriv_fav += 1
+
+                    if label_col:
+                        act_val = str(r.get(label_col, "")).strip().lower()
+                        is_act_pos = act_val in ("1", "true", "positive", "approved", "favorable", "high")
+                        if is_act_pos:
+                            if is_priv:
+                                priv_pos_total += 1
+                                if is_fav: priv_true_pos += 1
+                            else:
+                                unpriv_pos_total += 1
+                                if is_fav: unpriv_true_pos += 1
+
+                p_fav_priv = priv_fav / max(priv_total, 1)
+                p_fav_unpriv = unpriv_fav / max(unpriv_total, 1)
+                dir_val = round(p_fav_unpriv / max(p_fav_priv, 0.0001), 3)
+                spd_val = round(p_fav_unpriv - p_fav_priv, 3)
+
+                eod_val = None
+                if label_col and priv_pos_total > 0 and unpriv_pos_total > 0:
+                    tpr_priv = priv_true_pos / priv_pos_total
+                    tpr_unpriv = unpriv_true_pos / unpriv_pos_total
+                    eod_val = round(tpr_unpriv - tpr_priv, 3)
+
+                is_dir_compliant = dir_val >= 0.80
+                is_spd_compliant = abs(spd_val) <= 0.10
+
+                return {
+                    "engine": "Custom Fairness Metrics Engine (DIR/SPD from dataset)",
+                    "evaluated": True,
+                    "sample_count": len(rows),
+                    "protected_attribute": protected_col,
+                    "target_outcome": outcome_col,
+                    "pre_mitigation": {
+                        "disparate_impact_ratio": dir_val,
+                        "dir_compliant": is_dir_compliant,
+                        "dir_threshold": ">= 0.80 (EEOC 80% Rule)",
+                        "statistical_parity_difference": spd_val,
+                        "spd_compliant": is_spd_compliant,
+                        "spd_threshold": "[-0.10, +0.10]",
+                        "equal_opportunity_difference": eod_val,
+                        "status": "COMPLIANT" if (is_dir_compliant and is_spd_compliant) else "BIAS DETECTED",
+                    },
+                    "reference_benchmark_example": {
+                        "dataset_name": baseline["dataset_name"],
+                        "empirical_dir": baseline["empirical_dir"],
+                        "empirical_spd": baseline["empirical_spd"],
+                        "note": "UCI German Credit reference dataset provided solely as an illustrative example.",
+                    },
+                    "regulatory_alignment": {
+                        "eu_ai_act": "Article 10(2)(f) - Examination of possible biases in training datasets",
+                        "nist_ai_rmf": "MEASURE 2.11 - Fairness and bias are evaluated and documented",
+                    }
+                }
+
+    # No predictions CSV provided: report honestly without synthetic numbers
     return {
-        "engine": "Custom Fairness Metrics Engine (DIR/SPD Computation)",
-        "benchmark_dataset": baseline["dataset_name"],
-        "sample_count": baseline["sample_count"],
-        "protected_attribute": baseline["protected_attribute"],
-        "class_balance_status": class_balance,
-        "pre_mitigation": {
-            "disparate_impact_ratio": dir_val,
-            "dir_compliant": is_dir_compliant,
-            "dir_threshold": ">= 0.80 (EEOC 80% Rule)",
-            "statistical_parity_difference": spd_val,
-            "spd_compliant": is_spd_compliant,
-            "spd_threshold": "[-0.10, +0.10]",
-            "equal_opportunity_difference": eod_val,
-            "status": "COMPLIANT" if (is_dir_compliant and is_spd_compliant) else "BIAS DETECTED"
-        },
-        "post_mitigation_reweighed": {
-            "method": "Kamiran & Calders (2012) Sample Reweighing",
-            "mitigated_disparate_impact_ratio": mitigated_dir,
-            "mitigated_statistical_parity_difference": mitigated_spd,
-            "status": "REWEIGHED COMPLIANT",
-            "sample_weights": baseline["weights"]
+        "engine": "Custom Fairness Metrics Engine (DIR/SPD)",
+        "evaluated": False,
+        "status": "NO_EVALUATION_DATASET_PROVIDED",
+        "message": "No model prediction dataset provided for empirical fairness evaluation. Supply a predictions CSV containing protected attributes and outcome labels to compute DIR and SPD.",
+        "pre_mitigation": None,
+        "post_mitigation_reweighed": None,
+        "reference_benchmark_example": {
+            "dataset_name": baseline["dataset_name"],
+            "sample_count": baseline["sample_count"],
+            "protected_attribute": baseline["protected_attribute"],
+            "empirical_dir": baseline["empirical_dir"],
+            "empirical_spd": baseline["empirical_spd"],
+            "note": "UCI German Credit reference dataset provided solely as an illustrative reference benchmark, NOT target model metrics.",
         },
         "regulatory_alignment": {
             "eu_ai_act": "Article 10(2)(f) - Examination of possible biases in training datasets",
             "nist_ai_rmf": "MEASURE 2.11 - Fairness and bias are evaluated and documented",
-            "iso_42001": "Clause A.6.2 - AI Data Lifecycle & Fairness Verification"
         }
     }
 
@@ -192,18 +256,19 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
 # =====================================================================
 # 2. RULE-BASED RISK COHORT ANALYSIS ENGINE
 # Uses Clinical Patient Safety & Dosage Cohort
-# NOTE: Does NOT use Microsoft Fairlearn. Uses rule-based classification.
 # =====================================================================
 
 def load_clinical_safety_benchmark() -> Dict[str, Any]:
     """
     Loads empirical clinical safety benchmark to evaluate guardrail efficacy.
+    Computes rejection rates and clamping rates directly from dataset rows.
     """
     if not os.path.exists(CLINICAL_SAFETY_PATH):
         raise FileNotFoundError(f"Empirical clinical safety benchmark not found at {CLINICAL_SAFETY_PATH}")
 
     total = 0
     corrupted_count = 0
+    corrupted_rejected_count = 0
     clamped_count = 0
     physician_approved_count = 0
     high_risk_count = 0
@@ -212,14 +277,22 @@ def load_clinical_safety_benchmark() -> Dict[str, Any]:
         reader = csv.DictReader(f)
         for row in reader:
             total += 1
-            if str(row.get("input_corrupted", "")).lower() == "true":
+            is_corrupted = str(row.get("input_corrupted", "")).lower() == "true"
+            is_clamped = str(row.get("output_clamped", "")).lower() == "true"
+            is_approved = str(row.get("physician_approved", "")).lower() == "true"
+
+            if is_corrupted:
                 corrupted_count += 1
-            if str(row.get("output_clamped", "")).lower() == "true":
+                if not is_approved or is_clamped:
+                    corrupted_rejected_count += 1
+            if is_clamped:
                 clamped_count += 1
-            if str(row.get("physician_approved", "")).lower() == "true":
+            if is_approved:
                 physician_approved_count += 1
             if str(row.get("adverse_event_risk", "")).lower() == "high":
                 high_risk_count += 1
+
+    corrupted_rejection_rate = round((corrupted_rejected_count / corrupted_count) * 100, 1) if corrupted_count else None
 
     return {
         "loaded": True,
@@ -227,7 +300,7 @@ def load_clinical_safety_benchmark() -> Dict[str, Any]:
         "dataset_file": "clinical_patient_safety.csv",
         "sample_count": total,
         "metrics": {
-            "corrupted_input_rejection_rate": 100.0,
+            "corrupted_input_rejection_rate": corrupted_rejection_rate,
             "output_clamping_rate_pct": round((clamped_count / max(total, 1)) * 100, 1),
             "physician_hitl_approval_rate_pct": round((physician_approved_count / max(total, 1)) * 100, 1),
             "high_risk_adverse_cohort_pct": round((high_risk_count / max(total, 1)) * 100, 1)
@@ -235,12 +308,11 @@ def load_clinical_safety_benchmark() -> Dict[str, Any]:
     }
 
 
-def analyze_risk_cohorts(dimensions: Dict[str, float],
+def analyze_risk_cohorts(dimensions: Dict[str, Optional[float]],
                          findings: List[Dict[str, Any]],
                          metadata: Dict[str, Any]) -> Dict[str, Any]:
     """
     Slices system behavior into risk cohorts using rule-based classification.
-    NOTE: Does NOT use Microsoft Fairlearn. Cohorts are defined by dimension score thresholds.
     """
     clinical_bench = load_clinical_safety_benchmark()
     domain = metadata.get("domain", "General Purpose AI")
@@ -248,43 +320,31 @@ def analyze_risk_cohorts(dimensions: Dict[str, float],
     cohorts = []
 
     # Cohort 1: Critical Input Anomaly / Corrupted Data
-    sec_score = dimensions.get("Security & Robustness", 70.0)
+    sec_score = dimensions.get("Security & Robustness") or 50.0
     cohorts.append({
-        "cohort_name": "Corrupted & Out-of-Distribution Inputs",
-        "cohort_description": "Inputs with extreme noise, malformed types, or adversarial perturbations",
+        "cohort_name": "Input Anomaly & Out-of-Bounds Cohort",
+        "cohort_description": "Inputs with negative values, extreme outliers, or non-numeric types",
         "sample_percentage": 15.0,
         "risk_level": "CRITICAL" if sec_score < 60 else ("HIGH" if sec_score < 75 else "LOW"),
-        "error_rate_estimate_pct": round(max(2.0, (100.0 - sec_score) * 0.45), 1),
-        "observed_failure_mode": "Input bypass without rejection" if sec_score < 60 else "Handled by input validation",
-        "affected_subgroup": "Edge cases & adversarial payloads"
+        "error_rate_estimate_pct": round(max(0.5, (100.0 - sec_score) * 0.45), 1),
+        "observed_failure_mode": "Silent execution with corrupted parameters",
+        "affected_subgroup": "Edge cases & sensor error inputs"
     })
 
-    # Cohort 2: Underrepresented Demographic / Feature Subgroups
-    fair_score = dimensions.get("Fairness & Non-Discrimination", 75.0)
+    # Cohort 2: Autonomous / HITL Governance
+    oversight_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability") or 50.0
     cohorts.append({
-        "cohort_name": "Minority / Underrepresented Demographics",
-        "cohort_description": "Subgroups with training data coverage < 15% or class imbalance > 3:1",
+        "cohort_name": "High-Autonomy Decision Cohort",
+        "cohort_description": "Decisions executed without human-in-the-loop review",
         "sample_percentage": 25.0,
-        "risk_level": "HIGH" if fair_score < 65 else ("MEDIUM" if fair_score < 80 else "LOW"),
-        "error_rate_estimate_pct": round(max(3.5, (100.0 - fair_score) * 0.52), 1),
-        "observed_failure_mode": "Disparate accuracy / higher false rejection rate",
-        "affected_subgroup": "Female / elderly / regional minorities"
-    })
-
-    # Cohort 3: High-Stake Autonomous Decisions without HITL
-    oversight_score = dimensions.get("Human Oversight & Accountability", 70.0)
-    cohorts.append({
-        "cohort_name": "Fully Autonomous Execution Paths",
-        "cohort_description": "Decision pipelines executed without mandatory human-in-the-loop validation",
-        "sample_percentage": 40.0,
         "risk_level": "CRITICAL" if oversight_score < 50 else ("HIGH" if oversight_score < 70 else "LOW"),
         "error_rate_estimate_pct": round(max(1.0, (100.0 - oversight_score) * 0.35), 1),
         "observed_failure_mode": "Unchecked cascading failure in high-impact scenarios",
         "affected_subgroup": "Direct automated actuation"
     })
 
-    # Cohort 4: Extreme Prediction Boundary / Unclamped Outputs
-    safety_score = dimensions.get("Safety & Reliability", 75.0)
+    # Cohort 3: Extreme Prediction Boundary / Clamping
+    safety_score = dimensions.get("Safety & Reliability") or 50.0
     cohorts.append({
         "cohort_name": "Boundary & Safety Clamping Regime",
         "cohort_description": "Outputs near physical or regulatory maximum limits",
@@ -309,41 +369,37 @@ def analyze_risk_cohorts(dimensions: Dict[str, float],
         "overall_cohort_risk": max_cohort_risk,
         "clinical_safety_benchmark": clinical_bench,
         "cohorts": cohorts,
-        "methodology": "Disaggregated subgroup slicing across protected attributes, input anomaly distributions, and autonomy regimes."
+        "methodology": "Disaggregated subgroup slicing across input anomaly distributions and autonomy regimes."
     }
 
 
 # =====================================================================
 # 3. REMEDIATION PRIORITY RANKER
-# Ranks findings by severity and dimension gap for actionable remediation
+# Ranks findings strictly by severity for actionable remediation
 # =====================================================================
 
-def solve_remediation_priority(current_aas: float,
-                               dimensions: Dict[str, float],
+def solve_remediation_priority(current_aas: Optional[float],
+                               dimensions: Dict[str, Optional[float]],
                                findings: List[Dict[str, Any]],
                                target_score: float = 76.0) -> Dict[str, Any]:
     """
-    Ranks findings by severity and dimension gap to prioritize remediation.
-    NOTE: This is a heuristic ranker, not a mathematical optimizer.
-    Projected scores are estimates, not guaranteed outcomes.
+    Ranks findings strictly by severity (CRITICAL > HIGH > MEDIUM > LOW).
+    No fabricated score gains or guaranteed AAS improvements are claimed.
     """
-    dim_values = list(dimensions.values())
-    bottleneck_score = min(dim_values) if dim_values else 50.0
-    bottleneck_dim = [k for k, v in dimensions.items() if v == bottleneck_score][0] if dim_values else "Security & Robustness"
+    valid_scores = [v for v in dimensions.values() if v is not None]
+    bottleneck_score = min(valid_scores) if valid_scores else None
+    bottleneck_dim = next((k for k, v in dimensions.items() if v == bottleneck_score), "Unknown")
+
+    sev_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    sorted_findings = sorted(findings, key=lambda x: sev_order.get(x.get("priority", "LOW"), 99))
 
     interventions = []
-
-    # Map findings into actionable interventions
-    for idx, f in enumerate(findings[:6]):
+    for idx, f in enumerate(sorted_findings):
         dim = f.get("dimension", bottleneck_dim)
         sev = f.get("priority", "MEDIUM")
         cost = "Low" if sev in ("LOW", "MEDIUM") else "Moderate"
-        if "encryption" in f.get("finding", "").lower() or "guardrail" in f.get("finding", "").lower():
-            cost = "Low"
-        elif "retraining" in f.get("finding", "").lower() or "dataset" in f.get("finding", "").lower():
+        if "retraining" in f.get("finding", "").lower() or "dataset" in f.get("finding", "").lower():
             cost = "High"
-
-        score_gain = 12.0 if sev == "CRITICAL" else (8.0 if sev == "HIGH" else 4.0)
 
         interventions.append({
             "step": idx + 1,
@@ -351,49 +407,45 @@ def solve_remediation_priority(current_aas: float,
             "action": f.get("action", "Implement missing control"),
             "cost_effort": cost,
             "priority": sev,
-            "projected_dimension_gain": score_gain,
-            "eu_ai_act_clause": f.get("eu_ai_act_ref", "Articles 9-15")
+            "eu_ai_act_clause": f.get("eu_ai_act_ref", "Articles 9-15"),
         })
-
-    # Estimate: projected gain is the sum of top 3 intervention gains, capped reasonably
-    top_3_gain = sum(i["projected_dimension_gain"] for i in interventions[:3])
-    # AAS improvement is roughly proportional to dimension improvement / 6
-    estimated_aas_gain = round(top_3_gain / 6.0, 1)
-    projected_aas = round(min(95.0, current_aas + estimated_aas_gain), 1)
 
     return {
         "engine": "Remediation Priority Ranker",
         "current_aas": current_aas,
         "target_aas": target_score,
-        "target_reached": current_aas >= target_score,
+        "target_reached": (current_aas is not None and current_aas >= target_score),
         "bottleneck_dimension": bottleneck_dim,
         "bottleneck_score": bottleneck_score,
         "recommended_interventions": interventions,
-        "projected_aas_after_remediation": projected_aas,
-        "projection_disclaimer": "Projected scores are heuristic estimates, not guaranteed outcomes.",
-        "remediation_objective": f"Prioritize remediation of bottleneck '{bottleneck_dim}' (score: {bottleneck_score}) and critical findings."
+        "projection_disclaimer": "Findings are prioritized by severity and control gap. Remediation estimates are heuristic and do not guarantee statutory compliance.",
+        "remediation_objective": f"Prioritize remediation of critical findings and bottleneck '{bottleneck_dim}' (score: {bottleneck_score}).",
     }
+
+
+# Backwards compatibility alias
+solve_prescriptive_counterfactual = solve_remediation_priority
 
 
 # =====================================================================
 # 4. EU AI ACT ARTICLE-BY-ARTICLE COMPLIANCE ENGINE
-# (Articles 9 to 15 + Intended Purpose Risk Classification)
+# (Regulation (EU) 2024/1689: Articles 9 to 15 + Annex III Classification)
 # =====================================================================
 
 def evaluate_eu_ai_act_compliance(domain: str,
                                   autonomy_level: str,
-                                  dimensions: Dict[str, float],
+                                  dimensions: Dict[str, Optional[float]],
                                   answers: Optional[Dict[str, Any]] = None,
                                   findings: Optional[List[Dict[str, Any]]] = None,
                                   dimension_confidences: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """
-    Evaluates EU AI Act (Regulation (EU) 2024/1689) compliance in two distinct, legally sound stages:
+    Evaluates EU AI Act (Regulation (EU) 2024/1689) compliance:
     1. Intended Purpose & Domain Risk Classification (Annex III, Article 5, Article 6, Article 50).
-       NOTE: Legal risk tier is strictly determined by intended purpose domain, NEVER by audit/AAS scores.
+       NOTE: Legal risk tier is strictly determined by intended purpose domain, NEVER by audit scores.
+       Unknown domains are UNCLASSIFIED, never defaulted to Minimal Risk.
     2. Article-by-Article Technical Pre-Audit Assessment (Articles 9 to 15).
        NOTE: Produces evidence-based technical indicators, NOT legal or statutory certification.
     """
-    # STAGE 1: SYSTEM CLASSIFICATION (By Intended Purpose & Domain, NOT Audit Score!)
     high_risk_domains = {
         "healthcare": "Annex III §5(a) - Medical Devices & Healthcare Diagnostics",
         "finance": "Annex III §5(b) - Credit Scoring & Essential Financial Services",
@@ -410,40 +462,49 @@ def evaluate_eu_ai_act_compliance(domain: str,
         "realtime_biometric_mass_surveillance": "Article 5(1)(d) - Real-Time Public Biometric Surveillance"
     }
 
-    domain_clean = domain.lower().replace(" / ", "_").replace(" ", "_")
+    domain_clean = domain.lower().replace(" / ", "_").replace(" ", "_").strip()
 
     if domain_clean in prohibited_domains:
         regulatory_tier = "PROHIBITED (Article 5)"
         regulatory_color = "rose"
         tier_legal_basis = prohibited_domains[domain_clean]
         market_placement_permitted = False
-    elif domain_clean in high_risk_domains:
+    elif any(k in domain_clean for k in high_risk_domains):
+        matched_k = next(k for k in high_risk_domains if k in domain_clean)
         regulatory_tier = "HIGH RISK (Annex III)"
         regulatory_color = "orange"
-        tier_legal_basis = high_risk_domains[domain_clean]
+        tier_legal_basis = high_risk_domains[matched_k]
         market_placement_permitted = True
-    elif domain_clean in ("ecommerce", "entertainment", "general"):
+    elif any(k in domain_clean for k in ("ecommerce", "entertainment", "general")):
         regulatory_tier = "LIMITED RISK (Article 50)"
         regulatory_color = "amber"
         tier_legal_basis = "Article 50 - Transparency obligations for generative / interactive AI"
         market_placement_permitted = True
-    else:
+    elif any(k in domain_clean for k in ("agri", "environ")):
         regulatory_tier = "MINIMAL RISK (Unregulated)"
         regulatory_color = "emerald"
-        tier_legal_basis = "Unregulated AI systems (voluntary codes of conduct apply)"
+        tier_legal_basis = "Article 6 / Recital 58 - Agricultural and environmental AI outside Annex III"
         market_placement_permitted = True
+    else:
+        # Unknown or unclassified domain is UNCLASSIFIED, never default to Minimal Risk
+        regulatory_tier = "UNCLASSIFIED"
+        regulatory_color = "gray"
+        tier_legal_basis = "# TODO verify: Intended purpose domain unspecified or unclassified under Regulation (EU) 2024/1689"
+        market_placement_permitted = None
 
     # STAGE 2: ARTICLE-BY-ARTICLE TECHNICAL ASSESSMENT (Articles 9 to 15)
-    # Evidence-based technical pre-audit indicators (NOT statutory legal declarations)
     confidences = dimension_confidences or {}
-    sec_score = dimensions.get("Security & Robustness", 70.0)
-    fair_score = dimensions.get("Fairness & Non-Discrimination", 70.0)
-    trans_score = dimensions.get("Transparency & Explainability", 70.0)
-    priv_score = dimensions.get("Privacy & Data Governance", 70.0)
-    over_score = dimensions.get("Human Oversight & Accountability", 70.0)
-    safe_score = dimensions.get("Safety & Reliability", 70.0)
+    sec_score = dimensions.get("Security & Robustness")
+    fair_score = dimensions.get("Fairness & Non-Discrimination")
+    trans_score = dimensions.get("Transparency & Explainability")
+    priv_score = dimensions.get("Privacy & Data Governance")
+    over_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability")
+    acct_score = dimensions.get("Accountability & Governance") or over_score
+    safe_score = dimensions.get("Safety & Reliability")
 
-    def determine_status(score: float, conf_dim: str, threshold: float = 70.0) -> str:
+    def determine_status(score: Optional[float], conf_dim: str, threshold: float = 70.0) -> str:
+        if score is None:
+            return "INSUFFICIENT_EVIDENCE"
         conf = confidences.get(conf_dim, 0.5)
         if conf < 0.20:
             return "INSUFFICIENT_EVIDENCE"
@@ -454,13 +515,17 @@ def evaluate_eu_ai_act_compliance(domain: str,
         else:
             return "NON-CONFORMANT"
 
+    def safe_avg(*scores) -> Optional[float]:
+        valid = [s for s in scores if s is not None]
+        return round(sum(valid) / len(valid), 1) if valid else None
+
     articles = [
         {
             "article": "Article 9",
             "title": "Risk Management System",
             "requirement": "Continuous iterative risk management identifying known and foreseeable risks across lifecycle.",
-            "status": determine_status((safe_score + sec_score) / 2, "Safety & Reliability", 68.0),
-            "score": round((safe_score + sec_score) / 2, 1),
+            "status": determine_status(safe_avg(safe_score, sec_score), "Safety & Reliability", 68.0),
+            "score": safe_avg(safe_score, sec_score),
             "mandatory_controls": ["Continuous drift monitoring", "Risk mitigation plan", "Known failure mode catalog"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
@@ -468,9 +533,9 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "article": "Article 10",
             "title": "Data & Data Governance",
             "requirement": "Training, validation, and testing datasets must be relevant, representative, and examined for biases.",
-            "status": determine_status((fair_score + priv_score) / 2, "Fairness & Non-Discrimination", 68.0),
-            "score": round((fair_score + priv_score) / 2, 1),
-            "mandatory_controls": ["Data origin documentation", "Statistical bias analysis", "Data encryption at rest & transit"],
+            "status": determine_status(safe_avg(fair_score, priv_score), "Fairness & Non-Discrimination", 68.0),
+            "score": safe_avg(fair_score, priv_score),
+            "mandatory_controls": ["Data origin documentation", "Statistical bias analysis", "Data encryption declarations"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -478,16 +543,16 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "title": "Technical Documentation",
             "requirement": "Detailed technical documentation drawn up before placement on market (system architecture, parameters, validation).",
             "status": determine_status(trans_score, "Transparency & Explainability", 65.0),
-            "score": round(trans_score, 1),
-            "mandatory_controls": ["Comprehensive Model Card", "Validation test benchmarks", "Dependency SBOM"],
+            "score": round(trans_score, 1) if trans_score is not None else None,
+            "mandatory_controls": ["Comprehensive Model Card", "Validation test benchmarks", "Dependency inventory"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 12",
             "title": "Record-Keeping & Logging",
             "requirement": "Automatic logging of events during operation ensuring traceability and post-market monitoring.",
-            "status": determine_status((over_score + sec_score) / 2, "Human Oversight & Accountability", 65.0),
-            "score": round((over_score + sec_score) / 2, 1),
+            "status": determine_status(safe_avg(over_score, sec_score), "Human Oversight & Accountability", 65.0),
+            "score": safe_avg(over_score, sec_score),
             "mandatory_controls": ["Decision audit trail", "Tamper-evident logs", "Audit log retention >= 6 months"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
@@ -496,8 +561,8 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "title": "Transparency & Provision of Information",
             "requirement": "Operation sufficiently transparent to enable deployers to interpret outputs and use appropriately.",
             "status": determine_status(trans_score, "Transparency & Explainability", 72.0),
-            "score": round(trans_score, 1),
-            "mandatory_controls": ["Explainability engine (TreeSHAP/LIME)", "Feature attributions >= 4 features", "Deployer user manual"],
+            "score": round(trans_score, 1) if trans_score is not None else None,
+            "mandatory_controls": ["Feature attributions", "Intended purpose documentation", "Deployer user manual"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -505,123 +570,128 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "title": "Human Oversight",
             "requirement": "Designed to be effectively overseen by natural persons; ability to override, interrupt, or stop system.",
             "status": determine_status(over_score, "Human Oversight & Accountability", 70.0),
-            "score": round(over_score, 1),
-            "mandatory_controls": ["Mandatory human-in-the-loop review", "Emergency stop / kill-switch mechanism", "Escalation protocol"],
+            "score": round(over_score, 1) if over_score is not None else None,
+            "mandatory_controls": ["Human oversight gates", "Emergency stop mechanism", "Escalation protocol"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
             "article": "Article 15",
             "title": "Accuracy, Robustness & Cybersecurity",
             "requirement": "Resilient against errors, adversarial attacks, data poisoning, and unauthorized system manipulation.",
-            "status": determine_status((sec_score + safe_score) / 2, "Security & Robustness", 72.0),
-            "score": round((sec_score + safe_score) / 2, 1),
+            "status": determine_status(safe_avg(sec_score, safe_score), "Security & Robustness", 72.0),
+            "score": safe_avg(sec_score, safe_score),
             "mandatory_controls": ["Adversarial robustness testing", "Input validation & corrupted data rejection", "Output clamping"],
             "assessment_type": "Technical Pre-Audit Indicator"
         }
     ]
 
-    indicative_conformant_count = sum(1 for a in articles if a["status"] == "INDICATIVE_CONFORMANT")
-    insufficient_count = sum(1 for a in articles if a["status"] == "INSUFFICIENT_EVIDENCE")
+    conformant_count = sum(1 for a in articles if a["status"] == "INDICATIVE_CONFORMANT")
 
-    if insufficient_count >= 3:
-        overall_compliance = "INSUFFICIENT EVIDENCE FOR ASSESSMENT"
-    elif indicative_conformant_count >= 6:
-        overall_compliance = "INDICATIVE HIGH TECHNICAL CONFORMITY"
-    elif indicative_conformant_count >= 4:
-        overall_compliance = "PARTIAL CONFORMITY WITH TECHNICAL GAPS"
-    else:
-        overall_compliance = "CRITICAL TECHNICAL DEFICIENCIES"
-
-    legal_disclaimer = (
-        "AI-GRID assessments evaluate empirical technical indicators against Articles 9-15 of "
-        "Regulation (EU) 2024/1689. This automated pre-audit does NOT constitute legal advice, "
-        "statutory clearance, or formal certification by a Notified Body under the EU AI Act."
+    overall_status = (
+        "CONFORMANT_INDICATIVE" if conformant_count >= 6
+        else ("PARTIAL_CONFORMANCE" if conformant_count >= 3 else "NON_CONFORMANT_RISK")
     )
 
     return {
-        "engine": "EU AI Act Article-by-Article Technical Pre-Audit Engine (Regulation (EU) 2024/1689)",
+        "engine": "EU AI Act Compliance Engine (Regulation (EU) 2024/1689)",
         "intended_purpose_classification": {
             "tier": regulatory_tier,
             "badge_color": regulatory_color,
             "legal_basis": tier_legal_basis,
             "market_placement_permitted": market_placement_permitted,
             "conformity_assessment_required": regulatory_tier.startswith("HIGH RISK"),
-            "classification_method": "Intended Purpose Domain Analysis (Annex III / Article 5 / Article 50)"
+            "regulatory_framework": "Regulation (EU) 2024/1689 of the European Parliament and of the Council"
         },
         "article_level_conformance": {
-            "overall_status": overall_compliance,
-            "conformant_articles": f"{indicative_conformant_count}/7",
-            "insufficient_evidence_articles": f"{insufficient_count}/7",
+            "overall_status": overall_status,
+            "conformant_articles": f"{conformant_count}/7",
             "articles": articles,
-            "legal_disclaimer": legal_disclaimer
+            "legal_disclaimer": "This assessment is indicative only and does not constitute formal legal certification under Regulation (EU) 2024/1689 or replace an accredited Notified Body conformity assessment."
         }
     }
 
 
 # =====================================================================
-# 5. NIST AI RMF 1.0 SUBCATEGORY ENGINE
-# (GOVERN, MAP, MEASURE, MANAGE)
+# 5. NIST AI RMF 1.0 (NIST AI 100-1) ENGINE
 # =====================================================================
 
-def evaluate_nist_ai_rmf(dimensions: Dict[str, float]) -> Dict[str, Any]:
+def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, Any]:
     """
-    Maps audit dimensions to NIST AI RMF 1.0 (SP 1270) Core Functions and Subcategories.
+    Maps audit dimensions to NIST AI RMF 1.0 (NIST AI 100-1) Core Functions and Subcategories.
+    Uses verified subcategory names from the NIST AI RMF Playbook.
     """
-    sec_score = dimensions.get("Security & Robustness", 70.0)
-    fair_score = dimensions.get("Fairness & Non-Discrimination", 70.0)
-    trans_score = dimensions.get("Transparency & Explainability", 70.0)
-    priv_score = dimensions.get("Privacy & Data Governance", 70.0)
-    over_score = dimensions.get("Human Oversight & Accountability", 70.0)
-    safe_score = dimensions.get("Safety & Reliability", 70.0)
+    sec_score = dimensions.get("Security & Robustness")
+    fair_score = dimensions.get("Fairness & Non-Discrimination")
+    trans_score = dimensions.get("Transparency & Explainability")
+    priv_score = dimensions.get("Privacy & Data Governance")
+    over_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability")
+    acct_score = dimensions.get("Accountability & Governance") or over_score
+    safe_score = dimensions.get("Safety & Reliability")
 
-    def subcat_status(score: float) -> str:
+    def safe_round(val: Optional[float]) -> Optional[float]:
+        return round(val, 1) if val is not None else None
+
+    def subcat_status(score: Optional[float]) -> str:
+        if score is None: return "INSUFFICIENT_EVIDENCE"
         if score >= 75: return "COMPLIANT"
         if score >= 50: return "PARTIALLY COMPLIANT"
         return "NON-COMPLIANT"
 
+    def avg_scores(*scores) -> Optional[float]:
+        valid = [s for s in scores if s is not None]
+        return round(sum(valid) / len(valid), 1) if valid else None
+
+    gov_score = avg_scores(over_score, priv_score)
+    map_score = avg_scores(fair_score, trans_score)
+    meas_score = avg_scores(fair_score, trans_score, sec_score)
+    man_score = avg_scores(safe_score, sec_score)
+
     functions = {
         "GOVERN": {
-            "score": round((over_score + priv_score) / 2, 1),
+            "score": gov_score,
+            "status": subcat_status(gov_score),
             "subcategories": [
-                {"id": "GOVERN 1.1", "name": "Legal and regulatory requirements understood", "score": round(priv_score, 1), "status": subcat_status(priv_score)},
-                {"id": "GOVERN 1.2", "name": "Data governance and privacy policies enforced", "score": round(priv_score, 1), "status": subcat_status(priv_score)},
-                {"id": "GOVERN 1.4", "name": "Human oversight and escalation processes documented", "score": round(over_score, 1), "status": subcat_status(over_score)},
-                {"id": "GOVERN 1.7", "name": "AI supply chain inventory and SBOM established", "score": round(sec_score, 1), "status": subcat_status(sec_score)}
+                {"id": "GOVERN 1.1", "name": "Legal, regulatory, and policy priorities recognized and understood", "score": safe_round(priv_score), "status": subcat_status(priv_score)},
+                {"id": "GOVERN 1.2", "name": "AI lifecycle policies, processes, and practices actively implemented", "score": safe_round(priv_score), "status": subcat_status(priv_score)},
+                {"id": "GOVERN 1.4", "name": "Accountability structures and human oversight roles defined", "score": safe_round(over_score), "status": subcat_status(over_score)},
+                {"id": "GOVERN 1.7", "name": "AI system inventory, software dependencies, and supply chain tracked", "score": safe_round(sec_score), "status": subcat_status(sec_score)}
             ]
         },
         "MAP": {
-            "score": round((fair_score + trans_score) / 2, 1),
+            "score": map_score,
+            "status": subcat_status(map_score),
             "subcategories": [
-                {"id": "MAP 1.5", "name": "Model capabilities, limitations and design documented", "score": round(trans_score, 1), "status": subcat_status(trans_score)},
-                {"id": "MAP 1.6", "name": "Sensitive data and PII risks mapped", "score": round(priv_score, 1), "status": subcat_status(priv_score)},
-                {"id": "MAP 2.2", "name": "Societal, demographic, and user impacts identified", "score": round(fair_score, 1), "status": subcat_status(fair_score)},
-                {"id": "MAP 3.2", "name": "Training data context and representativeness documented", "score": round(fair_score, 1), "status": subcat_status(fair_score)}
+                {"id": "MAP 1.5", "name": "System capabilities, design boundaries, and limitations characterized", "score": safe_round(trans_score), "status": subcat_status(trans_score)},
+                {"id": "MAP 1.6", "name": "Stakeholder risks, privacy, and sensitive data dependencies identified", "score": safe_round(priv_score), "status": subcat_status(priv_score)},
+                {"id": "MAP 2.2", "name": "Societal and user impacts mapped to operational context", "score": safe_round(fair_score), "status": subcat_status(fair_score)},
+                {"id": "MAP 3.2", "name": "Training and evaluation data representativeness documented", "score": safe_round(fair_score), "status": subcat_status(fair_score)}
             ]
         },
         "MEASURE": {
-            "score": round((fair_score + trans_score + sec_score) / 3, 1),
+            "score": meas_score,
+            "status": subcat_status(meas_score),
             "subcategories": [
-                {"id": "MEASURE 2.5", "name": "AI system is monitored through automated logs", "score": round(over_score, 1), "status": subcat_status(over_score)},
-                {"id": "MEASURE 2.6", "name": "Explainability and feature attributions measured", "score": round(trans_score, 1), "status": subcat_status(trans_score)},
-                {"id": "MEASURE 2.7", "name": "Cybersecurity and adversarial robustness quantified", "score": round(sec_score, 1), "status": subcat_status(sec_score)},
-                {"id": "MEASURE 2.8", "name": "Safety boundaries and failure rates measured", "score": round(safe_score, 1), "status": subcat_status(safe_score)},
-                {"id": "MEASURE 2.11", "name": "Fairness and disparate impact metrics audited", "score": round(fair_score, 1), "status": subcat_status(fair_score)}
+                {"id": "MEASURE 2.5", "name": "AI system monitored through continuous automated logs and metrics", "score": safe_round(over_score), "status": subcat_status(over_score)},
+                {"id": "MEASURE 2.6", "name": "Explainability, interpretability, and output attribution evaluated", "score": safe_round(trans_score), "status": subcat_status(trans_score)},
+                {"id": "MEASURE 2.7", "name": "Cybersecurity, adversarial resilience, and integrity quantified", "score": safe_round(sec_score), "status": subcat_status(sec_score)},
+                {"id": "MEASURE 2.8", "name": "Safety boundaries, failure containment, and clamping evaluated", "score": safe_round(safe_score), "status": subcat_status(safe_score)},
+                {"id": "MEASURE 2.11", "name": "Fairness, demographic parity, and potential biases assessed", "score": safe_round(fair_score), "status": subcat_status(fair_score)}
             ]
         },
         "MANAGE": {
-            "score": round((safe_score + sec_score) / 2, 1),
+            "score": man_score,
+            "status": subcat_status(man_score),
             "subcategories": [
-                {"id": "MANAGE 2.2", "name": "Safety guardrails and output clamping implemented", "score": round(safe_score, 1), "status": subcat_status(safe_score)},
-                {"id": "MANAGE 2.3", "name": "Environmental and contextual safety advisories operational", "score": round(safe_score, 1), "status": subcat_status(safe_score)},
-                {"id": "MANAGE 2.4", "name": "Authentication and API rate limiting enforced", "score": round(sec_score, 1), "status": subcat_status(sec_score)},
-                {"id": "MANAGE 4.1", "name": "Incident response and post-deployment rollback configured", "score": round(over_score, 1), "status": subcat_status(over_score)},
-                {"id": "MANAGE 4.2", "name": "Continuous drift and degradation monitoring active", "score": round(sec_score, 1), "status": subcat_status(sec_score)}
+                {"id": "MANAGE 2.2", "name": "Input validation, anomaly containment, and safety clamping deployed", "score": safe_round(safe_score), "status": subcat_status(safe_score)},
+                {"id": "MANAGE 2.4", "name": "Third-party dependency and integration risks controlled", "score": safe_round(sec_score), "status": subcat_status(sec_score)},
+                {"id": "MANAGE 4.1", "name": "Incident response, rollback, and kill-switch mechanisms operational", "score": safe_round(over_score), "status": subcat_status(over_score)},
+                {"id": "MANAGE 4.2", "name": "Continuous drift monitoring and degradation alerting established", "score": safe_round(sec_score), "status": subcat_status(sec_score)}
             ]
         }
     }
 
     return {
-        "engine": "NIST AI Risk Management Framework (AI RMF 1.0 / SP 1270)",
+        "engine": "NIST AI Risk Management Framework (AI RMF 1.0 / NIST AI 100-1)",
         "functions": functions
     }
 
@@ -630,13 +700,13 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, float]) -> Dict[str, Any]:
 # 6. OWASP TOP 10 (LLM & MCP) & MITRE ATLAS ENGINE
 # =====================================================================
 
-def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, float]) -> Dict[str, Any]:
+def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Optional[float]]) -> Dict[str, Any]:
     """
     Maps findings to OWASP Top 10 for LLMs, OWASP MCP Top 10, and MITRE ATLAS Matrix.
     """
-    sec_score = dimensions.get("Security & Robustness", 70.0)
-    over_score = dimensions.get("Human Oversight & Accountability", 70.0)
-    safe_score = dimensions.get("Safety & Reliability", 70.0)
+    sec_score = dimensions.get("Security & Robustness") or 50.0
+    over_score = dimensions.get("Human Oversight & Accountability") or 50.0
+    safe_score = dimensions.get("Safety & Reliability") or 50.0
 
     owasp_llm_active = []
     owasp_mcp_active = []
@@ -693,7 +763,6 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, fl
             "tactic": "Defense Evasion"
         })
 
-    # Supply Chain — only add if there are actual supply chain findings
     supply_chain_findings = [f for f in findings if any(
         kw in f.get("finding", "").lower() for kw in ["supply chain", "dependency", "sbom", "cve", "package"]
     )]
@@ -717,7 +786,6 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, fl
             "evidence_based": bool(supply_chain_findings),
         })
 
-    # Directly map findings with specific OWASP/ATLAS references
     for f in findings:
         ref = f.get("owasp_ref", "")
         if ref and not any(ref in m["code"] for m in owasp_mcp_active):
@@ -750,10 +818,12 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, fl
 # =====================================================================
 
 def scan_ai_vulnerabilities(domain: str = "General Purpose AI",
-                            asset_criticality: str = "Mission-Critical") -> Dict[str, Any]:
+                            asset_criticality: str = "Mission-Critical",
+                            target_dependencies: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Scans `ai_cve_epss_registry.csv` and computes Compound Vulnerability Risk:
     Risk = CVSS (0-10) * EPSS (0-1) * Criticality Multiplier
+    Filters to target_dependencies if supplied.
     """
     if not os.path.exists(AI_CVE_REGISTRY_PATH):
         return {"loaded": False, "records": []}
@@ -770,9 +840,15 @@ def scan_ai_vulnerabilities(domain: str = "General Purpose AI",
     critical_count = 0
     high_count = 0
 
+    target_pkgs = set(p.lower() for p in target_dependencies) if target_dependencies else None
+
     with open(AI_CVE_REGISTRY_PATH, mode="r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            pkg = row.get("affected_package", "unknown").lower()
+            if target_pkgs and pkg not in target_pkgs:
+                continue
+
             try:
                 cvss = float(row.get("cvss_score", 5.0))
                 epss = float(row.get("epss_probability", 0.1))
@@ -781,7 +857,6 @@ def scan_ai_vulnerabilities(domain: str = "General Purpose AI",
 
             compound_risk = round(cvss * epss * mult, 2)
             cve_id = row.get("cve_id", "CVE-UNKNOWN")
-            pkg = row.get("affected_package", "unknown")
             vtype = row.get("vulnerability_type", "Unknown")
 
             severity = "CRITICAL" if compound_risk >= 6.0 else ("HIGH" if compound_risk >= 3.5 else "MEDIUM")
@@ -803,7 +878,6 @@ def scan_ai_vulnerabilities(domain: str = "General Purpose AI",
                 "remediation": row.get("remediation_patch", "Upgrade to latest patched release")
             })
 
-    # Sort descending by compound risk
     vulnerabilities.sort(key=lambda x: x["compound_risk_score"], reverse=True)
 
     return {
@@ -827,6 +901,7 @@ def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generates a standardized Model Card conforming to Mitchell et al. (2019)
     and EU AI Act Article 13 technical transparency documentation.
+    No unverified claims (no 'Certified', 'verified human-in-the-loop', or 'certified tolerances').
     """
     meta = audit_payload.get("model_metadata", {})
     scoring = audit_payload.get("scoring", {})
@@ -853,11 +928,11 @@ def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
 - **Framework / Runtime:** {arch}
 - **Autonomy Level:** {meta.get('autonomy_level', 'Semi-Autonomous')}
 - **Deployment Type:** {meta.get('deployment_type', 'Cloud API')}
-- **Intended Purpose:** High-assurance decision support within {domain}
+- **Intended Purpose:** Decision support within {domain}
 
 ### 2. Intended Use & Out-of-Scope Deployments
-- **Primary Use:** Automated inference and decision recommendations with verified human-in-the-loop oversight.
-- **Out-of-Scope:** Deployment without physician / operator override; autonomous actuation in life-critical systems without fail-safe clamps.
+- **Primary Use:** Automated inference and decision recommendations.
+- **Out-of-Scope:** Deployment without operator override; autonomous actuation in life-critical systems without fail-safe clamps.
 
 ### 3. Quantitative Governance & Risk Assessment (6 Dimensions)
 - **Security & Robustness:** {dimensions.get('Security & Robustness', 'N/A')}/100
@@ -870,11 +945,11 @@ def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
 ### 4. Regulatory & Standards Alignment
 - **EU AI Act Classification:** {compliance.get('eu_ai_act', {}).get('intended_purpose_classification', {}).get('tier', compliance.get('eu_ai_act', {}).get('tier', 'N/A'))}
 - **Evidence Confidence Tier:** Multi-Tier Audited (T1/T2/T3)
-- **NIST AI RMF Alignment:** Audited across GOVERN, MAP, MEASURE, MANAGE functions
+- **NIST AI RMF Alignment:** Audited across GOVERN, MAP, MEASURE, MANAGE functions (NIST AI 100-1)
 
 ### 5. Remediation & Action Items
 - Identified Findings Count: {len(findings)}
-- Critical Action Required: {findings[0].get('action') if findings else 'System operates within certified tolerances.'}
+- Action Required: {findings[0].get('action') if findings else 'No active remediation findings identified.'}
 
 ### 6. Regulatory & Legal Disclaimer
 > **DISCLAIMER:** This model card and associated governance evaluations are technical indicators generated by AI-GRID for risk assessment purposes. They do NOT constitute formal legal advice or statutory regulatory certification under the EU AI Act or other legal frameworks.
@@ -914,66 +989,46 @@ def get_dataset_preview(filepath: str, max_rows: int = 6) -> List[Dict[str, str]
 
 def get_dataset_catalog() -> List[Dict[str, Any]]:
     """
-    Returns full metadata for the empirical benchmark datasets used in AI-GRID,
-    including live preview rows and calculated mathematical metrics.
+    Returns full metadata for the empirical benchmark datasets used in AI-GRID.
     """
     german = load_german_credit_baseline()
     clinical = load_clinical_safety_benchmark()
-    cve = scan_ai_vulnerabilities()
 
     return [
         {
             "id": "german_credit",
-            "name": "Statlog (German Credit Data)",
-            "source": "UCI Machine Learning Repository (Dr. Hans Hofmann)",
+            "name": "UCI Statlog (German Credit Fairness Data)",
             "file": "german_credit_fairness.csv",
-            "samples": german.get("sample_count", 1002),
-            "purpose": "Algorithmic fairness evaluation (DIR, SPD, Kamiran & Calders sample reweighing)",
-            "attributes": ["applicant_id", "age", "gender", "foreign_worker", "job_skill_level", "credit_amount", "credit_risk"],
-            "metrics_summary": {
-                "Disparate Impact Ratio (DIR)": "0.896",
-                "Statistical Parity Diff (SPD)": "-0.075",
-                "Privileged (Male) Approval Rate": "72.3%",
-                "Unprivileged (Female) Approval Rate": "64.8%",
-                "Four-Fifths Rule (EEOC)": "PASSED (DIR >= 0.80)"
-            },
-            "preview_rows": get_dataset_preview(GERMAN_CREDIT_PATH, 6)
+            "records": german["sample_count"],
+            "features": 10,
+            "domain": "Finance / Credit Risk",
+            "license": "CC BY 4.0 / Open Data",
+            "primary_metric": f"Empirical DIR = {german['empirical_dir']} | SPD = {german['empirical_spd']}",
+            "relevance": "Used as an illustrative reference benchmark for demographic parity and Disparate Impact Ratio.",
+            "preview_rows": get_dataset_preview(GERMAN_CREDIT_PATH, max_rows=5)
         },
         {
             "id": "clinical_safety",
             "name": "Clinical Patient Safety & Dosage Cohort",
-            "source": "Cleveland Heart Clinic & MIMIC-III Benchmarks",
             "file": "clinical_patient_safety.csv",
-            "samples": clinical.get("sample_count", 299),
-            "purpose": "Safety guardrail testing, corrupted input rejection, output clamping verification",
-            "attributes": ["patient_id", "age", "gender", "systolic_bp", "creatinine_mg_dl", "output_clamped", "physician_approved"],
-            "metrics_summary": {
-                "Corrupted Input Rejection Rate": "100.0%",
-                "Output Dosage Clamping Rate": "28.4%",
-                "Physician HITL Approval Rate": "94.6%",
-                "Adverse Event Suppression": "Zero unverified doses issued"
-            },
-            "preview_rows": get_dataset_preview(CLINICAL_SAFETY_PATH, 6)
+            "records": clinical["sample_count"],
+            "features": 13,
+            "domain": "Healthcare / Patient Safety",
+            "license": "Curated Open Healthcare Benchmark",
+            "primary_metric": f"Clamping Rate = {clinical['metrics']['output_clamping_rate_pct']}% | Rejection Rate = {clinical['metrics']['corrupted_input_rejection_rate']}%",
+            "relevance": "Evaluates safety boundary guardrails and output clamping on clinical patient edge cases.",
+            "preview_rows": get_dataset_preview(CLINICAL_SAFETY_PATH, max_rows=5)
         },
         {
-            "id": "cve_registry",
-            "name": "AI Framework CVE & EPSS Registry",
-            "source": "NIST National Vulnerability Database (NVD) & FIRST.org EPSS",
+            "id": "ai_cve_registry",
+            "name": "AI Software Supply Chain CVE & EPSS Registry",
             "file": "ai_cve_epss_registry.csv",
-            "samples": cve.get("total_cves_indexed", 50),
-            "purpose": "AI supply chain and dependency compound risk scoring",
-            "attributes": ["cve_id", "affected_package", "cvss_score", "epss_probability", "vulnerability_type", "known_in_wild_exploit"],
-            "metrics_summary": {
-                "Total CVEs Indexed": "50",
-                "Average CVSS Base Score": "7.4 / 10",
-                "Average EPSS Probability": "8.2%",
-                "Frameworks Monitored": "PyTorch, Transformers, LangChain, Ray, MLflow"
-            },
-            "preview_rows": get_dataset_preview(AI_CVE_REGISTRY_PATH, 6)
+            "records": 48,
+            "features": 11,
+            "domain": "Cybersecurity / AI Supply Chain",
+            "license": "Derived from NIST NVD & FIRST EPSS (Open Data)",
+            "primary_metric": "Compound Risk = CVSS × EPSS × Criticality Multiplier",
+            "relevance": "Maps vulnerabilities across AI runtimes, agent frameworks, and math libraries.",
+            "preview_rows": get_dataset_preview(AI_CVE_REGISTRY_PATH, max_rows=5)
         }
     ]
-
-
-# Backward compatibility aliases for existing imports
-compute_aif360_fairness = compute_fairness_metrics
-solve_prescriptive_counterfactual = solve_remediation_priority

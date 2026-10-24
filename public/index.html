@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI-GRID | Enterprise AI Trust &amp; Assurance Control Plane</title>
-  <meta name="description" content="AI-GRID Enterprise is a high-assurance AI Governance, Risk &amp; Compliance Operating System evaluating agentic and tool-augmented AI systems across 6 empirical trust dimensions, EU AI Act Articles 9-15, NIST AI RMF, and Model Context Protocol.">
+  <title>AI-GRID | Enterprise AI Trust &amp; Governance Control Plane</title>
+  <meta name="description" content="AI-GRID Enterprise is a high-assurance AI Governance, Risk &amp; Compliance Operating System evaluating AI systems across 7 empirical trust dimensions, EU AI Act Regulation (EU) 2024/1689 Articles 9-15, NIST AI 100-1, and QB4AIRA.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
           </div>
           <div class="brand-info">
             <div class="brand-name">AI-GRID</div>
-            <div class="brand-tag">Trust &amp; Assurance v4.0</div>
+            <div class="brand-tag">Governance Engine v4.0</div>
           </div>
         </div>
 
@@ -44,11 +44,11 @@
           </a>
 
           <div class="nav-section-label">Assessment</div>
-          <a class="nav-item" onclick="showPage('page-setup', this)" id="nav-setup" title="Launch Audit">
+          <a class="nav-item" onclick="showPage('page-setup', this)" id="nav-setup" title="AI Governance Questionnaire">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </span>
-            <span class="nav-text">Launch Audit</span>
+            <span class="nav-text">Governance Questionnaire</span>
           </a>
 
           <div class="nav-section-label">Assurance &amp; Governance</div>
@@ -58,37 +58,19 @@
             </span>
             <span class="nav-text">EU AI Act (Art. 9–15)</span>
           </a>
-          <a class="nav-item" onclick="showPage('page-discrepancy', this)" id="nav-discrepancy" title="Attestation Discrepancy">
+          <a class="nav-item" onclick="showPage('page-history', this); loadAuditHistory();" id="nav-history" title="Audit Records &amp; History">
             <span class="nav-icon-wrap">
-              <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </span>
-            <span class="nav-text">Attestation Discrepancy</span>
-          </a>
-          <a class="nav-item" onclick="showPage('page-framework-map', this)" id="nav-framework-map" title="Interactive Framework Mapping" style="display: none !important;">
-            <span class="nav-icon-wrap">
-              <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            </span>
-            <span class="nav-text">Framework Mapping</span>
+            <span class="nav-text">Audit History</span>
           </a>
 
-          <div class="nav-section-label">Research &amp; Analysis</div>
-          <a class="nav-item" onclick="showPage('page-datasets', this)" id="nav-datasets" title="Empirical Datasets" style="display: none !important;">
-            <span class="nav-icon-wrap">
-              <svg class="svg-icon sm" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            </span>
-            <span class="nav-text">Benchmark Datasets</span>
-          </a>
+          <div class="nav-section-label">Question Bank &amp; Standards</div>
           <a class="nav-item" onclick="showPage('page-question-bank', this)" id="nav-questions" title="Research Question Bank">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
             </span>
             <span class="nav-text">Research Question Bank</span>
-          </a>
-          <a class="nav-item" onclick="showPage('page-simulation', this)" id="nav-simulation" title="What-If Risk Simulator">
-            <span class="nav-icon-wrap">
-              <svg class="svg-icon sm" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-            </span>
-            <span class="nav-text">What-If Risk Simulator</span>
           </a>
 
           <div class="nav-section-label">Actions &amp; Reports</div>
@@ -108,9 +90,9 @@
       </div>
 
       <div class="sidebar-bottom">
-        <div class="mcp-status-pill">
+        <div class="governance-status-pill">
           <span class="status-beacon-dot online"></span>
-          <span class="mcp-status-text" id="mcpStatusText">MCP Protocol Engine &bull; Active</span>
+          <span class="governance-status-text" id="governanceStatusText">Governance Engine &bull; Online</span>
         </div>
         <button class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Toggle sidebar width">
           <svg class="svg-icon xs" id="collapseIcon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
@@ -135,9 +117,9 @@
 
         <div class="topbar-right">
           <!-- Launch Assessment Wizard -->
-          <button class="btn-secondary sm" onclick="showPage('page-setup')" id="headerLaunchBtn" title="Launch custom MCP probe or research questionnaire">
+          <button class="btn-secondary sm" onclick="showPage('page-setup')" id="headerLaunchBtn" title="Launch research questionnaire">
             <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>Audit Launchpad</span>
+            <span>Questionnaire Wizard</span>
           </button>
 
           <!-- Theme Switcher -->
@@ -154,9 +136,6 @@
         </div>
       </header>
 
-
-
-
       <!-- ============================================================= -->
       <!-- SCREEN 1: EXECUTIVE OVERVIEW (MAIN COCKPIT)                   -->
       <!-- ============================================================= -->
@@ -170,59 +149,18 @@
               <p class="page-header-subtitle">Evidence-driven assessment of AI security, trustworthiness and governance</p>
             </div>
             <div class="page-header-actions">
-              <button class="btn-primary sm" onclick="runQuickDemoAudit()" title="Run live automated wire probe against certified benchmark">
+              <button class="btn-primary sm" onclick="runQuickDemoAudit()" title="Run quick audit with high-risk clinical AI preset">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>⚡ Live Wire Probe</span>
+                <span>⚡ Run Quick Audit</span>
               </button>
               <button class="btn-secondary sm" onclick="showPage('page-setup')">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                <span>Launch Custom Audit</span>
+                <span>Launch Questionnaire</span>
               </button>
               <button class="btn-secondary sm" onclick="resetAuditState()" title="Reset cockpit and entire platform to clean standby state">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 <span>Reset</span>
               </button>
-            </div>
-          </div>
-
-          <!-- Assessment Status Banner -->
-          <div class="assessment-status-banner" id="verdictBanner">
-            <div class="status-banner-left">
-              <div class="status-banner-icon" id="verdictIconBox">
-                <svg class="svg-icon lg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-              </div>
-              <div>
-                <div class="status-banner-headline">
-                  <span id="verdictHeadlineText">AWAITING SYSTEM AUDIT &bull; CONTROL PLANE READY</span>
-                  <span class="badge info" id="kpiGradeBadge">UNAUDITED</span>
-                </div>
-                <div class="status-banner-desc" id="verdictSubText">
-                  No active assessment executed. Connect live Model Context Protocol (MCP) tool endpoints (Tier T1) or complete the research questionnaire (Tier T3) to dynamically evaluate assurance adequacy.
-                  <div style="margin-top: 10px; display:flex; gap:10px;">
-                    <button class="btn-primary sm" onclick="runQuickDemoAudit()">
-                      <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                      <span>Execute Automated MCP Probe Now</span>
-                    </button>
-                    <button class="btn-secondary sm" onclick="showPage('page-setup')">
-                      <span>Structured Questionnaire (T3) &rarr;</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="status-banner-meta">
-              <div class="banner-meta-item">
-                <span class="banner-meta-label">DISCREPANCY (&Delta;)</span>
-                <span class="banner-meta-val" id="bannerDiscrepancyVal">—</span>
-              </div>
-              <div class="banner-meta-item">
-                <span class="banner-meta-label">EVIDENCE BASIS</span>
-                <span class="banner-meta-val" id="bannerEvidenceBasis">Awaiting Probe</span>
-              </div>
-              <div class="banner-meta-item">
-                <span class="banner-meta-label">HASH INTEGRITY</span>
-                <span class="banner-meta-val" id="bannerHashIntegrity">Standby</span>
-              </div>
             </div>
           </div>
 
@@ -232,7 +170,7 @@
             <div class="kpi-card">
               <div class="kpi-top">
                 <span class="kpi-label">Assurance Adequacy Score</span>
-                <span class="badge info" id="kpiConfidenceBadge">AWAITING AUDIT</span>
+                <span class="badge info" id="kpiGradeBadge">UNAUDITED</span>
               </div>
               <div class="kpi-value-row">
                 <span class="kpi-num" id="kpiAasScore">—</span>
@@ -294,360 +232,319 @@
               <div class="chart-box">
                 <canvas id="radarChart"></canvas>
               </div>
-
-              <!-- ERM Scoring Sensitivity Explorer -->
-              <div class="erm-box" style="margin-top:16px;">
-                <div class="erm-slider-header">
-                  <span class="erm-label">ERM Sensitivity Explorer: <code>AAS(&alpha;) = &alpha; &times; Mean + (1 - &alpha;) &times; Min</code></span>
-                  <span class="erm-alpha-badge" id="alphaValueDisplay">&alpha; = 0.60</span>
-                </div>
-                <input type="range" id="alphaSlider" min="0" max="1" step="0.05" value="0.60" oninput="updateAlphaSlider(this.value)" class="erm-slider-input" aria-label="ERM Sensitivity Alpha Slider">
-                <div class="erm-scales">
-                  <span>&alpha; = 0.0 (Bottleneck Bound)</span>
-                  <span style="color:var(--primary-500); font-weight:600;">Default &alpha; = 0.60 (Balanced ERM)</span>
-                  <span>&alpha; = 1.0 (Arithmetic Mean)</span>
-                </div>
-                <div class="erm-stats-grid">
-                  <div class="erm-stat-tile">
-                    <div class="erm-tile-label">Mean Weight</div>
-                    <div class="erm-tile-val" id="alphaMeanWeight">60%</div>
-                  </div>
-                  <div class="erm-stat-tile">
-                    <div class="erm-tile-label">Bottleneck Weight</div>
-                    <div class="erm-tile-val" id="alphaMinWeight">40%</div>
-                  </div>
-                  <div class="erm-stat-tile highlight">
-                    <div class="erm-tile-label">Recalculated AAS</div>
-                    <div class="erm-tile-val" id="alphaAasResult">—</div>
-                  </div>
-                </div>
-                <div class="erm-explanation" id="alphaInsightNote">
-                  Execute an audit to inspect sensitivity across empirical trust dimensions under varying risk appetites.
-                </div>
-              </div>
             </div>
 
-            <!-- Right: Live Protocol Terminal -->
-            <div class="card" id="terminalCardSection">
+            <!-- Right: Governance Profile & Posture Section -->
+            <div class="card" id="summaryCardSection">
               <div class="card-header">
                 <div>
-                  <h3 class="card-title">Live Protocol Prober Telemetry</h3>
-                  <p class="card-subtitle">Real-time wire-level tool introspection and boundary audit feed</p>
+                  <h3 class="card-title">Governance Profile &amp; Posture</h3>
+                  <p class="card-subtitle">Active system target, statutory tier &amp; dimension conformity</p>
                 </div>
-                <div class="terminal-controls">
-                  <button class="btn-terminal" onclick="toggleLogPause()" id="btnPauseLogs">Pause</button>
-                  <button class="btn-terminal" onclick="copyTerminalLogs()">Copy Logs</button>
+                <span class="badge info" id="overviewStatusBadge">AWAITING AUDIT</span>
+              </div>
+
+              <!-- Active Target Strip -->
+              <div class="summary-target-strip">
+                <div class="summary-target-icon">
+                  <svg class="svg-icon md" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                </div>
+                <div class="summary-target-info">
+                  <div class="summary-target-name" id="summaryTargetName">Awaiting Assessment Target</div>
+                  <div class="summary-target-sub" id="summaryTargetSub">Select a reference preset or complete the questionnaire</div>
+                </div>
+                <div class="summary-target-tier">
+                  <span class="badge info" id="summaryTierBadge">ANNEX III §5</span>
                 </div>
               </div>
-              <div class="terminal-window">
+
+              <!-- 7 Mini Pillar Rows with Score & Mini Progress Fill -->
+              <div class="summary-pillars-list" id="summaryPillarsList">
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('security')" title="Click to inspect Security &amp; Robustness">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">🔒 Security &amp; Robustness</span>
+                    <span class="summary-pillar-score" id="smini_security">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_security" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('safety')" title="Click to inspect Safety &amp; Reliability">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">🛡️ Safety &amp; Reliability</span>
+                    <span class="summary-pillar-score" id="smini_safety">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_safety" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('fairness')" title="Click to inspect Fairness &amp; Bias Mitigation">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">⚖️ Fairness &amp; Non-Discrimination</span>
+                    <span class="summary-pillar-score" id="smini_fairness">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_fairness" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('transparency')" title="Click to inspect Transparency &amp; Explainability">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">🔍 Transparency &amp; Explainability</span>
+                    <span class="summary-pillar-score" id="smini_transparency">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_transparency" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('privacy')" title="Click to inspect Privacy &amp; Data Governance">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">🔐 Privacy &amp; Data Governance</span>
+                    <span class="summary-pillar-score" id="smini_privacy">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_privacy" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('oversight')" title="Click to inspect Human Oversight &amp; Agency">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">👁️ Human Oversight &amp; Agency</span>
+                    <span class="summary-pillar-score" id="smini_oversight">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_oversight" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <div class="summary-pillar-row" onclick="openDimensionDrawer('accountability')" title="Click to inspect Accountability &amp; Governance">
+                  <div class="summary-pillar-meta">
+                    <span class="summary-pillar-name">🏛️ Accountability &amp; Governance</span>
+                    <span class="summary-pillar-score" id="smini_accountability">— / 100</span>
+                  </div>
+                  <div class="summary-pillar-track">
+                    <div class="summary-pillar-fill" id="sminiFill_accountability" style="width: 0%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer with Presets and Optional Audit Trail Drawer Toggle -->
+              <div class="summary-card-footer">
+                <div class="summary-presets-group">
+                  <span class="summary-presets-label">Reference Profiles:</span>
+                  <div class="summary-presets-btns">
+                    <button class="btn-preset-pill" onclick="loadPresetProfile('healthcare')">🏥 Clinical AI</button>
+                    <button class="btn-preset-pill" onclick="loadPresetProfile('finance')">💳 Credit Scoring</button>
+                    <button class="btn-preset-pill" onclick="loadPresetProfile('assistant')">🤖 Assistant</button>
+                  </div>
+                </div>
+                <button class="btn-terminal-toggle" onclick="toggleAuditTrailDrawer()" id="btnToggleTrail" title="Toggle audit execution event trail">
+                  <svg class="svg-icon xs" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                  <span>Audit Trail</span>
+                </button>
+              </div>
+
+              <!-- Collapsible Telemetry / Audit Trail Container (Maintains terminalLog for full event compatibility) -->
+              <div class="summary-audit-trail" id="auditTrailDrawer" style="display:none;">
                 <div class="terminal-bar">
                   <div class="terminal-dots">
                     <span class="terminal-dot r"></span>
                     <span class="terminal-dot y"></span>
                     <span class="terminal-dot g"></span>
                   </div>
-                  <div class="terminal-title">AI-GRID Kernel &bull; Protocol Prober</div>
+                  <div class="terminal-title">AI-GRID Audit Kernel &bull; Execution Trace</div>
                   <span class="badge info" id="terminalStatus" style="font-size:10px;">IDLE / STANDBY</span>
                 </div>
                 <div class="terminal-body" id="terminalLog">
                   <div class="log-entry">
                     <span class="log-timestamp">[00:00:00]</span>
                     <span class="log-badge PROBE">STANDBY</span>
-                    <span>AI-GRID Control Plane online. Awaiting MCP connection or questionnaire execution...</span>
+                    <span>AI-GRID Control Plane online. Awaiting questionnaire execution or preset selection...</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 6 Empirical Trust Dimension Analytical Cards -->
-          <section class="card" id="dimensionsCardSection">
+          <!-- Priority Remediation Action Items (No Duplicate Metrics) -->
+          <section class="card" style="margin-bottom: 24px;">
             <div class="card-header">
               <div>
-                <h3 class="card-title">6 Empirical Trust Dimensions</h3>
-                <p class="card-subtitle">Pillar scores with regulatory anchors, confidence levels, and active status</p>
+                <h3 class="card-title">Priority Remediation Action Items</h3>
+                <p class="card-subtitle">Highest-impact algorithmic deficits and compliance findings requiring engineering intervention</p>
               </div>
-              <span class="badge info">QB4AIRA TAXONOMY</span>
-            </div>
-
-            <div class="dimensions-grid" id="dimensionsGrid">
-              <!-- Security -->
-              <div class="dimension-card" onclick="openDimensionDrawer('security')" id="pillarCard_security">
-                <div class="dim-header">
-                  <div class="dim-title-group">
-                    <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                    <div>
-                      <div class="dim-name">Security &amp; Robustness</div>
-                      <div class="dim-anchor">EU Art. 15(4) &bull; NIST MEASURE 2.7</div>
-                    </div>
-                  </div>
-                  <div class="dim-score-num" id="pillarScore_security">—</div>
-                </div>
-                <div class="dim-progress-track">
-                  <div class="dim-progress-fill" id="pillarFill_security" style="width: 0%;"></div>
-                </div>
-                <div class="dim-footer-info">
-                  <span class="badge info" id="pillarTag_security">STANDBY</span>
-                  <span>Adversarial &bull; SBOM &bull; Rate Limit</span>
-                </div>
-              </div>
-
-              <!-- Fairness -->
-              <div class="dimension-card" onclick="openDimensionDrawer('fairness')" id="pillarCard_fairness">
-                <div class="dim-header">
-                  <div class="dim-title-group">
-                    <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1zM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10M12 3v18M3 7h18"/></svg></div>
-                    <div>
-                      <div class="dim-name">Fairness &amp; Non-Discrimination</div>
-                      <div class="dim-anchor">EU Art. 10(2) &bull; EEOC 80% Rule</div>
-                    </div>
-                  </div>
-                  <div class="dim-score-num" id="pillarScore_fairness">—</div>
-                </div>
-                <div class="dim-progress-track">
-                  <div class="dim-progress-fill" id="pillarFill_fairness" style="width: 0%;"></div>
-                </div>
-                <div class="dim-footer-info">
-                  <span class="badge info" id="pillarTag_fairness">STANDBY</span>
-                  <span>Disparate Impact &bull; Reweighing</span>
-                </div>
-              </div>
-
-              <!-- Transparency -->
-              <div class="dimension-card" onclick="openDimensionDrawer('transparency')" id="pillarCard_transparency">
-                <div class="dim-header">
-                  <div class="dim-title-group">
-                    <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
-                    <div>
-                      <div class="dim-name">Transparency &amp; Explainability</div>
-                      <div class="dim-anchor">EU Art. 13 &bull; NIST MAP 1.5</div>
-                    </div>
-                  </div>
-                  <div class="dim-score-num" id="pillarScore_transparency">—</div>
-                </div>
-                <div class="dim-progress-track">
-                  <div class="dim-progress-fill" id="pillarFill_transparency" style="width: 0%;"></div>
-                </div>
-                <div class="dim-footer-info">
-                  <span class="badge info" id="pillarTag_transparency">STANDBY</span>
-                  <span>TreeSHAP &bull; Model Cards</span>
-                </div>
-              </div>
-
-              <!-- Privacy -->
-              <div class="dimension-card" onclick="openDimensionDrawer('privacy')" id="pillarCard_privacy">
-                <div class="dim-header">
-                  <div class="dim-title-group">
-                    <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-                    <div>
-                      <div class="dim-name">Privacy &amp; Data Governance</div>
-                      <div class="dim-anchor">EU Art. 10(5) &bull; GDPR Art. 25/32</div>
-                    </div>
-                  </div>
-                  <div class="dim-score-num" id="pillarScore_privacy">—</div>
-                </div>
-                <div class="dim-progress-track">
-                  <div class="dim-progress-fill" id="pillarFill_privacy" style="width: 0%;"></div>
-                </div>
-                <div class="dim-footer-info">
-                  <span class="badge info" id="pillarTag_privacy">STANDBY</span>
-                  <span>AES-256 &bull; Retention Control</span>
-                </div>
-              </div>
-
-              <!-- Oversight -->
-              <div class="dimension-card" onclick="openDimensionDrawer('oversight')" id="pillarCard_oversight">
-                <div class="dim-header">
-                  <div class="dim-title-group">
-                    <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-                    <div>
-                      <div class="dim-name">Human Oversight &amp; Agency</div>
-                      <div class="dim-anchor">EU Art. 14 &bull; NIST GOVERN 1.4</div>
-                    </div>
-                  </div>
-                  <div class="dim-score-num" id="pillarScore_oversight">—</div>
-                </div>
-                <div class="dim-progress-track">
-                  <div class="dim-progress-fill" id="pillarFill_oversight" style="width: 0%;"></div>
-                </div>
-                <div class="dim-footer-info">
-                  <span class="badge info" id="pillarTag_oversight">STANDBY</span>
-                  <span>Mandatory HITL &bull; Kill-Switch</span>
-                </div>
-              </div>
-
-              <!-- Safety -->
-              <div class="dimension-card" onclick="openDimensionDrawer('safety')" id="pillarCard_safety">
-                <div class="dim-header">
-                  <div class="dim-title-group">
-                    <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-                    <div>
-                      <div class="dim-name">Safety &amp; Reliability</div>
-                      <div class="dim-anchor">EU Art. 9 &bull; NIST MANAGE 2.2</div>
-                    </div>
-                  </div>
-                  <div class="dim-score-num" id="pillarScore_safety">—</div>
-                </div>
-                <div class="dim-progress-track">
-                  <div class="dim-progress-fill" id="pillarFill_safety" style="width: 0%;"></div>
-                </div>
-                <div class="dim-footer-info">
-                  <span class="badge info" id="pillarTag_safety">STANDBY</span>
-                  <span>Output Clamping &bull; Boundary Checks</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Top 3 Remediation Preview -->
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Priority Remediation Findings</h3>
-                <p class="card-subtitle">Highest-impact actionable engineering interventions</p>
-              </div>
-              <button class="btn-secondary sm" onclick="showPage('page-remediation')">View All Findings &rarr;</button>
+              <a href="javascript:void(0)" onclick="showPage('page-remediation')" class="badge info" style="text-decoration:none; cursor:pointer;">VIEW FULL ROADMAP &rarr;</a>
             </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Severity</th>
-                    <th>Finding Title</th>
-                    <th>Affected Dimension</th>
+                    <th style="width:110px;">Priority</th>
+                    <th>Deficit Finding</th>
+                    <th>Trust Dimension</th>
                     <th>Recommended Engineering Action</th>
-                    <th>Framework Clause</th>
+                    <th style="width:110px;">Statutory Ref</th>
                   </tr>
                 </thead>
                 <tbody id="overviewRemediationTbody">
                   <tr>
-                    <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No active findings. Execute an audit to dynamically generate remediation roadmap.</td>
+                    <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No active findings. Execute an audit or load a reference profile to dynamically evaluate assurance.</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </section>
 
+          <!-- 7-Pillar Statutory Compliance Crosswalk (EU AI Act Articles 9–15 & NIST AI RMF) -->
+          <section class="card" id="dimensionsCardSection">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">7 Statutory Trust Dimensions &amp; Technical Controls</h3>
+                <p class="card-subtitle">Comprehensive regulatory crosswalk mapping empirical controls to EU AI Act Articles 9–15 and NIST AI RMF 1.0</p>
+              </div>
+              <span class="badge info">7 PILLARS • ISO/IEC 42001</span>
+            </div>
+
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Trust Dimension</th>
+                    <th>EU AI Act Anchor</th>
+                    <th>NIST AI RMF</th>
+                    <th>Mandatory Engineering Controls</th>
+                    <th style="text-align:right;">Score</th>
+                    <th style="text-align:center;">Conformity</th>
+                    <th style="text-align:center;">Inspect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Security & Robustness -->
+                  <tr id="pillarCard_security">
+                    <td><strong>🔒 Security &amp; Robustness</strong></td>
+                    <td><span class="badge success">Art. 15(4)</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MEASURE 2.7</small></td>
+                    <td>Adversarial FGSM/AutoAttack stress testing &bull; SBOM dependency tracking &bull; mTLS API ratelimiting</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_security">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_security">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('security')" title="Inspect Security & Robustness">Inspect</button></td>
+                  </tr>
+                  <!-- Safety & Reliability -->
+                  <tr id="pillarCard_safety">
+                    <td><strong>🛡️ Safety &amp; Reliability</strong></td>
+                    <td><span class="badge success">Art. 9 &bull; Art. 15</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MANAGE 2.2</small></td>
+                    <td>Deterministic output clamping &bull; Input sanitization &bull; Failure-mode simulation bounds</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_safety">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_safety">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('safety')" title="Inspect Safety & Reliability">Inspect</button></td>
+                  </tr>
+                  <!-- Fairness & Non-Discrimination -->
+                  <tr id="pillarCard_fairness">
+                    <td><strong>⚖️ Fairness &amp; Non-Discrimination</strong></td>
+                    <td><span class="badge success">Art. 10(2)</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MAP 1.6</small></td>
+                    <td>Disparate impact ratio (&ge;0.80) &bull; Demographic parity audit &bull; Pre-processing reweighing</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_fairness">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_fairness">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('fairness')" title="Inspect Fairness & Non-Discrimination">Inspect</button></td>
+                  </tr>
+                  <!-- Transparency & Explainability -->
+                  <tr id="pillarCard_transparency">
+                    <td><strong>🔍 Transparency &amp; Explainability</strong></td>
+                    <td><span class="badge success">Art. 13</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MAP 1.5</small></td>
+                    <td>TreeSHAP local feature attribution &bull; Calibrated prediction intervals &bull; Machine-readable Model Cards</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_transparency">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_transparency">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('transparency')" title="Inspect Transparency & Explainability">Inspect</button></td>
+                  </tr>
+                  <!-- Privacy & Data Governance -->
+                  <tr id="pillarCard_privacy">
+                    <td><strong>🔐 Privacy &amp; Data Governance</strong></td>
+                    <td><span class="badge success">Art. 10(5)</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 1.2</small></td>
+                    <td>AES-256 envelope KMS encryption &bull; TLS 1.3 in-transit strict &bull; Automated PII redaction pipeline</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_privacy">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_privacy">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('privacy')" title="Inspect Privacy & Data Governance">Inspect</button></td>
+                  </tr>
+                  <!-- Human Oversight & Agency -->
+                  <tr id="pillarCard_oversight">
+                    <td><strong>👁️ Human Oversight &amp; Agency</strong></td>
+                    <td><span class="badge success">Art. 14</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 1.4</small></td>
+                    <td>Mandatory human-in-the-loop (HITL) gate &bull; Hardware kill-switch interrupt &bull; Operator override protocol</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_oversight">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_oversight">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('oversight')" title="Inspect Human Oversight & Agency">Inspect</button></td>
+                  </tr>
+                  <!-- Accountability & Governance -->
+                  <tr id="pillarCard_accountability">
+                    <td><strong>🏛️ Accountability &amp; Governance</strong></td>
+                    <td><span class="badge success">Art. 9 &bull; Art. 17</span></td>
+                    <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 2.1</small></td>
+                    <td>WORM cryptographic append-only telemetry &bull; Formal QA risk management &bull; Post-market monitoring</td>
+                    <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_accountability">—</td>
+                    <td style="text-align:center;"><span class="badge info" id="pillarTag_accountability">STANDBY</span></td>
+                    <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('accountability')" title="Inspect Accountability & Governance">Inspect</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+
+
         </div>
       </div>
 
       <!-- ============================================================= -->
-      <!-- SCREEN 2: LAUNCH AUDIT                                        -->
+      <!-- SCREEN 2: GOVERNANCE QUESTIONNAIRE                          -->
       <!-- ============================================================= -->
       <div class="page" id="page-setup">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
-              <h2 class="page-header-title">Audit Launchpad</h2>
-              <p class="page-header-subtitle">Execute wire-level Model Context Protocol probes or structured research questionnaire</p>
+              <h2 class="page-header-title">AI Governance &amp; Compliance Questionnaire</h2>
+              <p class="page-header-subtitle">35 research-grounded control questions across 7 trust dimensions mapped to EU AI Act Articles 9–15, NIST AI 100-1, and QB4AIRA</p>
             </div>
           </div>
 
-          <!-- Mode Selection Grid -->
-          <section class="card" id="modeSelectionCard">
-            <div class="card-header">
+          <!-- Quick-Start Reference Presets Toolbar -->
+          <div class="card" style="margin-bottom:16px; background:var(--bg-surface-elevated); padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
               <div>
-                <h3 class="card-title">Step 1: Select Assessment Protocol</h3>
-                <p class="card-subtitle">Choose wire-level runtime introspection (Tier T1) or empirical self-attestation (Tier T3)</p>
+                <h4 style="font-size:14px; font-weight:700; margin:0 0 4px 0;">⚡ Quick-Start Reference Presets</h4>
+                <p style="font-size:12px; color:var(--text-secondary); margin:0;">Load pre-configured research attestations or manually complete the questionnaire below:</p>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk under Annex III)">
+                  🏥 Clinical Diagnostic AI (High-Risk)
+                </button>
+                <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk under Annex III)">
+                  💳 Credit Scoring AI (High-Risk)
+                </button>
+                <button class="btn-secondary sm" onclick="loadPresetProfile('assistant')" title="Load General Purpose AI Assistant (Minimal Risk)">
+                  🤖 General Assistant (Minimal Risk)
+                </button>
+                <button class="btn-secondary sm" onclick="clearWizardAnswers()" title="Clear form answers">
+                  🧹 Clear Answers
+                </button>
               </div>
             </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-              <div class="card" style="cursor:pointer;" onclick="selectMode('mcp')">
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                  <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></div>
-                  <h4 style="font-size:15px; font-weight:700;">Automated MCP Runtime Probing</h4>
-                </div>
-                <p style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin-bottom:12px;">
-                  Connects to live Model Context Protocol server via JSON-RPC. Automatically validates registered tools, boundary clamping, adversarial perturbation resistance, and data encryption.
-                </p>
-                <span class="badge success">Evidence Tier T1 &bull; Weight 1.00 (High Confidence)</span>
-              </div>
-
-              <div class="card" style="cursor:pointer;" onclick="selectMode('questionnaire')">
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                  <div class="dim-icon-box"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-                  <h4 style="font-size:15px; font-weight:700;">Structured Research Questionnaire</h4>
-                </div>
-                <p style="font-size:12px; color:var(--text-secondary); line-height:1.6; margin-bottom:12px;">
-                  Comprehensive 30-item technical attestation questionnaire mapped to QB4AIRA, Pfau &amp; Jung (IEEE TAI 2026), EU AI Act Articles 9–15, and NIST AI RMF 1.0.
-                </p>
-                <span class="badge info">Evidence Tier T3 &bull; Weight 0.60 (Self-Attested)</span>
-              </div>
-            </div>
-          </section>
-
-          <!-- MCP Target Configuration -->
-          <section class="card" id="mcpConnectionCard" style="display:none;">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Step 2: Configure MCP Target Server</h3>
-                <p class="card-subtitle">Select certified benchmark reference target or specify custom live MCP server</p>
-              </div>
-              <button class="btn-secondary sm" onclick="backToModeSelection()">Back</button>
-            </div>
-
-            <!-- Target Selection Mode -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
-              <label class="card" style="margin:0; padding:12px; cursor:pointer; border:1px solid var(--primary-500); display:flex; align-items:center; gap:8px;">
-                <input type="radio" name="mcpAuditType" id="mcpTypeDemo" value="demo" checked onchange="toggleMcpAuditType()">
-                <div>
-                  <strong>Certified Demo Benchmark</strong>
-                  <div style="font-size:11px; color:var(--text-secondary);">Reproducible reference servers in <code>demo_servers/</code></div>
-                </div>
-              </label>
-              <label class="card" style="margin:0; padding:12px; cursor:pointer; border:1px solid var(--border-card); display:flex; align-items:center; gap:8px;">
-                <input type="radio" name="mcpAuditType" id="mcpTypeLive" value="live" onchange="toggleMcpAuditType()">
-                <div>
-                  <strong>Live Custom MCP Process</strong>
-                  <div style="font-size:11px; color:var(--text-secondary);">Direct stdio protocol probing of local agent</div>
-                </div>
-              </label>
-            </div>
-
-            <!-- Demo Form -->
-            <div id="mcpDemoGroup" class="form-group">
-              <label class="form-label" for="mcpProfileSelect">Audit Target Profile:</label>
-              <select id="mcpProfileSelect" class="form-select">
-                <option value="good" selected>AgriTrust-SoilNet-Certified (High-Assurance / Robust / Clamped Output)</option>
-                <option value="moderate">AgriModel-Beta (Moderate Gaps / Missing Adversarial &amp; Encryption)</option>
-                <option value="poor">Uncertified-Predictor (High-Risk / Unclamped Output / Missing Encryption)</option>
-              </select>
-              <small style="color:var(--text-muted); display:block; margin-top:6px;">Runs protocol verification against a certified reference benchmark profile.</small>
-            </div>
-
-            <!-- Live Target Form -->
-            <div id="mcpLiveGroup" style="display:none; margin-bottom:16px;">
-              <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px; margin-bottom:10px;">
-                <div>
-                  <label class="form-label" for="mcpLiveExec">Executable:</label>
-                  <input type="text" id="mcpLiveExec" class="form-input" value="python" placeholder="python">
-                </div>
-                <div>
-                  <label class="form-label" for="mcpLiveScript">Server Script / Args:</label>
-                  <input type="text" id="mcpLiveScript" class="form-input" value="demo_servers/good_server.py" placeholder="path/to/server.py">
-                </div>
-              </div>
-              <label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; margin-top:8px;">
-                <input type="checkbox" id="mcpAuthorizeCheck">
-                <span><strong>Explicit Authorization:</strong> I explicitly authorize AI-GRID to launch and probe this local MCP server process via stdio transport.</span>
-              </label>
-            </div>
-
-            <button class="btn-primary" onclick="connectMcp()">
-              <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span id="mcpSubmitBtnText">Execute Benchmark Probe Audit</span>
-            </button>
-          </section>
+          </div>
 
           <!-- Questionnaire Wizard -->
-          <section class="card" id="wizardCard" style="display:none;">
+          <section class="card" id="wizardCard" style="display:block;">
             <div class="card-header">
               <div>
                 <h3 class="card-title" id="wizardStepTitle">Step 1: System Identity</h3>
                 <p class="card-subtitle" id="wizardStepDesc">System identity and operational domain parameters</p>
               </div>
-              <button class="btn-secondary sm" onclick="backToModeSelection()">Back</button>
             </div>
 
             <div class="wizard-progress-bar">
@@ -661,15 +558,19 @@
               <span class="wizard-step-bubble" data-step="5">5</span>
               <span class="wizard-step-bubble" data-step="6">6</span>
               <span class="wizard-step-bubble" data-step="7">7</span>
+              <span class="wizard-step-bubble" data-step="8">8</span>
             </div>
 
             <div id="wizardBody"></div>
 
             <div style="display:flex; justify-content:space-between; margin-top:20px; padding-top:14px; border-top:1px solid var(--border-card);">
-              <button class="btn-secondary" id="wizardBackBtn" onclick="wizardPrev()" style="display:none;">Previous</button>
+              <button class="btn-secondary" id="wizardBackBtn" onclick="wizardPrev()" style="display:none;">&larr; Previous Step</button>
               <div style="flex:1;"></div>
               <button class="btn-primary" id="wizardNextBtn" onclick="wizardNext()">Next Step &rarr;</button>
-              <button class="btn-primary" id="wizardSubmitBtn" onclick="submitQuestionnaire()" style="display:none;">Compile Assurance Dossier</button>
+              <button class="btn-primary" id="wizardSubmitBtn" onclick="submitQuestionnaire()" style="display:none;">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Compile &amp; Execute AI Governance Audit</span>
+              </button>
             </div>
           </section>
         </div>
@@ -745,92 +646,121 @@
             </div>
           </section>
 
-          <!-- NIST AI RMF Crosswalk -->
-          <section class="card">
+          <!-- NIST AI RMF 1.0 (NIST AI 100-1) Crosswalk -->
+          <section class="card" id="nistRmfSection">
             <div class="card-header">
               <div>
-                <h3 class="card-title">NIST AI Risk Management Framework 1.0 (SP 1270) Crosswalk</h3>
-                <p class="card-subtitle">Core lifecycle functions: GOVERN, MAP, MEASURE, MANAGE</p>
+                <h3 class="card-title">NIST AI Risk Management Framework 1.0 (NIST AI 100-1) Crosswalk</h3>
+                <p class="card-subtitle">Empirical evaluation across core lifecycle functions: GOVERN, MAP, MEASURE, MANAGE &amp; 17 Playbook Subcategories</p>
               </div>
-              <span class="badge info">NIST SP 1270</span>
+              <span class="badge info">NIST AI 100-1</span>
             </div>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;" id="nistGrid">
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">GOVERN</div>
-                <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:2px;" id="nistGovern">—</div>
+
+            <!-- Function Summary Cards Grid -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:16px;" id="nistGrid">
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated); cursor:pointer;" onclick="filterNistByFunction('GOVERN', this)" title="Filter to GOVERN subcategories">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--primary-400); font-family:var(--font-mono);">GOVERN</span>
+                  <span class="badge info" id="nistGovernStatus">STANDBY</span>
+                </div>
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary); margin-top:6px;" id="nistGovern">— / 100</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Policies, Accountability &amp; Oversight</div>
               </div>
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">MAP</div>
-                <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:2px;" id="nistMap">—</div>
+
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated); cursor:pointer;" onclick="filterNistByFunction('MAP', this)" title="Filter to MAP subcategories">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--primary-400); font-family:var(--font-mono);">MAP</span>
+                  <span class="badge info" id="nistMapStatus">STANDBY</span>
+                </div>
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary); margin-top:6px;" id="nistMap">— / 100</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Context, Risk Framing &amp; Boundaries</div>
               </div>
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">MEASURE</div>
-                <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:2px;" id="nistMeasure">—</div>
+
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated); cursor:pointer;" onclick="filterNistByFunction('MEASURE', this)" title="Filter to MEASURE subcategories">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--primary-400); font-family:var(--font-mono);">MEASURE</span>
+                  <span class="badge info" id="nistMeasureStatus">STANDBY</span>
+                </div>
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary); margin-top:6px;" id="nistMeasure">— / 100</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Quantitative &amp; Empirical Assessment</div>
               </div>
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">MANAGE</div>
-                <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:2px;" id="nistManage">—</div>
+
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated); cursor:pointer;" onclick="filterNistByFunction('MANAGE', this)" title="Filter to MANAGE subcategories">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:700; color:var(--primary-400); font-family:var(--font-mono);">MANAGE</span>
+                  <span class="badge info" id="nistManageStatus">STANDBY</span>
+                </div>
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary); margin-top:6px;" id="nistManage">— / 100</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Risk Containment &amp; Incident Response</div>
               </div>
+            </div>
+
+            <!-- Filter Pills -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+              <button class="btn-secondary sm active" id="btnNistAll" onclick="filterNistByFunction('all', this)">All Functions (17)</button>
+              <button class="btn-secondary sm" onclick="filterNistByFunction('GOVERN', this)">GOVERN (4)</button>
+              <button class="btn-secondary sm" onclick="filterNistByFunction('MAP', this)">MAP (4)</button>
+              <button class="btn-secondary sm" onclick="filterNistByFunction('MEASURE', this)">MEASURE (5)</button>
+              <button class="btn-secondary sm" onclick="filterNistByFunction('MANAGE', this)">MANAGE (4)</button>
+            </div>
+
+            <!-- Detailed Subcategory Crosswalk Table -->
+            <div class="table-container">
+              <table class="data-table" id="nistSubcategoriesTable">
+                <thead>
+                  <tr>
+                    <th style="width:130px;">Subcategory ID</th>
+                    <th style="width:110px;">Function</th>
+                    <th>NIST Playbook Requirement &amp; Name</th>
+                    <th style="text-align:right; width:90px;">Score</th>
+                    <th style="text-align:center; width:140px;">Conformity</th>
+                    <th style="text-align:center; width:90px;">Inspect</th>
+                  </tr>
+                </thead>
+                <tbody id="nistSubcategoriesTbody">
+                  <tr>
+                    <td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No compliance data loaded. Run an audit or select a reference profile to evaluate NIST AI RMF conformity.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </section>
         </div>
       </div>
 
+      <!-- SCREEN 4: AUDIT RECORDS & HISTORY                          -->
       <!-- ============================================================= -->
-      <!-- SCREEN 4: ATTESTATION DISCREPANCY (COMPARATIVE ENGINE)        -->
-      <!-- ============================================================= -->
-      <div class="page" id="page-discrepancy">
+      <div class="page" id="page-history">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
-              <h2 class="page-header-title">Attestation Discrepancy Analysis</h2>
-              <p class="page-header-subtitle">Empirical test of Optimism Bias: Self-reported claims (T3) vs Automated protocol probes (T1)</p>
+              <h2 class="page-header-title">Audit Records &amp; History</h2>
+              <p class="page-header-subtitle">Persistent SQLite audit records tracking longitudinal AI governance evaluations</p>
             </div>
-            <button class="btn-primary sm" onclick="runComparativeAudit()">
-              <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              <span>Recalculate Delta</span>
+            <button class="btn-secondary sm" onclick="loadAuditHistory()">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              <span>Refresh Records</span>
             </button>
           </div>
 
-          <div class="kpi-strip">
-            <div class="kpi-card">
-              <div class="kpi-top"><span class="kpi-label">Attestation Discrepancy Index (&Delta;)</span></div>
-              <div class="kpi-value-row"><span class="kpi-num" id="adiVal" style="color:var(--primary-500);">—</span><span class="kpi-denom">pts Delta</span></div>
-              <div class="kpi-footer-note">Developer self-report inflation vs wire probe</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-top"><span class="kpi-label">Bias Significance</span></div>
-              <div class="kpi-value-row"><span class="kpi-num" style="font-size:22px; color:var(--text-secondary);" id="adiSignificance">STANDBY</span></div>
-              <div class="kpi-footer-note">Requires Tier 1 protocol verification</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-top"><span class="kpi-label">Research Hypothesis</span></div>
-              <div class="kpi-value-row"><span class="kpi-num" style="font-size:20px; color:var(--text-primary);">Validates T1 Probing</span></div>
-              <div class="kpi-footer-note">Pfau &amp; Jung (IEEE TAI 2026) ERM</div>
-            </div>
-          </div>
-
           <section class="card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Dimension Comparison Table</h3>
-                <p class="card-subtitle">&Delta; &gt; 0 indicates self-reporting overestimation; &Delta; &le; 0 indicates verified or conservative claims</p>
-              </div>
-            </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Trust Dimension</th>
-                    <th>Self-Attested Score (T3)</th>
-                    <th>Automated Probe Score (T1)</th>
-                    <th>Discrepancy Delta (&Delta;)</th>
-                    <th>Reporting Bias Direction</th>
+                    <th>Audit ID</th>
+                    <th>Timestamp</th>
+                    <th>AI System Name</th>
+                    <th>Operating Domain</th>
+                    <th>AAS Trust Score</th>
+                    <th>Trust Grade</th>
+                    <th>Bottleneck Dimension</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
-                <tbody id="discrepancyTbody">
+                <tbody id="auditHistoryTbody">
                   <tr>
-                    <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">Both Tier T1 (MCP automated probe) and Tier T3 (Questionnaire) data are required to compute attestation discrepancy.</td>
+                    <td colspan="8" style="text-align:center; padding:18px; color:var(--text-muted);">Loading audit history from persistent storage...</td>
                   </tr>
                 </tbody>
               </table>
@@ -840,172 +770,28 @@
       </div>
 
       <!-- ============================================================= -->
-      <!-- SCREEN 5: INTERACTIVE FRAMEWORK MAPPING (HIDDEN)              -->
-      <!-- ============================================================= -->
-      <div class="page" id="page-framework-map" style="display: none !important;">
-        <div class="page-inner">
-          <div class="page-header-row">
-            <div>
-              <h2 class="page-header-title">Interactive Framework Mapping</h2>
-              <p class="page-header-subtitle">Traceable lineage: Target System &rarr; Observed Evidence &rarr; Security Finding &rarr; Framework Clause &rarr; Remediation</p>
-            </div>
-          </div>
-
-          <section class="framework-graph-container">
-            <div class="framework-graph-toolbar">
-              <div>
-                <h3 class="card-title">Traceability Lineage Graph</h3>
-                <p class="card-subtitle">Click any node to highlight upstream evidence and downstream regulatory impact</p>
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button class="btn-secondary sm" onclick="resetFrameworkGraph()">Reset Highlight</button>
-                <button class="btn-secondary sm" onclick="toggleGraphListView()" id="btnGraphListToggle">Switch to List View</button>
-              </div>
-            </div>
-
-            <!-- Visual Flow Nodes -->
-            <div class="framework-nodes-flow" id="frameworkFlowNodes">
-              <div class="graph-node active" onclick="selectGraphNode('system', this)" id="gnode-system">
-                <span class="graph-node-step">1. System</span>
-                <span class="graph-node-label" id="flabel-system">System Target</span>
-              </div>
-              <div class="graph-flow-arrow">&rarr;</div>
-
-              <div class="graph-node" onclick="selectGraphNode('probe', this)" id="gnode-probe">
-                <span class="graph-node-step">2. Audit Mode</span>
-                <span class="graph-node-label" id="flabel-probe">Protocol Mode</span>
-              </div>
-              <div class="graph-flow-arrow">&rarr;</div>
-
-              <div class="graph-node" onclick="selectGraphNode('evidence', this)" id="gnode-evidence">
-                <span class="graph-node-step">3. Evidence</span>
-                <span class="graph-node-label" id="flabel-evidence">Observed Telemetry</span>
-              </div>
-              <div class="graph-flow-arrow">&rarr;</div>
-
-              <div class="graph-node" onclick="selectGraphNode('finding', this)" id="gnode-finding">
-                <span class="graph-node-step">4. Finding</span>
-                <span class="graph-node-label" id="flabel-finding">Vulnerability Analysis</span>
-              </div>
-              <div class="graph-flow-arrow">&rarr;</div>
-
-              <div class="graph-node" onclick="selectGraphNode('dimension', this)" id="gnode-dimension">
-                <span class="graph-node-step">5. Dimension</span>
-                <span class="graph-node-label" id="flabel-dimension">Trust Bottleneck</span>
-              </div>
-              <div class="graph-flow-arrow">&rarr;</div>
-
-              <div class="graph-node" onclick="selectGraphNode('clause', this)" id="gnode-clause">
-                <span class="graph-node-step">6. Regulation</span>
-                <span class="graph-node-label" id="flabel-clause">Framework Clause</span>
-              </div>
-              <div class="graph-flow-arrow">&rarr;</div>
-
-              <div class="graph-node" onclick="selectGraphNode('remediation', this)" id="gnode-remediation">
-                <span class="graph-node-step">7. Fix</span>
-                <span class="graph-node-label" id="flabel-remediation">Engineering Fix</span>
-              </div>
-            </div>
-
-            <!-- Node Detail Info Box -->
-            <div class="card" style="background:var(--bg-surface-elevated);" id="graphNodeDetailBox">
-              <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); text-transform:uppercase;" id="gdetailType">Selected Node: AI System</div>
-              <h4 style="font-size:15px; font-weight:700; color:var(--text-primary); margin:4px 0;" id="gdetailTitle">Awaiting System Audit</h4>
-              <p style="font-size:13px; color:var(--text-secondary); line-height:1.6;" id="gdetailDesc">
-                Lineage mapping connects observed wire-level probes, identified vulnerabilities, empirical trust dimensions, statutory EU AI Act / NIST articles, and actionable engineering remediation. Run an audit to trace lineage.
-              </p>
-              <div style="display:flex; gap:10px; margin-top:10px;">
-                <span class="badge info" id="gdetailBadge">Traceability Lineage</span>
-                <span class="badge info" id="gdetailStatus">Standby</span>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      <!-- ============================================================= -->
-      <!-- SCREEN 6: BENCHMARK DATASETS (ANALYTICAL LAB - HIDDEN)       -->
-      <!-- ============================================================= -->
-      <div class="page" id="page-datasets" style="display: none !important;">
-        <div class="page-inner">
-          <div class="page-header-row">
-            <div>
-              <h2 class="page-header-title">Empirical Benchmark Datasets</h2>
-              <p class="page-header-subtitle">Real-world empirical corpora powering algorithmic fairness, clinical safety, and AI supply chain scanning</p>
-            </div>
-          </div>
-
-          <!-- 3 Dataset Overview Cards -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
-            <div class="card" style="cursor:pointer;" onclick="selectDatasetTab('german_credit')">
-              <h4 style="font-size:14px; font-weight:700; margin-bottom:4px;">UCI Statlog German Credit</h4>
-              <p style="font-size:12px; color:var(--text-secondary); line-height:1.5;">1,002 rows, 10 attributes. Protected classes: Gender, Age. Evaluates Disparate Impact Ratio and Calders Reweighing.</p>
-              <div style="margin-top:10px;"><span class="badge info">DIR: 0.896 &bull; SPD: -0.075</span></div>
-            </div>
-
-            <div class="card" style="cursor:pointer;" onclick="selectDatasetTab('clinical_safety')">
-              <h4 style="font-size:14px; font-weight:700; margin-bottom:4px;">Clinical Patient Safety Cohort</h4>
-              <p style="font-size:12px; color:var(--text-secondary); line-height:1.5;">299 clinical records, 13 vitals. Evaluates corrupted input rejection and output dosage clamping rate.</p>
-              <div style="margin-top:10px;"><span class="badge success">100% Corruption Rejection</span></div>
-            </div>
-
-            <div class="card" style="cursor:pointer;" onclick="selectDatasetTab('cve_registry')">
-              <h4 style="font-size:14px; font-weight:700; margin-bottom:4px;">AI Framework CVE &amp; EPSS Registry</h4>
-              <p style="font-size:12px; color:var(--text-secondary); line-height:1.5;">50 verified CVEs across PyTorch, LangChain, Transformers. Compound Risk = CVSS &times; EPSS &times; Criticality.</p>
-              <div style="margin-top:10px;"><span class="badge warning">50 Indexed &bull; 0 Active</span></div>
-            </div>
-          </div>
-
-          <!-- Dataset Live Inspector -->
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Live Empirical Data Inspector</h3>
-                <p class="card-subtitle">Real records extracted and parsed directly from disk</p>
-              </div>
-              <div style="display:flex; gap:6px;">
-                <button class="btn-secondary sm" id="dtab_german_credit" onclick="selectDatasetTab('german_credit')">German Credit</button>
-                <button class="btn-secondary sm" id="dtab_clinical_safety" onclick="selectDatasetTab('clinical_safety')">Clinical Safety</button>
-                <button class="btn-secondary sm" id="dtab_cve_registry" onclick="selectDatasetTab('cve_registry')">AI Supply-Chain CVEs</button>
-              </div>
-            </div>
-
-            <!-- Stats Strip -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:14px;" id="datasetStatsStrip"></div>
-
-            <!-- Table Preview -->
-            <div class="table-container">
-              <table class="data-table" id="datasetPreviewTable">
-                <thead id="datasetPreviewThead"></thead>
-                <tbody id="datasetPreviewTbody"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      <!-- ============================================================= -->
-      <!-- SCREEN 7: RESEARCH QUESTION BANK (30 SCORED ITEMS)            -->
+      <!-- SCREEN 5: RESEARCH QUESTION BANK (30 SCORED ITEMS)            -->
       <!-- ============================================================= -->
       <div class="page" id="page-question-bank">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
               <h2 class="page-header-title">Research-Grounded Question Bank</h2>
-              <p class="page-header-subtitle">30 scored items grounded in QB4AIRA, Pfau &amp; Jung (IEEE TAI 2026), EU AI Act 9–15, and NIST RMF</p>
+              <p class="page-header-subtitle">35 scored items grounded in QB4AIRA, EU AI Act Articles 9–15, and NIST AI 100-1</p>
             </div>
           </div>
 
           <section class="card">
             <!-- Filter Pills -->
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
-              <button class="btn-secondary sm" onclick="filterQuestionByDim('all', this)">All (30)</button>
+              <button class="btn-secondary sm" onclick="filterQuestionByDim('all', this)">All (35)</button>
               <button class="btn-secondary sm" onclick="filterQuestionByDim('Security', this)">Security (5)</button>
+              <button class="btn-secondary sm" onclick="filterQuestionByDim('Safety', this)">Safety (5)</button>
               <button class="btn-secondary sm" onclick="filterQuestionByDim('Fairness', this)">Fairness (5)</button>
               <button class="btn-secondary sm" onclick="filterQuestionByDim('Transparency', this)">Transparency (5)</button>
               <button class="btn-secondary sm" onclick="filterQuestionByDim('Privacy', this)">Privacy (5)</button>
-              <button class="btn-secondary sm" onclick="filterQuestionByDim('Human Oversight', this)">Oversight (5)</button>
-              <button class="btn-secondary sm" onclick="filterQuestionByDim('Safety', this)">Safety (5)</button>
+              <button class="btn-secondary sm" onclick="filterQuestionByDim('Human Oversight', this)">Human Oversight (5)</button>
+              <button class="btn-secondary sm" onclick="filterQuestionByDim('Accountability', this)">Accountability (5)</button>
             </div>
 
             <!-- Search input -->
@@ -1041,7 +827,7 @@
           <div class="page-header-row">
             <div>
               <h2 class="page-header-title">Governance Remediation Roadmap</h2>
-              <p class="page-header-subtitle">Prioritized interventions to eliminate the identified bottleneck ($D_{\min}$) and achieve certification</p>
+              <p class="page-header-subtitle">Prioritized interventions to eliminate the identified bottleneck ($D_{\min}$) and achieve compliance</p>
             </div>
           </div>
 
@@ -1109,61 +895,9 @@
         </div>
       </div>
 
-      <!-- ============================================================= -->
-      <!-- SCREEN 10: WHAT-IF SCENARIO RISK SIMULATOR                    -->
-      <!-- ============================================================= -->
-      <div class="page" id="page-simulation">
-        <div class="page-inner">
-          <div class="page-header-row">
-            <div>
-              <h2 class="page-header-title">What-If Scenario Risk Simulator</h2>
-              <p class="page-header-subtitle">Stress-test systemic risk degradation under user concurrency and cross-domain operational transfer</p>
-            </div>
-          </div>
-
-          <section class="card">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-              <div class="form-group">
-                <label class="form-label" for="simDomainSelect">Target Deployment Domain:</label>
-                <select id="simDomainSelect" class="form-select" onchange="runSimulation()">
-                  <option value="Healthcare / Medical">Healthcare / Medical Diagnostics (1.5&times; Exposure)</option>
-                  <option value="Finance / Banking">Finance / Credit Scoring (1.3&times; Exposure)</option>
-                  <option value="Autonomous Vehicles / Robotics">Autonomous Vehicles / Robotics (1.5&times; Exposure)</option>
-                  <option value="Commercial Agriculture">Commercial Agriculture (1.2&times; Exposure)</option>
-                  <option value="Cybersecurity / Critical Infrastructure">Cybersecurity / Critical Infrastructure (1.4&times; Exposure)</option>
-                  <option value="General Purpose AI" selected>General Purpose AI (1.0&times; Exposure)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="simUserSlider">Concurrency Scale: <span id="userCountLabel" style="color:var(--primary-500); font-family:var(--font-mono);">50,000</span> Users</label>
-                <input type="range" id="simUserSlider" min="500" max="1000000" step="5000" value="50000" oninput="updateUserScale(this.value)" class="erm-slider-input" style="margin-top:8px;">
-              </div>
-            </div>
-
-            <div class="kpi-strip">
-              <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-label">Simulated AAS Score</span></div>
-                <div class="kpi-value-row"><span class="kpi-num" id="simScore">—</span><span class="kpi-denom">/ 100</span></div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-label">Projected Annual Incidents</span></div>
-                <div class="kpi-value-row"><span class="kpi-num" id="simIncidents" style="color:var(--warning);">—</span><span class="kpi-denom">/ year</span></div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-top"><span class="kpi-label">Financial Liability Exposure</span></div>
-                <div class="kpi-value-row"><span class="kpi-num" id="simLiability" style="color:var(--critical);">—</span><span class="kpi-denom">USD</span></div>
-              </div>
-            </div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:10px;">
-              Note: Projected incident rates and liability figures represent illustrative stress scenarios derived from user scale multipliers.
-            </div>
-          </section>
-        </div>
-      </div>
-
       <!-- FOOTER -->
       <footer style="padding:16px 24px; border-top:1px solid var(--border-card); font-size:12px; color:var(--text-secondary); text-align:center; margin-top:auto;">
-        AI-GRID Enterprise v3.2 &bull; Grounded in QB4AIRA (2024), Pfau &amp; Jung (IEEE TAI 2026), EU AI Act (2024/1689), NIST AI RMF 1.0, and Model Context Protocol.
+        AI-GRID Enterprise v4.0 &bull; Grounded in QB4AIRA (2024), EU AI Act Regulation (EU) 2024/1689, NIST AI 100-1, and 6 Empirical Trust Dimensions.
       </footer>
     </div>
   </div>

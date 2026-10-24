@@ -500,12 +500,12 @@ QUESTIONS: List[Dict[str, Any]] = [
     },
 
     # -------------------------------------------------------------
-    # Step 6: Dimension 5 — Human Oversight & Accountability (Q21 - Q25)
+    # Step 6: Dimension 5 — Human Oversight & Agency (Q21 - Q25)
     # -------------------------------------------------------------
     {
         "id": "q21_human_oversight",
         "step": 6,
-        "step_title": "Human Oversight & Accountability",
+        "step_title": "Human Oversight & Agency",
         "label": "Q21: Is human oversight mandatory before AI decisions are actuated in production?",
         "type": "select",
         "options": [
@@ -514,7 +514,7 @@ QUESTIONS: List[Dict[str, Any]] = [
             {"value": "none", "label": "Zero Oversight: Fully autonomous execution without human review interface", "score": 0.0}
         ],
         "required": True,
-        "dimension": "Human Oversight & Accountability",
+        "dimension": "Human Oversight & Agency",
         "research_source": "QB4AIRA §Accountability; Dhanorkar et al. (ACM FAccT 2026)",
         "eu_ai_act_ref": "Art. 14(1)",
         "nist_rmf_ref": "GOVERN 1.4",
@@ -524,7 +524,7 @@ QUESTIONS: List[Dict[str, Any]] = [
     {
         "id": "q22_autonomy_level",
         "step": 6,
-        "step_title": "Human Oversight & Accountability",
+        "step_title": "Human Oversight & Agency",
         "label": "Q22: What autonomy classification characterizes this AI's operational mode?",
         "type": "select",
         "options": [
@@ -533,7 +533,7 @@ QUESTIONS: List[Dict[str, Any]] = [
             {"value": "fully_autonomous", "label": "Fully Autonomous: AI initiates and completes irreversible workflows alone", "score": 0.1}
         ],
         "required": True,
-        "dimension": "Human Oversight & Accountability",
+        "dimension": "Human Oversight & Agency",
         "research_source": "Pfau & Jung (IEEE TAI 2026) §Human Agency; EU AI Act Art. 14(4)",
         "eu_ai_act_ref": "Art. 14(4)",
         "nist_rmf_ref": "GOVERN 1.4",
@@ -541,29 +541,10 @@ QUESTIONS: List[Dict[str, Any]] = [
         "mitre_atlas_ref": "AML.T0054"
     },
     {
-        "id": "q23_incident_escalation",
-        "step": 6,
-        "step_title": "Human Oversight & Accountability",
-        "label": "Q23: Is there a documented incident escalation and anomaly triage protocol?",
-        "type": "select",
-        "options": [
-            {"value": "formal_escalation", "label": "Documented 24/7 on-call escalation protocol with defined SLAs and incident commander", "score": 1.0},
-            {"value": "informal_slack", "label": "Ad-hoc developer alerting (email/Slack) without guaranteed response SLA", "score": 0.5},
-            {"value": "none", "label": "None: No defined incident triage or failure escalation pathway", "score": 0.0}
-        ],
-        "required": True,
-        "dimension": "Human Oversight & Accountability",
-        "research_source": "ISO/IEC 42001 §A.8; QB4AIRA §Accountability",
-        "eu_ai_act_ref": "Art. 9(9)",
-        "nist_rmf_ref": "MANAGE 4.1",
-        "owasp_ref": "OWASP MCP06",
-        "mitre_atlas_ref": "AML.T0054"
-    },
-    {
         "id": "q24_kill_switch",
         "step": 6,
-        "step_title": "Human Oversight & Accountability",
-        "label": "Q24: Does an authorized human operator possess an immediate emergency kill-switch?",
+        "step_title": "Human Oversight & Agency",
+        "label": "Q23: Does an authorized human operator possess an immediate emergency kill-switch?",
         "type": "select",
         "options": [
             {"value": "instant_killswitch", "label": "Instant hardware/software kill-switch: Safely suspends AI execution within seconds", "score": 1.0},
@@ -571,7 +552,7 @@ QUESTIONS: List[Dict[str, Any]] = [
             {"value": "none", "label": "None: Cannot interrupt running workflows without tearing down primary service", "score": 0.0}
         ],
         "required": True,
-        "dimension": "Human Oversight & Accountability",
+        "dimension": "Human Oversight & Agency",
         "research_source": "Pfau & Jung (IEEE TAI 2026) §Human Agency; Dhanorkar et al. (2026)",
         "eu_ai_act_ref": "Art. 14(4)(e)",
         "nist_rmf_ref": "GOVERN 1.4",
@@ -579,10 +560,71 @@ QUESTIONS: List[Dict[str, Any]] = [
         "mitre_atlas_ref": "AML.T0054"
     },
     {
-        "id": "q25_decision_logging",
+        "id": "q24b_operator_training",
         "step": 6,
-        "step_title": "Human Oversight & Accountability",
-        "label": "Q25: Are all AI inputs, prompts, weights, and decisions logged in tamper-evident audit trails?",
+        "step_title": "Human Oversight & Agency",
+        "label": "Q24: Have human overseers received verified training on system operational boundaries?",
+        "type": "select",
+        "options": [
+            {"value": "certified_training", "label": "Certified Training: Mandatory role-based competency certification and boundary drills", "score": 1.0},
+            {"value": "basic_briefing", "label": "Informal: Product walkthrough briefing or standard operating procedure document", "score": 0.5},
+            {"value": "none", "label": "None: No formal training on automation bias or error detection provided", "score": 0.0}
+        ],
+        "required": True,
+        "dimension": "Human Oversight & Agency",
+        "research_source": "EU AI Act Art. 14(2); NIST AI RMF GOVERN 2.2",
+        "eu_ai_act_ref": "Art. 14(2)",
+        "nist_rmf_ref": "GOVERN 2.2",
+        "owasp_ref": "OWASP LLM08",
+        "mitre_atlas_ref": "AML.T0054"
+    },
+    {
+        "id": "q24c_override_capability",
+        "step": 6,
+        "step_title": "Human Oversight & Agency",
+        "label": "Q25: Can operators intervene, override, or reverse AI decisions in real time?",
+        "type": "select",
+        "options": [
+            {"value": "instant_override", "label": "Real-time Override: Dedicated operator console can instantly reverse decisions", "score": 1.0},
+            {"value": "post_hoc_ticket", "label": "Post-hoc Review: Decisions can be flagged for support review within business hours", "score": 0.5},
+            {"value": "irreversible", "label": "Irreversible: Decisions execute automatically without manual override hook", "score": 0.0}
+        ],
+        "required": True,
+        "dimension": "Human Oversight & Agency",
+        "research_source": "EU AI Act Art. 14(4)(a); IEEE TAI 2026 §Human Agency",
+        "eu_ai_act_ref": "Art. 14(4)(a)",
+        "nist_rmf_ref": "GOVERN 1.4",
+        "owasp_ref": "OWASP LLM08",
+        "mitre_atlas_ref": "AML.T0054"
+    },
+
+    # -------------------------------------------------------------
+    # Step 7: Dimension 6 — Accountability & Governance (Q26 - Q30)
+    # -------------------------------------------------------------
+    {
+        "id": "q23_incident_escalation",
+        "step": 7,
+        "step_title": "Accountability & Governance",
+        "label": "Q26: Is there a documented incident escalation and anomaly triage protocol?",
+        "type": "select",
+        "options": [
+            {"value": "formal_escalation", "label": "Documented 24/7 on-call escalation protocol with defined SLAs and incident commander", "score": 1.0},
+            {"value": "informal_slack", "label": "Ad-hoc developer alerting (email/Slack) without guaranteed response SLA", "score": 0.5},
+            {"value": "none", "label": "None: No defined incident triage or failure escalation pathway", "score": 0.0}
+        ],
+        "required": True,
+        "dimension": "Accountability & Governance",
+        "research_source": "ISO/IEC 42001 §A.8; QB4AIRA §Accountability",
+        "eu_ai_act_ref": "Art. 9(9)",
+        "nist_rmf_ref": "MANAGE 4.1",
+        "owasp_ref": "OWASP MCP06",
+        "mitre_atlas_ref": "AML.T0054"
+    },
+    {
+        "id": "q25_decision_logging",
+        "step": 7,
+        "step_title": "Accountability & Governance",
+        "label": "Q27: Are all AI inputs, prompts, weights, and decisions logged in tamper-evident audit trails?",
         "type": "select",
         "options": [
             {"value": "append_only_signed", "label": "Cryptographically signed append-only logs with WORM storage (Art. 12 compliant)", "score": 1.0},
@@ -590,22 +632,79 @@ QUESTIONS: List[Dict[str, Any]] = [
             {"value": "none", "label": "None: Ephemeral logging or decisions discarded immediately after response", "score": 0.0}
         ],
         "required": True,
-        "dimension": "Human Oversight & Accountability",
+        "dimension": "Accountability & Governance",
         "research_source": "QB4AIRA §Accountability; EU AI Act Article 12 Automatic Logging",
         "eu_ai_act_ref": "Art. 12(1)",
         "nist_rmf_ref": "MEASURE 2.5",
         "owasp_ref": "OWASP LLM08",
         "mitre_atlas_ref": "AML.T0054"
     },
+    {
+        "id": "q25b_technical_dossier",
+        "step": 7,
+        "step_title": "Accountability & Governance",
+        "label": "Q28: Is a comprehensive EU AI Act Annex IV Technical Documentation dossier maintained?",
+        "type": "select",
+        "options": [
+            {"value": "full_annex_iv", "label": "Full Annex IV: Version-controlled technical dossier with architecture, training data & validation", "score": 1.0},
+            {"value": "partial_docs", "label": "Partial: Standard software engineering documentation without statutory Annex IV sections", "score": 0.5},
+            {"value": "none", "label": "None: Undocumented system architecture and missing regulatory records", "score": 0.0}
+        ],
+        "required": True,
+        "dimension": "Accountability & Governance",
+        "research_source": "EU AI Act Article 11 & Annex IV; ISO/IEC 42001 §A.9",
+        "eu_ai_act_ref": "Art. 11",
+        "nist_rmf_ref": "GOVERN 1.5",
+        "owasp_ref": "OWASP LLM05",
+        "mitre_atlas_ref": "AML.T0054"
+    },
+    {
+        "id": "q25c_post_market_monitoring",
+        "step": 7,
+        "step_title": "Accountability & Governance",
+        "label": "Q29: Is there a systematic post-market monitoring plan and regulatory authority reporting workflow?",
+        "type": "select",
+        "options": [
+            {"value": "active_monitoring", "label": "Active Plan: Continuous post-market telemetry with automated serious incident alerting per Art. 72", "score": 1.0},
+            {"value": "reactive_support", "label": "Reactive: Customer ticket intake without formal regulatory incident reporting SLAs", "score": 0.5},
+            {"value": "none", "label": "None: No post-market monitoring or incident disclosure protocol", "score": 0.0}
+        ],
+        "required": True,
+        "dimension": "Accountability & Governance",
+        "research_source": "EU AI Act Article 72; NIST AI RMF MANAGE 4.3",
+        "eu_ai_act_ref": "Art. 72",
+        "nist_rmf_ref": "MANAGE 4.3",
+        "owasp_ref": "OWASP LLM08",
+        "mitre_atlas_ref": "AML.T0054"
+    },
+    {
+        "id": "q25d_governance_charter",
+        "step": 7,
+        "step_title": "Accountability & Governance",
+        "label": "Q30: Has an executive AI Governance Charter designated responsible compliance stewards?",
+        "type": "select",
+        "options": [
+            {"value": "formal_charter", "label": "Formal Charter: Designated AI Ethics Board, Chief AI Safety Officer, and line-of-business owners", "score": 1.0},
+            {"value": "ad_hoc_committee", "label": "Ad-hoc committee without formal executive veto power or defined accountability lines", "score": 0.5},
+            {"value": "none", "label": "None: No designated AI governance owner or organizational accountability structure", "score": 0.0}
+        ],
+        "required": True,
+        "dimension": "Accountability & Governance",
+        "research_source": "ISO/IEC 42001:2023 §5 Leadership; NIST AI RMF GOVERN 1.1",
+        "eu_ai_act_ref": "Art. 9(1)",
+        "nist_rmf_ref": "GOVERN 1.1",
+        "owasp_ref": "OWASP LLM08",
+        "mitre_atlas_ref": "AML.T0054"
+    },
 
     # -------------------------------------------------------------
-    # Step 7: Dimension 6 — Safety & Reliability (Q26 - Q30)
+    # Step 8: Dimension 7 — Safety & Reliability (Q31 - Q35)
     # -------------------------------------------------------------
     {
         "id": "q26_input_validation",
-        "step": 7,
+        "step": 8,
         "step_title": "Safety & Reliability",
-        "label": "Q26: Does the model validate and reject corrupted, malformed, or out-of-range inputs?",
+        "label": "Q31: Does the model validate and reject corrupted, malformed, or out-of-range inputs?",
         "type": "select",
         "options": [
             {"value": "comprehensive_rejection", "label": "Comprehensive: Strict Pydantic/JSON-schema validation, range clamps & corrupted data rejection", "score": 1.0},
@@ -622,9 +721,9 @@ QUESTIONS: List[Dict[str, Any]] = [
     },
     {
         "id": "q27_guardrail_count",
-        "step": 7,
+        "step": 8,
         "step_title": "Safety & Reliability",
-        "label": "Q27: How many independent safety guardrails are operational in the pipeline?",
+        "label": "Q32: How many independent safety guardrails are operational in the pipeline?",
         "type": "select",
         "options": [
             {"value": "3plus", "label": ">= 3 Guardrails: Input schema validator + Output range clamp + Anomaly detector", "score": 1.0},
@@ -641,9 +740,9 @@ QUESTIONS: List[Dict[str, Any]] = [
     },
     {
         "id": "q28_output_clamping",
-        "step": 7,
+        "step": 8,
         "step_title": "Safety & Reliability",
-        "label": "Q28: Does the system enforce deterministic safety clamping on dangerous output bounds?",
+        "label": "Q33: Does the system enforce deterministic safety clamping on dangerous output bounds?",
         "type": "select",
         "options": [
             {"value": "hard_clamping", "label": "Hard Clamping: Strict programmatic limits enforce legal/physical boundaries on outputs", "score": 1.0},
@@ -660,9 +759,9 @@ QUESTIONS: List[Dict[str, Any]] = [
     },
     {
         "id": "q29_contextual_advisory",
-        "step": 7,
+        "step": 8,
         "step_title": "Safety & Reliability",
-        "label": "Q29: Does the system emit contextual or environmental safety advisories alongside predictions?",
+        "label": "Q34: Does the system emit contextual or environmental safety advisories alongside predictions?",
         "type": "select",
         "options": [
             {"value": "yes_dynamic", "label": "Yes: Dynamic warnings generated based on real-world environment/safety context", "score": 1.0},
@@ -679,9 +778,9 @@ QUESTIONS: List[Dict[str, Any]] = [
     },
     {
         "id": "q30_failure_mode_testing",
-        "step": 7,
+        "step": 8,
         "step_title": "Safety & Reliability",
-        "label": "Q30: Has the system been validated against documented edge cases and known failure modes?",
+        "label": "Q35: Has the system been validated against documented edge cases and known failure modes?",
         "type": "select",
         "options": [
             {"value": "formal_failure_suite", "label": "Formal Test Suite: Regression suite covering 100% of cataloged failure modes & edge cases", "score": 1.0},
@@ -714,11 +813,12 @@ DOMAIN_LABELS = {
 
 DIMENSIONS_LIST = [
     "Security & Robustness",
+    "Safety & Reliability",
     "Fairness & Non-Discrimination",
     "Transparency & Explainability",
     "Privacy & Data Governance",
-    "Human Oversight & Accountability",
-    "Safety & Reliability"
+    "Human Oversight & Agency",
+    "Accountability & Governance",
 ]
 
 
@@ -764,15 +864,22 @@ def calculate_dimension_scores(answers: Dict[str, Any],
     for q_id, q_def in q_map.items():
         dim = q_def["dimension"]
         user_val = answers.get(q_id)
+        if user_val is None:
+            # Unanswered question: do NOT count as 0.5 default
+            continue
 
-        # Find option score
-        opt_score = 0.5  # default neutral
-        opt_label = ""
+        matched_opt = None
         for opt in q_def.get("options", []):
             if opt["value"] == user_val:
-                opt_score = float(opt.get("score", 0.5))
-                opt_label = opt.get("label", "")
+                matched_opt = opt
                 break
+
+        if matched_opt is None:
+            # Invalid/unrecognized value: do NOT count as 0.5 default
+            continue
+
+        opt_score = float(matched_opt.get("score", 0.0))
+        opt_label = matched_opt.get("label", "")
 
         dim_totals[dim] += (opt_score * 100.0)
         dim_counts[dim] += 1
@@ -798,23 +905,65 @@ def calculate_dimension_scores(answers: Dict[str, Any],
             )
 
     # Compute normalized dimension scores
-    dimension_scores = {}
+    dimension_scores: Dict[str, Optional[float]] = {}
     for dim in DIMENSIONS_LIST:
-        raw_avg = dim_totals[dim] / max(dim_counts[dim], 1)
-        dimension_scores[dim] = round(raw_avg, 1)
+        if dim_counts[dim] == 0:
+            dimension_scores[dim] = None
+        else:
+            raw_avg = dim_totals[dim] / dim_counts[dim]
+            dimension_scores[dim] = round(raw_avg, 1)
+
+    # Provide backward-compatibility for legacy callers expecting composite dimension
+    s_over = dimension_scores.get("Human Oversight & Agency")
+    s_acct = dimension_scores.get("Accountability & Governance")
+    if s_over is not None and s_acct is not None:
+        dimension_scores["Human Oversight & Accountability"] = round((s_over + s_acct) / 2.0, 1)
+    elif s_over is not None:
+        dimension_scores["Human Oversight & Accountability"] = s_over
+    elif s_acct is not None:
+        dimension_scores["Human Oversight & Accountability"] = s_acct
 
     return dimension_scores, findings, logs
 
 
-def compute_aas_and_bottleneck(dimensions: Dict[str, float], alpha: float = 0.6) -> Dict[str, Any]:
+def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: float = 0.6) -> Dict[str, Any]:
     """
-    Computes Bottleneck-Penalized Trust Score (AAS) via Empirical Risk Minimization:
+    Computes Bottleneck-Penalized Trust Score (AAS) via bottleneck-penalised aggregate:
     AAS = alpha * mean(S) + (1 - alpha) * min(S)
+    Dimensions with score=None are excluded from mean and min.
+    Withholds AAS if fewer than 4 dimensions have evidence.
     """
-    dim_values = list(dimensions.values())
-    weighted_average = sum(dim_values) / len(dim_values) if dim_values else 50.0
-    bottleneck_score = min(dim_values) if dim_values else 50.0
-    bottleneck_dimension = [k for k, v in dimensions.items() if v == bottleneck_score][0] if dim_values else "Unknown"
+    canonical_7 = [
+        "Security & Robustness",
+        "Safety & Reliability",
+        "Fairness & Non-Discrimination",
+        "Transparency & Explainability",
+        "Privacy & Data Governance",
+        "Human Oversight & Agency",
+        "Accountability & Governance",
+    ]
+    has_7 = any(k in dimensions for k in ("Human Oversight & Agency", "Accountability & Governance"))
+    if has_7:
+        eval_dims = {k: v for k, v in dimensions.items() if k in canonical_7 and v is not None}
+    else:
+        eval_dims = {k: v for k, v in dimensions.items() if v is not None}
+
+    valid_scores = list(eval_dims.values())
+    if len(valid_scores) < 4:
+        return {
+            "aas_score": None,
+            "weighted_average": round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else None,
+            "bottleneck_score": min(valid_scores) if valid_scores else None,
+            "bottleneck_dimension": next((k for k, v in eval_dims.items() if v == min(valid_scores)), None) if valid_scores else "Unknown",
+            "trust_grade": "INSUFFICIENT_EVIDENCE",
+            "alpha_parameter": alpha,
+            "sensitivity_curve": [],
+            "status": "INSUFFICIENT_EVIDENCE",
+        }
+
+    weighted_average = sum(valid_scores) / len(valid_scores)
+    bottleneck_score = min(valid_scores)
+    bottleneck_dimension = next(k for k, v in eval_dims.items() if v == bottleneck_score)
 
     aas = round((alpha * weighted_average) + ((1.0 - alpha) * bottleneck_score), 1)
 
@@ -832,7 +981,7 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, float], alpha: float = 0.6)
         sensitivity_curve.append({
             "alpha": round(a_val, 1),
             "score": score_at_a,
-            "interpretation": "High Bottleneck Penalty" if a_val <= 0.3 else ("Balanced ERM" if a_val <= 0.7 else "Mean-Dominant")
+            "interpretation": "High Bottleneck Penalty" if a_val <= 0.3 else ("Balanced (bottleneck-penalised aggregate)" if a_val <= 0.7 else "Mean-Dominant")
         })
 
     return {
@@ -842,7 +991,8 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, float], alpha: float = 0.6)
         "bottleneck_dimension": bottleneck_dimension,
         "trust_grade": grade,
         "alpha_parameter": alpha,
-        "sensitivity_curve": sensitivity_curve
+        "sensitivity_curve": sensitivity_curve,
+        "status": "COMPUTED",
     }
 
 
@@ -872,11 +1022,11 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
     dimensions, findings, audit_logs = calculate_dimension_scores(answers, evidence_tier=evidence_tier)
     log("EVALUATION", f"Computed 6 dimension scores across 30 research-grounded question items.", "SUCCESS")
 
-    # Phase 2: Compute ERM Bottleneck AAS
+    # Phase 2: Compute Bottleneck AAS
     scoring = compute_aas_and_bottleneck(dimensions, alpha=0.6)
     aas = scoring["aas_score"]
     grade = scoring["trust_grade"]
-    log("SCORING", f"Bottleneck ERM AAS Score: {aas}/100 (Grade: {grade}) | Bottleneck: '{scoring['bottleneck_dimension']}' ({scoring['bottleneck_score']})", "SUCCESS")
+    log("SCORING", f"Bottleneck AAS Score: {aas}/100 (Grade: {grade}) | Bottleneck: '{scoring['bottleneck_dimension']}' ({scoring['bottleneck_score']})", "SUCCESS")
 
     # Phase 3: Regulatory Compliance (EU AI Act & NIST AI RMF)
     eu_compliance = evaluate_eu_ai_act_compliance(
@@ -894,7 +1044,7 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
     threat_crosswalk = map_owasp_and_atlas(findings=findings, dimensions=dimensions)
 
     # Phase 5: Empirical Benchmark Engines
-    fairness_metrics = compute_fairness_metrics(answers=answers, fairness_score=dimensions["Fairness & Non-Discrimination"])
+    fairness_metrics = compute_fairness_metrics(answers=answers, fairness_score=dimensions.get("Fairness & Non-Discrimination"))
     risk_cohorts = analyze_risk_cohorts(dimensions=dimensions, findings=findings, metadata={"domain": domain_label})
     counterfactual = solve_remediation_priority(current_aas=aas, dimensions=dimensions, findings=findings, target_score=76.0)
     vulnerability_scan = scan_ai_vulnerabilities(domain=domain_label)
@@ -932,7 +1082,8 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
                 "conformant_articles": eu_compliance["article_level_conformance"]["conformant_articles"],
                 "articles": eu_compliance["article_level_conformance"]["articles"]
             },
-            "nist_ai_rmf": nist_compliance["functions"]
+            "nist_ai_rmf": nist_compliance["functions"],
+            "nist_rmf": nist_compliance["functions"]
         },
         "threat_landscape": {
             "owasp_llm_top_10": threat_crosswalk["owasp_llm_top_10"],
@@ -952,6 +1103,7 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
         "audit_mode": "questionnaire",
         "aif360": fairness_metrics,
         "cohort_analysis": risk_cohorts,
+        "remediation_priority": counterfactual,
         "prescriptive_counterfactual": counterfactual,
         "vulnerability_scan": vulnerability_scan
     }

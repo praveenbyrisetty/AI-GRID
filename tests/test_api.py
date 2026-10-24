@@ -1,10 +1,12 @@
 """
 Integration Tests for AI-GRID REST API & Endpoints (v4.0)
+Questionnaire-Based AI Governance & Compliance Auditing Platform
 """
 
 import json
 import pytest
 from server import app
+import server
 
 
 @pytest.fixture
@@ -14,15 +16,19 @@ def client():
         yield client
 
 
+@pytest.fixture
+def auth_headers():
+    return {"X-API-Key": server.API_KEY}
+
+
 def test_api_status(client):
-    """Verify /api/status returns 200, version 4.0.0, 6 dimensions, and legal disclaimer."""
+    """Verify /api/status returns 200, version 4.0.0, 7 dimensions, and legal disclaimer."""
     resp = client.get("/api/status")
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["version"] == "4.0.0"
-    assert data["dimensions"] == 6
+    assert data["dimensions"] == 7
     assert "evidence_tiers" in data
-    assert "T1" in data["evidence_tiers"]
     assert "disclaimer" in data
 
 
@@ -44,14 +50,6 @@ def test_api_questions(client):
     assert data["data"]["total_questions"] >= 30
 
 
-import server
-
-
-@pytest.fixture
-def auth_headers():
-    return {"X-API-Key": server.API_KEY}
-
-
 def test_api_questionnaire_audit(client, auth_headers):
     """Verify /api/audit/questionnaire accepts valid answers with API key and persists to SQLite."""
     payload = {
@@ -71,6 +69,7 @@ def test_api_questionnaire_audit(client, auth_headers):
     assert "audit_id" in data
     assert "scoring" in data["data"]
     assert "dimensions" in data["data"]
+    assert "compliance" in data["data"]
 
 
 def test_api_questionnaire_input_validation(client, auth_headers):
@@ -84,64 +83,13 @@ def test_api_questionnaire_input_validation(client, auth_headers):
     assert resp.status_code == 400
 
 
-def test_api_mcp_audit_empty_or_missing_body_rejected(client, auth_headers):
-    """Verify /api/audit/mcp rejects missing or empty request bodies with 400."""
-    # Empty body
-    resp = client.post("/api/audit/mcp", json={}, headers=auth_headers)
-    assert resp.status_code == 400
-    assert "cannot be empty" in resp.get_json()["error"]
-
-    # No JSON body
-    resp = client.post("/api/audit/mcp", data="", content_type="application/json", headers=auth_headers)
-    assert resp.status_code == 400
-
-
-def test_api_mcp_audit_validation(client, auth_headers):
-    """Verify /api/audit/mcp rejects invalid profile name."""
-    resp = client.post("/api/audit/mcp", json={"profile": "malicious_unregistered_profile"}, headers=auth_headers)
-    assert resp.status_code == 400
+def test_api_mcp_returns_410_gone(client, auth_headers):
+    """Verify /api/audit/mcp returns 410 Gone indicating removal."""
+    resp = client.post("/api/audit/mcp", json={"demo_profile": "good"}, headers=auth_headers)
+    assert resp.status_code == 410
     data = resp.get_json()
     assert data["success"] is False
-    assert "Invalid demo profile" in data["error"]
-
-
-def test_api_mcp_rejects_interpreter_flags(client, auth_headers):
-    """Verify interpreter flags (-c, -m, -e, -r, --eval) are rejected regardless of client authorized flag."""
-    resp = client.post("/api/audit/mcp", json={
-        "target_command": ["python", "-c", "import os; print('pwn')"],
-        "authorized": True
-    }, headers=auth_headers)
-    assert resp.status_code in (400, 403)
-    assert "strictly disallowed" in resp.get_json()["error"]
-
-
-def test_api_mcp_live_target_command_validation(client, auth_headers):
-    """Verify disallowed executables, interpreter flags, and shell metacharacters are rejected."""
-    # Disallowed executable
-    resp = client.post("/api/audit/mcp", json={
-        "target_command": ["bash", "-c", "echo hello"],
-        "authorized": True
-    }, headers=auth_headers)
-    assert resp.status_code in (400, 403)
-
-    # Shell injection metacharacters
-    resp = client.post("/api/audit/mcp", json={
-        "target_command": ["python", "good_server.py; rm -rf /"],
-        "authorized": True
-    }, headers=auth_headers)
-    assert resp.status_code in (400, 403)
-
-
-def test_api_mcp_demo_audit_execution(client, auth_headers):
-    """Verify valid demo profile runs successfully and is labeled as DEMO_BENCHMARK."""
-    resp = client.post("/api/audit/mcp", json={"demo_profile": "good"}, headers=auth_headers)
-    assert resp.status_code == 200
-    data = resp.get_json()
-    assert data["success"] is True
-    assert data["data"]["execution_mode"] == "DEMO_BENCHMARK"
-    assert data["data"]["is_demo"] is True
-    assert "scoring" in data["data"]
-    assert "dimensions" in data["data"]
+    assert "removed" in data["error"].lower()
 
 
 def test_api_audit_history_and_get(client, auth_headers):
@@ -162,3 +110,42 @@ def test_api_audit_history_and_get(client, auth_headers):
     get_resp = client.get(f"/api/audit/{audit_id}")
     assert get_resp.status_code == 200
     assert get_resp.get_json()["data"]["model_metadata"]["model_name"] == "HistoryTestAI"
+
+
+def test_api_model_card_and_remediation(client, auth_headers):
+    """Verify model card generator and remediation ranker endpoints."""
+    # Run audit first
+    resp = client.post("/api/audit/questionnaire", json={"answers": {"model_name": "ModelCardAI", "domain": "finance"}}, headers=auth_headers)
+    assert resp.status_code == 200
+
+    # Get model card
+    card_resp = client.get("/api/model-card")
+    assert card_resp.status_code == 200
+    card_data = card_resp.get_json()
+    assert card_data["success"] is True
+    assert "json_schema" in card_data["data"]
+    assert "markdown" in card_data["data"]
+    assert "model_details" in card_data["data"]["json_schema"]
+
+    # Remediation ranker
+    rem_resp = client.post("/api/rai/counterfactual", json={"target_score": 80.0})
+    assert rem_resp.status_code == 200
+    rem_data = rem_resp.get_json()
+    assert rem_data["success"] is True
+
+
+def test_api_sensitivity_analysis(client, auth_headers):
+    """Verify alpha sensitivity curve analysis endpoint."""
+    dims = {
+        "Safety & Reliability": 85.0,
+        "Transparency & Explainability": 70.0,
+        "Fairness & Non-Discrimination": 80.0,
+        "Privacy & Data Governance": 90.0,
+        "Human Oversight & Accountability": 65.0,
+        "Security & Robustness": 75.0,
+    }
+    resp = client.post("/api/analysis/sensitivity", json={"dimensions": dims})
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["success"] is True
+    assert len(data["data"]) == 9

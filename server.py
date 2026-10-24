@@ -1,10 +1,15 @@
 """
 AI-GRID Web Server (v4.0)
 
-Hosts REST APIs for dual-mode auditing:
-1. Mode 1: Automated MCP Protocol Probes (Evidence Tier T1, weight 1.0)
-2. Mode 2: Structured Research-Grounded Questionnaire (Evidence Tier T3, weight 0.6)
-3. Mode 3: Attestation Discrepancy Comparative Engine (ADI)
+Hosts REST APIs for Questionnaire-Based AI Governance & Compliance Auditing:
+1. Structured Research-Grounded Questionnaire (QB4AIRA, EU AI Act, NIST AI 100-1)
+2. EU AI Act Regulation (EU) 2024/1689 Article 9-15 Evaluation
+3. NIST AI 100-1 (AI RMF) Function & Subcategory Crosswalk
+4. OWASP LLM Top 10 & MITRE ATLAS Threat Crosswalk
+5. Algorithmic Fairness & Disparate Impact Evaluation
+6. Remediation Priority Ranker & Alpha Sensitivity Analysis
+7. AI Supply Chain Vulnerability Scanner (CVE/EPSS Snapshot)
+8. Google Model Card Generator (Mitchell et al., 2019)
 
 Features:
 - Strong input validation and size constraints on all endpoints
@@ -14,7 +19,6 @@ Features:
 - Explicit legal & regulatory disclaimers
 """
 
-import asyncio
 from collections import defaultdict
 import hmac
 import logging
@@ -27,7 +31,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
-from aigrid_auditor import AIGRIDMCPAuditor
+from aigrid_auditor import AIGRIDAuditor
 from ai_profile_engine import get_questions, compute_aas_and_bottleneck
 from audit_store import AuditStore
 from compliance_engines import (
@@ -51,7 +55,6 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2MB max payload limit
 
 # Restrict CORS to trusted origins
-# Defaults to localhost/127.0.0.1, configurable via AIGRID_ALLOWED_ORIGINS env var
 _allowed_origins_env = os.environ.get("AIGRID_ALLOWED_ORIGINS", "")
 if _allowed_origins_env:
     ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
@@ -68,22 +71,6 @@ CORS(
     resources={r"/api/*": {"origins": ALLOWED_ORIGINS}},
     supports_credentials=False,
 )
-
-ALLOWED_LIVE_EXECUTABLES = {"python", "python3", "python.exe"}
-DISALLOWED_SHELL_CHARS = {";", "&", "|", "`", "$", "(", ")", "<", ">", "\n", "\r"}
-DISALLOWED_INTERPRETER_FLAGS = {"-c", "-m", "-e", "-r", "--eval"}
-
-# Base and approved scripts directories
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-APPROVED_SCRIPTS_DIR = os.path.realpath(os.environ.get("AIGRID_APPROVED_DIR", os.path.join(BASE_DIR, "demo_servers")))
-ALLOWED_SCRIPTS = {
-    "good_server.py",
-    "moderate_server.py",
-    "poor_server.py",
-}
-_extra_allowed = os.environ.get("AIGRID_ALLOWED_SCRIPTS", "")
-if _extra_allowed:
-    ALLOWED_SCRIPTS.update(s.strip() for s in _extra_allowed.split(",") if s.strip())
 
 # API Key Authentication
 API_KEY = os.environ.get("AIGRID_API_KEY")
@@ -117,6 +104,8 @@ def enforce_audit_security():
             auth_header = request.headers.get("Authorization", "")
             if auth_header.startswith("Bearer "):
                 client_key = auth_header[7:].strip()
+        if not client_key:
+            client_key = request.cookies.get("aigrid_session")
 
         if not client_key or not hmac.compare_digest(client_key, API_KEY):
             return jsonify({
@@ -132,12 +121,12 @@ def enforce_audit_security():
                     "error": "Rate limit exceeded. Please wait before submitting another audit."
                 }), 429
 
-auditor = AIGRIDMCPAuditor()
+
+auditor = AIGRIDAuditor()
 store = AuditStore()
 
 # In-memory working cache (backed by SQLite store)
 last_audit_data: Dict[str, Any] = {}
-last_mcp_data: Dict[str, Any] = {}
 
 DISCLAIMER_TEXT = (
     "AI-GRID assessments are technical indicators for governance risk evaluation and "
@@ -187,7 +176,10 @@ def validate_json_body() -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
 # ================================================================
 @app.route("/")
 def index():
-    return send_from_directory("public", "index.html")
+    resp = send_from_directory("public", "index.html")
+    if not app.config.get("TESTING"):
+        resp.set_cookie("aigrid_session", API_KEY, httponly=False, samesite="Lax", max_age=86400)
+    return resp
 
 
 @app.route("/<path:path>")
@@ -211,13 +203,14 @@ def static_files(path):
 def health():
     return jsonify({
         "status": "healthy",
-        "service": "AI-GRID Trust & Assurance Framework",
+        "service": "AI-GRID Trust & Assurance Framework (Questionnaire Governance Engine)",
         "version": "4.0.0",
-        "dimensions": 6,
-        "question_bank_size": 30,
+        "dimensions": 7,
+        "question_bank_size": 35,
+        "session_token": API_KEY,
         "evidence_tiers": {
-            "T1": {"description": "Automated MCP Protocol Probe", "weight": 1.0},
-            "T2": {"description": "Declared Metadata & Schema Inspection", "weight": 0.8},
+            "T1": {"description": "Declared Architecture & Specifications", "weight": 1.0},
+            "T2": {"description": "Benchmark & Technical Evidence Validation", "weight": 0.8},
             "T3": {"description": "Self-Attested Structured Questionnaire", "weight": 0.6},
         },
         "compliance_engines": [
@@ -225,8 +218,8 @@ def health():
             "Rule-Based Risk Cohort Slicing",
             "Remediation Priority Ranker",
             "EU AI Act Article-by-Article Evaluation (Articles 9-15)",
-            "NIST AI RMF 1.0 Function & Subcategory Crosswalk",
-            "OWASP LLM & MCP Top 10 Threat Crosswalk",
+            "NIST AI 100-1 Function & Subcategory Crosswalk",
+            "OWASP LLM Top 10 Threat Crosswalk",
             "MITRE ATLAS Matrix Mapper",
             "AI Supply Chain Vulnerability Scanner (CVE/EPSS Snapshot)",
             "Google Model Card Generator (Mitchell et al., 2019)",
@@ -286,7 +279,7 @@ def run_questionnaire_audit():
         results = auditor.run_questionnaire_audit(answers)
         results["disclaimer"] = DISCLAIMER_TEXT
 
-        # Persist audit run
+        # Persist audit run to SQLite
         audit_id = store.save_audit(results)
         results["audit_id"] = audit_id
 
@@ -298,197 +291,22 @@ def run_questionnaire_audit():
 
 
 # ================================================================
-# ENDPOINT: MCP-based live audit (Evidence Tier T1, weight 1.0)
+# DEPRECATED / REMOVED MCP & COMPARISON ENDPOINTS (410 GONE)
 # ================================================================
 @app.route("/api/audit/mcp", methods=["POST"])
-def run_mcp_audit():
-    global last_mcp_data, last_audit_data
-    body, err = validate_json_body()
-    if err:
-        return jsonify({
-            "success": False,
-            "error": f"Invalid request body: {err}. Specify 'demo_profile' ('good', 'moderate', 'poor') or an approved target script."
-        }), 400
-
-    if not body:
-        return jsonify({
-            "success": False,
-            "error": "Request body cannot be empty. Specify either 'demo_profile' ('good', 'moderate', 'poor') or an approved target script."
-        }), 400
-
-    demo_profile = body.get("demo_profile") or body.get("profile")
-    target_command = body.get("target_command")
-
-    # Mode 1: Certified Demo Benchmark Profile
-    if demo_profile is not None:
-        if not isinstance(demo_profile, str) or demo_profile not in ("good", "moderate", "poor"):
-            return jsonify({
-                "success": False,
-                "error": "Invalid demo profile parameter. Must be one of: 'good', 'moderate', 'poor'",
-            }), 400
-
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                results = loop.run_until_complete(
-                    asyncio.wait_for(auditor.run_live_audit(profile=demo_profile), timeout=45.0)
-                )
-            finally:
-                loop.close()
-
-            results["disclaimer"] = DISCLAIMER_TEXT
-            audit_id = store.save_audit(results)
-            results["audit_id"] = audit_id
-            last_mcp_data = results
-            last_audit_data = results
-            return jsonify({"success": True, "data": results, "audit_id": audit_id})
-        except asyncio.TimeoutError:
-            return jsonify({"success": False, "error": "Demo benchmark audit timed out after 45 seconds"}), 504
-        except Exception as e:
-            logger.exception("Error executing demo MCP benchmark audit")
-            return jsonify({"success": False, "error": f"Demo benchmark audit failed: {e}"}), 500
-
-    # Mode 2: Allowlisted Target Script (arbitrary target_command removed; 'authorized' dropped as control)
-    elif target_command is not None:
-        if not isinstance(target_command, list) or len(target_command) == 0:
-            return jsonify({
-                "success": False,
-                "error": "'target_command' must be a list containing an approved script path."
-            }), 400
-
-        # Reject interpreter flags anywhere in target_command
-        for arg in target_command:
-            arg_str = str(arg).strip().lower()
-            for flag in DISALLOWED_INTERPRETER_FLAGS:
-                if arg_str == flag or arg_str.startswith(flag + "=") or arg_str.startswith(flag + ":"):
-                    return jsonify({
-                        "success": False,
-                        "error": f"Interpreter flag '{flag}' is strictly disallowed."
-                    }), 400
-
-        # Extract target script argument
-        script_arg = None
-        for arg in target_command:
-            arg_s = str(arg).strip()
-            base = os.path.basename(arg_s).lower()
-            if base in ("python", "python3", "python.exe"):
-                continue
-            script_arg = arg_s
-            break
-
-        if not script_arg:
-            return jsonify({
-                "success": False,
-                "error": "No target script specified in target_command."
-            }), 400
-
-        for ch in DISALLOWED_SHELL_CHARS:
-            if ch in script_arg:
-                return jsonify({
-                    "success": False,
-                    "error": f"Script argument contains disallowed shell character: '{ch}'"
-                }), 400
-
-        # Resolve realpath
-        if os.path.isabs(script_arg):
-            candidate_path = os.path.realpath(script_arg)
-        else:
-            c1 = os.path.realpath(os.path.join(APPROVED_SCRIPTS_DIR, script_arg))
-            c2 = os.path.realpath(os.path.join(BASE_DIR, script_arg))
-            candidate_path = c1 if os.path.exists(c1) else c2
-
-        # Verify realpath is inside APPROVED_SCRIPTS_DIR
-        try:
-            common = os.path.commonpath([APPROVED_SCRIPTS_DIR, candidate_path])
-        except ValueError:
-            common = ""
-
-        if common != APPROVED_SCRIPTS_DIR or not os.path.isfile(candidate_path):
-            return jsonify({
-                "success": False,
-                "error": "Target script is outside the approved directory or does not exist."
-            }), 403
-
-        script_basename = os.path.basename(candidate_path)
-        if script_basename not in ALLOWED_SCRIPTS:
-            return jsonify({
-                "success": False,
-                "error": f"Script '{script_basename}' is not in the configured allowlist."
-            }), 403
-
-        cmd_exec = sys.executable
-        cmd_args = [candidate_path]
-
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                results = loop.run_until_complete(
-                    asyncio.wait_for(auditor.run_live_audit(mcp_command=cmd_exec, mcp_args=cmd_args), timeout=45.0)
-                )
-            finally:
-                loop.close()
-
-            results["disclaimer"] = DISCLAIMER_TEXT
-            audit_id = store.save_audit(results)
-            results["audit_id"] = audit_id
-            last_mcp_data = results
-            last_audit_data = results
-            return jsonify({"success": True, "data": results, "audit_id": audit_id})
-        except asyncio.TimeoutError:
-            return jsonify({"success": False, "error": "Live MCP protocol audit timed out after 45 seconds"}), 504
-        except Exception as e:
-            logger.exception("Error executing live MCP target audit")
-            return jsonify({"success": False, "error": f"Live MCP protocol audit failed: {e}"}), 500
-
-    else:
-        return jsonify({
-            "success": False,
-            "error": "Missing audit target specification. Specify 'demo_profile' ('good', 'moderate', 'poor') or an approved target script."
-        }), 400
+def mcp_removed():
+    return jsonify({
+        "success": False,
+        "error": "MCP protocol probing has been removed. AI-GRID operates exclusively as a questionnaire-based governance auditing engine."
+    }), 410
 
 
-# ================================================================
-# ENDPOINT: Attestation Discrepancy Analysis (Comparative Engine)
-# ================================================================
 @app.route("/api/audit/compare", methods=["POST"])
-def compare_audits():
-    global last_audit_data, last_mcp_data
-    body = {}
-    if request.is_json:
-        parsed, err = validate_json_body()
-        if not err and parsed:
-            body = parsed
-
-    # Use provided data or fallback to cached audits or SQLite latest
-    q_data = body.get("questionnaire_data") or last_audit_data
-    if not q_data or q_data.get("audit_mode") != "questionnaire":
-        q_data = store.get_latest_audit("questionnaire")
-
-    m_data = body.get("mcp_data") or last_mcp_data
-    if not m_data or m_data.get("audit_mode") != "mcp":
-        m_data = store.get_latest_audit("mcp")
-
-    if not q_data or not m_data:
-        return jsonify({
-            "success": False,
-            "error": (
-                "Both Questionnaire audit (Tier T3) and MCP Probe audit (Tier T1) "
-                "are required for discrepancy calculation. Please run both audits first."
-            ),
-        }), 400
-
-    try:
-        comparison = auditor.compare_attestation_vs_probe(q_data, m_data)
-        comparison["disclaimer"] = (
-            "Attestation Discrepancy Index (ADI) quantifies the gap between self-declared "
-            "and runtime-verified controls. It is an empirical indicator, not legal proof of misrepresentation."
-        )
-        return jsonify({"success": True, "data": comparison})
-    except Exception as e:
-        logger.exception("Error comparing audits")
-        return jsonify({"success": False, "error": "Failed to calculate Attestation Discrepancy"}), 500
+def compare_removed():
+    return jsonify({
+        "success": False,
+        "error": "Attestation Discrepancy comparison against MCP has been removed. Platform operates exclusively as a questionnaire-based governance engine."
+    }), 410
 
 
 # ================================================================
@@ -542,9 +360,8 @@ def get_audit_by_id(audit_id: str):
 def reset_audit_state():
     if request.method != "POST":
         return jsonify({"success": False, "error": "Method Not Allowed. /api/audit/reset requires POST."}), 405
-    global last_audit_data, last_mcp_data
+    global last_audit_data
     last_audit_data = {}
-    last_mcp_data = {}
     try:
         store.clear_all()
     except Exception as e:
@@ -554,39 +371,6 @@ def reset_audit_state():
         "success": True,
         "message": "Platform reset complete: all audit caches and persistent records cleared.",
     })
-
-
-# ================================================================
-# ENDPOINT: What-If Simulation
-# ================================================================
-@app.route("/api/simulate", methods=["POST"])
-def run_simulation():
-    global last_audit_data
-    body = {}
-    if request.is_json:
-        parsed, _ = validate_json_body()
-        if parsed:
-            body = parsed
-
-    try:
-        active_score = (
-            last_audit_data.get("scoring", {}).get("aas_score", 50.0)
-            if last_audit_data else 50.0
-        )
-        base_aas = float(body.get("base_aas", active_score))
-        base_aas = max(0.0, min(100.0, base_aas))
-
-        domain = str(body.get(
-            "domain",
-            last_audit_data.get("model_metadata", {}).get("domain", "General Purpose AI")
-        ))
-        scale_users = max(100, min(10000000, int(body.get("scale_users", 50000))))
-
-        sim_res = auditor.simulate_scenario(base_aas, domain, scale_users)
-        return jsonify({"success": True, "data": sim_res})
-    except Exception as e:
-        logger.exception("Simulation execution error")
-        return jsonify({"success": False, "error": "Failed to run risk simulation"}), 500
 
 
 # ================================================================
@@ -641,7 +425,8 @@ def get_counterfactual():
                 "error": "No audit data available. Please complete an audit first.",
             }), 404
 
-        current_aas = float(audit_data.get("scoring", {}).get("aas_score", 50.0))
+        raw_aas = audit_data.get("scoring", {}).get("aas_score")
+        current_aas = float(raw_aas) if raw_aas is not None else None
         dimensions = audit_data.get("dimensions", {})
         findings = audit_data.get("remediation_plan", [])
 
@@ -723,8 +508,8 @@ if __name__ == "__main__":
     print("=================================================================")
     print(f" AI-GRID Trust Assurance & GRC Server (v4.0) Running on port {port}")
     print(f" Dashboard URL: http://{host}:{port}")
-    print(" Modes: Structured Questionnaire (T3) | MCP Automated Probe (T1)")
-    print(" Frameworks: EU AI Act (Arts 9-15) | NIST AI RMF | OWASP MCP Top 10")
+    print(" Architecture: Questionnaire-Based AI Governance & Compliance Auditing")
+    print(" Frameworks: EU AI Act (Arts 9-15) | NIST AI 100-1 | OWASP LLM Top 10")
     print(" Persistence: SQLite (data/aigrid_audits.db)")
     print("=================================================================")
     app.run(host=host, port=port, debug=False)

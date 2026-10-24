@@ -48,7 +48,7 @@ class AuditStore:
                     model_name TEXT NOT NULL,
                     model_version TEXT,
                     domain TEXT,
-                    aas_score REAL NOT NULL,
+                    aas_score REAL,
                     trust_grade TEXT NOT NULL,
                     bottleneck_dimension TEXT,
                     bottleneck_score REAL,
@@ -64,7 +64,7 @@ class AuditStore:
                     dimension TEXT NOT NULL,
                     source TEXT NOT NULL,
                     tier TEXT NOT NULL,
-                    value REAL NOT NULL,
+                    value REAL,
                     description TEXT,
                     timestamp TEXT,
                     FOREIGN KEY (audit_id) REFERENCES audits(audit_id) ON DELETE CASCADE
@@ -105,11 +105,14 @@ class AuditStore:
         model_name = meta.get("model_name", "AI System Under Audit")
         model_version = meta.get("version", "1.0.0")
         domain = meta.get("domain", "General Purpose AI")
-        aas_score = float(scoring.get("aas_score", 50.0))
-        trust_grade = str(scoring.get("trust_grade", "D"))
+        aas_raw = scoring.get("aas_score")
+        aas_score = float(aas_raw) if aas_raw is not None else None
+        trust_grade = str(scoring.get("trust_grade", "INSUFFICIENT_EVIDENCE"))
         bottleneck_dimension = str(scoring.get("bottleneck_dimension", "Unknown"))
-        bottleneck_score = float(scoring.get("bottleneck_score", 50.0))
-        overall_confidence = float(scoring.get("overall_confidence", 0.6))
+        btn_raw = scoring.get("bottleneck_score")
+        bottleneck_score = float(btn_raw) if btn_raw is not None else None
+        conf_raw = scoring.get("overall_confidence")
+        overall_confidence = float(conf_raw) if conf_raw is not None else 0.0
 
         # Attach ID back to payload
         payload["audit_id"] = audit_id

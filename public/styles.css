@@ -313,6 +313,7 @@ body {
 .sidebar.collapsed .nav-section-label,
 .sidebar.collapsed .nav-text,
 .sidebar.collapsed .auditor-meta,
+.sidebar.collapsed .governance-status-text,
 .sidebar.collapsed .mcp-status-text {
   display: none !important;
 }
@@ -439,6 +440,7 @@ body {
   background: transparent;
 }
 
+.governance-status-pill,
 .mcp-status-pill {
   display: flex;
   align-items: center;
@@ -1050,65 +1052,206 @@ body {
 }
 
 /* ==========================================================================
-   TERMINAL — Warm Amber Console
+   EXECUTIVE GOVERNANCE PROFILE & POSTURE SUMMARY CARD
    ========================================================================== */
-.terminal-window {
-  background: var(--bg-terminal);
-  border: 1px solid rgba(0, 123, 167, 0.18);
-  border-radius: var(--radius-md);
+#summaryCardSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-target-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+
+.summary-target-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--primary-400);
+  border: 1px solid var(--primary-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.summary-target-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.summary-target-name {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
   overflow: hidden;
-  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.5);
+  text-overflow: ellipsis;
 }
 
-[data-theme="dark"] .terminal-window {
-  border-color: rgba(0, 123, 167, 0.15);
-  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 123, 167, 0.06);
+.summary-target-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
-.terminal-bar {
-  background: var(--bg-terminal-bar);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 9px 14px;
+.summary-pillars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.summary-pillar-row {
+  padding: 8px 12px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.summary-pillar-row:hover {
+  border-color: var(--border-highlight);
+  background: var(--bg-surface-hover);
+  transform: translateX(2px);
+}
+
+.summary-pillar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.summary-pillar-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.summary-pillar-score {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.summary-pillar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.summary-pillar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--primary-500);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.summary-pillar-fill.high { background: var(--success); }
+.summary-pillar-fill.medium { background: var(--warning); }
+.summary-pillar-fill.low { background: var(--critical); }
+
+.summary-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
 }
 
-.terminal-dots { display: flex; gap: 6px; }
-.terminal-dot { width: 9px; height: 9px; border-radius: 50%; }
-.terminal-dot.r { background: #E05555; }
-.terminal-dot.y { background: #DEAD52; }
-.terminal-dot.g { background: #4DBB6E; }
-
-.terminal-title {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: #9C958C;
-  font-weight: 500;
-}
-
-.terminal-controls {
+.summary-presets-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.btn-terminal {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  color: #9C958C;
+.summary-presets-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-presets-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-preset-pill {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  border-radius: 99px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-preset-pill:hover {
+  background: var(--primary-bg);
+  border-color: var(--primary-border);
+  color: var(--primary-400);
+}
+
+.btn-terminal-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
   font-size: 11px;
   font-family: var(--font-mono);
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 99px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.2s;
 }
-.btn-terminal:hover {
-  background: rgba(0, 123, 167, 0.14);
-  color: #1A9FD0;
-  border-color: rgba(0, 123, 167, 0.30);
+
+.btn-terminal-toggle:hover, .btn-terminal-toggle.active {
+  background: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-highlight);
 }
+
+.summary-audit-trail {
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-terminal);
+}
+
+/* ==========================================================================
+   TERMINAL BAR & BODY (EMBEDDED TRACE)
+   ========================================================================== */
 
 .terminal-body {
   padding: 14px;

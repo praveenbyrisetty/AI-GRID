@@ -1,47 +1,50 @@
 """
-Research Validation Tests: Experiment 1 (ADI) & Experiment 2 (Sensitivity Analysis)
+Research Validation Tests: Experiment 1 (Multi-Risk Profiling) & Experiment 2 (Sensitivity Analysis)
 """
 
 import pytest
-from aigrid_auditor import AIGRIDMCPAuditor
+from aigrid_auditor import AIGRIDAuditor
 from ai_profile_engine import get_questions, compute_aas_and_bottleneck
 
 
-@pytest.mark.asyncio
-async def test_experiment_1_attestation_discrepancy_divergence():
+def test_experiment_1_questionnaire_governance_profiling():
     """
     Validates Hypothesis H1:
-    Automated MCP protocol probing reveals weaknesses that self-attested responses miss,
-    producing a statistically positive Attestation Discrepancy Index (ADI > 0).
+    Structured self-attestation accurately reflects the presence or absence of
+    governance controls across 6 trust dimensions, with bottleneck penalization
+    preventing compensatory masking of weak dimensions.
     """
-    auditor = AIGRIDMCPAuditor()
+    auditor = AIGRIDAuditor()
 
-    # Self-attested answers with all optimal responses (self-serving bias)
+    # Profile A: High-compliance attestation (all optimal options)
     high_answers = {
         q["id"]: q["options"][0]["value"]
         for q in get_questions()
         if not q.get("is_identity") and q.get("options")
     }
+    high_answers["model_name"] = "CompliantDiagnosticAI"
+    high_answers["domain"] = "healthcare"
+    high_answers["q22_autonomy_level"] = "human_in_loop"
+
     q_audit = auditor.run_questionnaire_audit(high_answers)
     self_aas = q_audit["scoring"]["aas_score"]
-    assert self_aas >= 90.0
+    assert self_aas >= 85.0
+    assert q_audit["scoring"]["trust_grade"] in ("A", "A+")
+    assert "HIGH RISK" in q_audit["compliance"]["eu_ai_act"]["tier"]
 
-    # Probe against poor and moderate demo profiles
-    poor_audit = await auditor.run_live_audit(profile="poor")
-    poor_aas = poor_audit["scoring"]["aas_score"]
+    # Profile B: System with severe safety defect (Q3 = None)
+    low_safety_answers = dict(high_answers)
+    # Set safety answers to lowest options
+    for q in get_questions():
+        if q.get("dimension") == "Safety & Reliability" and q.get("options"):
+            low_safety_answers[q["id"]] = q["options"][-1]["value"]
 
-    comparison_poor = auditor.compare_attestation_vs_probe(q_audit, poor_audit)
-    adi_poor = comparison_poor["attestation_discrepancy_index"]
-
-    # ADI must be positive, demonstrating self-report overestimation
-    assert adi_poor > 15.0
-    assert comparison_poor["significance"] == "HIGH RISK OF SELF-REPORT BIAS"
-
-    # Test against moderate profile
-    mod_audit = await auditor.run_live_audit(profile="moderate")
-    comparison_mod = auditor.compare_attestation_vs_probe(q_audit, mod_audit)
-    adi_mod = comparison_mod["attestation_discrepancy_index"]
-    assert adi_mod > 5.0
+    low_safety_audit = auditor.run_questionnaire_audit(low_safety_answers)
+    low_aas = low_safety_audit["scoring"]["aas_score"]
+    assert low_aas < self_aas
+    # Bottleneck penalization ensures low safety severely drags down overall AAS
+    assert low_safety_audit["scoring"]["bottleneck_score"] < low_safety_audit["scoring"]["weighted_average"]
+    assert low_safety_audit["scoring"]["aas_score"] < low_safety_audit["scoring"]["weighted_average"]
 
 
 def test_experiment_2_alpha_sensitivity():
