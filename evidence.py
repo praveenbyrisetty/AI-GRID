@@ -144,7 +144,7 @@ def aggregate_dimension_scores(
     all_evidence: List[Evidence],
 ) -> Dict[str, DimensionResult]:
     """
-    Groups evidence by dimension and computes weighted scores for all 6 dimensions.
+    Groups evidence by dimension and computes weighted scores for all 7 dimensions.
     A dimension with no evidence gets score=None, confidence=0.0, and status='INSUFFICIENT_EVIDENCE'.
     A dimension requires >= 2 evidence items and confidence >= 0.20 to be marked 'SUFFICIENT'.
 
@@ -195,7 +195,7 @@ def compute_aas(
     Rules:
         - Dimensions without evidence (score is None) NEVER enter mean or min.
         - Withhold AAS (aas_score = None, status = 'INSUFFICIENT_EVIDENCE')
-          if fewer than 4 of 6 dimensions have evidence.
+          if fewer than 4 of 7 dimensions have evidence.
 
     Returns:
         Dictionary containing AAS, breakdown, confidence, sensitivity curve, and status.
@@ -232,7 +232,7 @@ def compute_aas(
                 name: round(r.confidence, 3) for name, r in dimension_results.items()
             },
             "status": "INSUFFICIENT_EVIDENCE",
-            "message": f"AAS withheld: only {len(valid_scores)}/6 dimensions have evidence (minimum {MIN_DIMENSIONS_FOR_AAS} required).",
+            "message": f"AAS withheld: only {len(valid_scores)}/7 dimensions have evidence (minimum {MIN_DIMENSIONS_FOR_AAS} required).",
         }
 
     weighted_average = sum(valid_scores) / len(valid_scores)

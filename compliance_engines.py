@@ -364,12 +364,13 @@ def analyze_risk_cohorts(dimensions: Dict[str, Optional[float]],
             max_cohort_risk = "HIGH"
 
     return {
-        "engine": "Rule-Based Risk Cohort Analysis Engine",
+        "engine": "Illustrative Rule-Based Risk Cohort Engine (heuristic, not measured)",
+        "cohort_disclaimer": "Cohort distributions (15%, 25%, 10%) and estimated error rates are illustrative rule-based heuristics derived from dimension scores, not measured from production telemetry.",
         "cohort_count": len(cohorts),
         "overall_cohort_risk": max_cohort_risk,
         "clinical_safety_benchmark": clinical_bench,
         "cohorts": cohorts,
-        "methodology": "Disaggregated subgroup slicing across input anomaly distributions and autonomy regimes."
+        "methodology": "Illustrative rule-based subgroup slicing across input anomaly distributions and autonomy regimes (heuristic, not measured)."
     }
 
 
@@ -414,12 +415,13 @@ def solve_remediation_priority(current_aas: Optional[float],
         "engine": "Remediation Priority Ranker",
         "current_aas": current_aas,
         "target_aas": target_score,
+        "target_aas_label": "Illustrative Target AAS 76.0 (heuristic benchmark threshold)",
         "target_reached": (current_aas is not None and current_aas >= target_score),
         "bottleneck_dimension": bottleneck_dim,
         "bottleneck_score": bottleneck_score,
         "recommended_interventions": interventions,
-        "projection_disclaimer": "Findings are prioritized by severity and control gap. Remediation estimates are heuristic and do not guarantee statutory compliance.",
-        "remediation_objective": f"Prioritize remediation of critical findings and bottleneck '{bottleneck_dim}' (score: {bottleneck_score}).",
+        "projection_disclaimer": "Target AAS 76.0 is an illustrative heuristic threshold. Findings are prioritized strictly by severity and control gap, not guaranteed score improvements.",
+        "remediation_objective": f"Prioritize remediation of critical findings and bottleneck '{bottleneck_dim}' (score: {bottleneck_score}) toward illustrative target AAS {target_score}.",
     }
 
 
@@ -447,7 +449,7 @@ def evaluate_eu_ai_act_compliance(domain: str,
        NOTE: Produces evidence-based technical indicators, NOT legal or statutory certification.
     """
     high_risk_domains = {
-        "healthcare": "Annex III §5(a) - Medical Devices & Healthcare Diagnostics",
+        "healthcare": "High-risk (confirm applicable EU AI Act route: Article 6(1)/Annex I or Annex III §5)",
         "finance": "Annex III §5(b) - Credit Scoring & Essential Financial Services",
         "autonomous_vehicles": "Annex III §2 - Critical Infrastructure & Safety Components of Transport",
         "criminal_justice": "Annex III §6 - Law Enforcement & Judicial Decision Support",
@@ -471,7 +473,10 @@ def evaluate_eu_ai_act_compliance(domain: str,
         market_placement_permitted = False
     elif any(k in domain_clean for k in high_risk_domains):
         matched_k = next(k for k in high_risk_domains if k in domain_clean)
-        regulatory_tier = "HIGH RISK (Annex III)"
+        if matched_k == "healthcare":
+            regulatory_tier = "HIGH RISK (Art. 6(1)/Annex I or Annex III §5)"
+        else:
+            regulatory_tier = "HIGH RISK (Annex III)"
         regulatory_color = "orange"
         tier_legal_basis = high_risk_domains[matched_k]
         market_placement_permitted = True
@@ -489,7 +494,7 @@ def evaluate_eu_ai_act_compliance(domain: str,
         # Unknown or unclassified domain is UNCLASSIFIED, never default to Minimal Risk
         regulatory_tier = "UNCLASSIFIED"
         regulatory_color = "gray"
-        tier_legal_basis = "# TODO verify: Intended purpose domain unspecified or unclassified under Regulation (EU) 2024/1689"
+        tier_legal_basis = "Intended purpose domain unspecified or unclassified under Regulation (EU) 2024/1689 (Requires bespoke legal review)"
         market_placement_permitted = None
 
     # STAGE 2: ARTICLE-BY-ARTICLE TECHNICAL ASSESSMENT (Articles 9 to 15)
@@ -697,19 +702,18 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, An
 
 
 # =====================================================================
-# 6. OWASP TOP 10 (LLM & MCP) & MITRE ATLAS ENGINE
+# 6. OWASP TOP 10 (LLM) & MITRE ATLAS ENGINE
 # =====================================================================
 
 def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Optional[float]]) -> Dict[str, Any]:
     """
-    Maps findings to OWASP Top 10 for LLMs, OWASP MCP Top 10, and MITRE ATLAS Matrix.
+    Maps findings to OWASP Top 10 for LLMs and MITRE ATLAS Matrix.
     """
     sec_score = dimensions.get("Security & Robustness") or 50.0
-    over_score = dimensions.get("Human Oversight & Accountability") or 50.0
+    over_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability") or 50.0
     safe_score = dimensions.get("Safety & Reliability") or 50.0
 
     owasp_llm_active = []
-    owasp_mcp_active = []
     atlas_techniques = []
 
     if sec_score < 75:
@@ -717,11 +721,6 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
             "code": "LLM01:2025",
             "name": "Prompt Injection",
             "mitigation": "Enforce strict input parameter type validation and sanitize prompts before model invocation."
-        })
-        owasp_mcp_active.append({
-            "code": "MCP01:2026",
-            "name": "Tool Execution Poisoning",
-            "mitigation": "Isolate tool execution runtime and sign tool capability schemas."
         })
         atlas_techniques.append({
             "id": "AML.T0043",
@@ -735,14 +734,9 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
             "name": "Excessive Agency",
             "mitigation": "Restrict tool permissions, require human authorization for irreversible actions."
         })
-        owasp_mcp_active.append({
-            "code": "MCP06:2026",
-            "name": "Unbounded Tool Permissions",
-            "mitigation": "Enforce Principle of Least Privilege on MCP server tool capabilities."
-        })
         atlas_techniques.append({
             "id": "AML.T0054",
-            "technique": "LLM Jailbreak & Unauthorized Tool Execution",
+            "technique": "LLM Jailbreak & Unauthorized Execution",
             "tactic": "Privilege Escalation"
         })
 
@@ -751,11 +745,6 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
             "code": "LLM05:2025",
             "name": "Improper Output Handling",
             "mitigation": "Implement deterministic output clamping and safety filters before downstream consumers."
-        })
-        owasp_mcp_active.append({
-            "code": "MCP03:2026",
-            "name": "Insecure Output Propagation",
-            "mitigation": "Filter downstream tool invocation arguments through validation schema."
         })
         atlas_techniques.append({
             "id": "AML.T0029",
@@ -773,12 +762,6 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
             "mitigation": "Track dependencies with AI-BOM and scan with CVE/EPSS analyzer.",
             "evidence_based": bool(supply_chain_findings),
         })
-        owasp_mcp_active.append({
-            "code": "MCP04:2025",
-            "name": "Vulnerable MCP Dependency / Server Extension",
-            "mitigation": "Audit third-party MCP servers and pin version hashes.",
-            "evidence_based": bool(supply_chain_findings),
-        })
         atlas_techniques.append({
             "id": "AML.T0015",
             "technique": "AI Dependency Poisoning & Malicious Deserialization",
@@ -787,14 +770,15 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
         })
 
     for f in findings:
-        ref = f.get("owasp_ref", "")
-        if ref and not any(ref in m["code"] for m in owasp_mcp_active):
-            owasp_mcp_active.append({
-                "code": ref,
-                "name": f.get("finding", "Observed Security Control Gap"),
-                "mitigation": f.get("action", "Implement recommended remediation"),
+        owasp_code = f.get("owasp_ref", "")
+        if owasp_code and not any(t["code"] == owasp_code for t in owasp_llm_active):
+            owasp_llm_active.append({
+                "code": owasp_code,
+                "name": f.get("finding", "Observed Threat Surface"),
+                "mitigation": f.get("action", "Apply appropriate engineering control"),
                 "evidence_based": True,
             })
+
         atlas_ref = f.get("mitre_atlas_ref", "")
         if atlas_ref and not any(atlas_ref in t["id"] for t in atlas_techniques):
             atlas_techniques.append({
@@ -807,7 +791,7 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
     return {
         "engine": "OWASP & MITRE ATLAS Threat Crosswalk",
         "owasp_llm_top_10": owasp_llm_active,
-        "owasp_mcp_top_10": owasp_mcp_active,
+        "owasp_mcp_top_10": owasp_llm_active,  # Backwards compatibility alias
         "mitre_atlas_techniques": atlas_techniques,
     }
 
@@ -934,13 +918,14 @@ def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
 - **Primary Use:** Automated inference and decision recommendations.
 - **Out-of-Scope:** Deployment without operator override; autonomous actuation in life-critical systems without fail-safe clamps.
 
-### 3. Quantitative Governance & Risk Assessment (6 Dimensions)
+### 3. Quantitative Governance & Risk Assessment (7 Dimensions)
 - **Security & Robustness:** {dimensions.get('Security & Robustness', 'N/A')}/100
+- **Safety & Reliability:** {dimensions.get('Safety & Reliability', 'N/A')}/100
 - **Fairness & Non-Discrimination:** {dimensions.get('Fairness & Non-Discrimination', 'N/A')}/100
 - **Transparency & Explainability:** {dimensions.get('Transparency & Explainability', 'N/A')}/100
 - **Privacy & Data Governance:** {dimensions.get('Privacy & Data Governance', 'N/A')}/100
-- **Human Oversight & Accountability:** {dimensions.get('Human Oversight & Accountability', 'N/A')}/100
-- **Safety & Reliability:** {dimensions.get('Safety & Reliability', 'N/A')}/100
+- **Human Oversight & Agency:** {dimensions.get('Human Oversight & Agency', 'N/A')}/100
+- **Accountability & Governance:** {dimensions.get('Accountability & Governance', 'N/A')}/100
 
 ### 4. Regulatory & Standards Alignment
 - **EU AI Act Classification:** {compliance.get('eu_ai_act', {}).get('intended_purpose_classification', {}).get('tier', compliance.get('eu_ai_act', {}).get('tier', 'N/A'))}

@@ -9,8 +9,8 @@ Basis: Heuristic, not calibrated against empirical loss functions.
 from typing import Dict, List
 
 # Heuristic weights for evidence tiers (T1 = Runtime Observation, T2 = Schema Introspection, T3 = Self-Declared)
-# Basis: Runtime behavioral observation is given full weight (1.0); schema-based static checks (0.8);
-# self-attested/declared metadata without independent verification receives discounted weight (0.6).
+# Note: In the questionnaire-first control plane, all active assessments are currently Tier T3 (self-attested, weight = 0.60).
+# Tier T1/T2 weights are preserved for future automated artifact integrations.
 TIER_WEIGHTS: Dict[str, float] = {
     "T1": 1.0,  # heuristic, not calibrated
     "T2": 0.8,  # heuristic, not calibrated
@@ -22,7 +22,7 @@ TIER_WEIGHTS: Dict[str, float] = {
 # Basis: α = 0.6 balances average system trustworthiness with penalty for critical vulnerability bottlenecks.
 ALPHA_DEFAULT: float = 0.6  # heuristic, not calibrated
 
-# Minimum number of evidenced dimensions (out of 6) required to compute a valid overall AAS.
+# Minimum number of evidenced dimensions (out of 7) required to compute a valid overall AAS.
 # If fewer than 4 dimensions have evidence, AAS is withheld to prevent misleading assurance.
 MIN_DIMENSIONS_FOR_AAS: int = 4  # heuristic, not calibrated
 

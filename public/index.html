@@ -117,10 +117,8 @@
 
         <div class="topbar-right">
           <!-- Launch Assessment Wizard -->
-          <button class="btn-secondary sm" onclick="showPage('page-setup')" id="headerLaunchBtn" title="Launch research questionnaire">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>Questionnaire Wizard</span>
-          </button>
+          <!-- 
+           -->
 
           <!-- Theme Switcher -->
           <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Corporate Light / Executive Dark">
@@ -149,10 +147,10 @@
               <p class="page-header-subtitle">Evidence-driven assessment of AI security, trustworthiness and governance</p>
             </div>
             <div class="page-header-actions">
-              <button class="btn-primary sm" onclick="runQuickDemoAudit()" title="Run quick audit with high-risk clinical AI preset">
+              <!-- <button class="btn-primary sm" onclick="runQuickDemoAudit()" title="Run quick audit with high-risk clinical AI preset">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 <span>⚡ Run Quick Audit</span>
-              </button>
+              </button> -->
               <button class="btn-secondary sm" onclick="showPage('page-setup')">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span>Launch Questionnaire</span>
@@ -192,18 +190,6 @@
               <div class="kpi-footer-note" id="kpiBottleneckName">Bottleneck dimension caps overall trust ceiling</div>
             </div>
 
-            <!-- KPI 3: Open Security Findings -->
-            <div class="kpi-card">
-              <div class="kpi-top">
-                <span class="kpi-label">AI Supply-Chain CVEs</span>
-                <span class="badge info" id="kpiCveBadge">INDEXED REGISTRY</span>
-              </div>
-              <div class="kpi-value-row">
-                <span class="kpi-num" id="kpiCveCount">—</span>
-                <span class="kpi-denom" id="kpiCveLabel">Active Exploits</span>
-              </div>
-              <div class="kpi-footer-note">NIST NVD &amp; FIRST EPSS Compound Risk Scanner</div>
-            </div>
 
             <!-- KPI 4: Compliance Assessment -->
             <div class="kpi-card">
@@ -220,11 +206,11 @@
 
           <!-- Main Analytical Workspace: Radar Envelope + Live Protocol Terminal -->
           <div class="cockpit-grid" id="cockpitGridSection">
-            <!-- Left: 6-Dimension Trust Envelope -->
+            <!-- Left: 7-Dimension Trust Envelope -->
             <div class="card" id="radarCardSection">
               <div class="card-header">
                 <div>
-                  <h3 class="card-title">6-Dimension Trust Envelope</h3>
+                  <h3 class="card-title">7-Dimension Trust Envelope</h3>
                   <p class="card-subtitle">Empirical risk boundary across international pillars (Click dimension to inspect)</p>
                 </div>
                 <span class="badge info">IEEE TAI 2026</span>
@@ -361,7 +347,7 @@
                 <div class="terminal-body" id="terminalLog">
                   <div class="log-entry">
                     <span class="log-timestamp">[00:00:00]</span>
-                    <span class="log-badge PROBE">STANDBY</span>
+                    <span class="log-badge AUDIT">STANDBY</span>
                     <span>AI-GRID Control Plane online. Awaiting questionnaire execution or preset selection...</span>
                   </div>
                 </div>
@@ -405,7 +391,7 @@
                 <h3 class="card-title">7 Statutory Trust Dimensions &amp; Technical Controls</h3>
                 <p class="card-subtitle">Comprehensive regulatory crosswalk mapping empirical controls to EU AI Act Articles 9–15 and NIST AI RMF 1.0</p>
               </div>
-              <span class="badge info">7 PILLARS • ISO/IEC 42001</span>
+              <span class="badge info">7 TRUST PILLARS</span>
             </div>
 
             <div class="table-container">
@@ -522,7 +508,7 @@
                 <p style="font-size:12px; color:var(--text-secondary); margin:0;">Load pre-configured research attestations or manually complete the questionnaire below:</p>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk under Annex III)">
+                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk; confirm route Article 6(1)/Annex I or Annex III §5)">
                   🏥 Clinical Diagnostic AI (High-Risk)
                 </button>
                 <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk under Annex III)">
@@ -592,7 +578,7 @@
           <section class="card">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Statutory Classification (Annex III Assessment)</h3>
+                <h3 class="card-title">Statutory Classification (EU AI Act Assessment)</h3>
                 <p class="card-subtitle">Risk tier determined by operational domain and autonomy boundaries</p>
               </div>
               <span class="badge info" id="euBadge">STANDBY</span>

@@ -8,6 +8,7 @@ Ensures audits are preserved across server restarts, supporting research
 reproducibility and longitudinal governance tracking.
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -116,6 +117,12 @@ class AuditStore:
 
         # Attach ID back to payload
         payload["audit_id"] = audit_id
+
+        # Compute cryptographic SHA-256 integrity hash of canonical payload
+        canonical_bytes = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        audit_hash = hashlib.sha256(canonical_bytes).hexdigest()
+        payload["audit_hash"] = audit_hash
+        payload["sha256_hash"] = audit_hash
 
         payload_json = json.dumps(payload, ensure_ascii=False)
 

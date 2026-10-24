@@ -2,7 +2,7 @@
  * AI-GRID Enterprise Control Plane (v4.0)
  * High-Assurance AI Governance & Compliance Auditing Platform
  * Grounded in QB4AIRA (Lee et al., 2024), EU AI Act (Regulation (EU) 2024/1689 Articles 9-15),
- * NIST AI 100-1 (AI RMF), and 6 Empirical Trust Dimensions.
+ * NIST AI 100-1 (AI RMF), and 7 Empirical Trust Dimensions.
  */
 
 // =========================================================================
@@ -11,7 +11,7 @@
 let radarChartInstance = null;
 let currentAuditData = null;
 let wizardStep = 1;
-let totalWizardSteps = 7;
+let totalWizardSteps = 8;
 let wizardAnswers = {};
 let questionsData = null;
 let isTerminalPaused = false;
@@ -393,12 +393,6 @@ function clearAuditUI() {
     bnBadge.className = "badge info";
   }
 
-  const cveCount = document.getElementById("kpiCveCount");
-  if (cveCount) cveCount.textContent = "—";
-
-  const cveBadge = document.getElementById("kpiCveBadge");
-  if (cveBadge) cveBadge.textContent = "INDEXED REGISTRY";
-
   const euTier = document.getElementById("kpiEuTier");
   if (euTier) euTier.textContent = "UNASSESSED";
 
@@ -486,7 +480,7 @@ function clearAuditUI() {
     term.innerHTML = `
       <div class="log-entry">
         <span class="log-timestamp">[00:00:00]</span>
-        <span class="log-badge PROBE">STANDBY</span>
+        <span class="log-badge AUDIT">STANDBY</span>
         <span>AI-GRID Control Plane online. Awaiting questionnaire execution or preset selection...</span>
       </div>
     `;
@@ -844,22 +838,42 @@ function applyAuditDataToUI(data, tierText) {
   renderEuArticlesTable(eu.articles || []);
   const euBadge = document.getElementById("euBadge");
   if (euBadge) {
-    euBadge.textContent = eu.tier ? `${eu.tier}` : "ANNEX III";
-    euBadge.className = `badge ${eu.tier && eu.tier.includes("HIGH") ? "warning" : "info"}`;
+    euBadge.textContent = eu.tier ? `${eu.tier}` : "UNCLASSIFIED";
+    euBadge.className = `badge ${eu.tier && eu.tier.includes("HIGH") ? "warning" : (eu.tier && eu.tier.includes("PROHIBITED") ? "critical" : "info")}`;
   }
   const euTierName = document.getElementById("euTierName");
-  if (euTierName) euTierName.textContent = eu.tier ? `${eu.tier} (Annex III §5)` : "HIGH RISK";
+  if (euTierName) euTierName.textContent = eu.tier || "UNCLASSIFIED";
   const euLegalBasis = document.getElementById("euLegalBasis");
-  if (euLegalBasis) euLegalBasis.textContent = eu.legal_basis || "Critical Decision Support";
+  if (euLegalBasis) euLegalBasis.textContent = eu.legal_basis || "General AI System (Requires Domain Classification)";
   const euMarket = document.getElementById("euMarketPermitted");
   if (euMarket) {
-    euMarket.textContent = "PERMITTED (Conformity Required)";
-    euMarket.style.color = "var(--success)";
+    if (eu.market_placement_permitted === true) {
+      euMarket.textContent = (eu.tier && eu.tier.includes("HIGH")) ? "PERMITTED (Conformity Required)" : "PERMITTED";
+      euMarket.style.color = "var(--success)";
+    } else if (eu.market_placement_permitted === false) {
+      euMarket.textContent = "PROHIBITED (Article 5)";
+      euMarket.style.color = "var(--critical)";
+    } else {
+      euMarket.textContent = "PENDING CLASSIFICATION";
+      euMarket.style.color = "var(--warning)";
+    }
   }
   const euConfReq = document.getElementById("euConformityReq");
-  if (euConfReq) euConfReq.textContent = eu.assessment_protocol || "Annex VII Internal Control";
+  if (euConfReq) {
+    if (eu.tier && eu.tier.includes("PROHIBITED")) {
+      euConfReq.textContent = "Prohibited from Placement on EU Market";
+    } else if (eu.tier && eu.tier.includes("HIGH")) {
+      euConfReq.textContent = eu.assessment_protocol || "Annex VI / VII Conformity Assessment";
+    } else if (eu.tier && eu.tier.includes("LIMITED")) {
+      euConfReq.textContent = "Article 50 Transparency Disclosures";
+    } else if (eu.tier && eu.tier.includes("MINIMAL")) {
+      euConfReq.textContent = "Voluntary Codes of Conduct";
+    } else {
+      euConfReq.textContent = "Assessment Route Undetermined";
+    }
+  }
   const euConfCount = document.getElementById("euConformantCount");
-  if (euConfCount) euConfCount.textContent = `${eu.conformant_articles || '6/7'} Articles Conformant`;
+  if (euConfCount) euConfCount.textContent = `${eu.conformant_articles || '0/7'} Articles Conformant`;
 
   // 8. NIST AI RMF 1.0 Crosswalk & Subcategories Table
   renderNistSection(data.compliance?.nist_rmf || data.compliance?.nist_ai_rmf);
@@ -885,7 +899,7 @@ function renderTerminalLogs(logs) {
 
   term.innerHTML = logs.map((l, idx) => {
     const timeStr = `[00:00:0${idx + 1}]`;
-    const badgeClass = l.status === "SUCCESS" ? "COMPLETE" : (l.status === "WARNING" ? "WARNING" : (l.status === "DANGER" ? "DANGER" : "PROBE"));
+    const badgeClass = l.status === "SUCCESS" ? "COMPLETE" : (l.status === "WARNING" ? "WARNING" : (l.status === "DANGER" ? "DANGER" : "AUDIT"));
     return `
       <div class="log-entry">
         <span class="log-timestamp">${timeStr}</span>
@@ -1557,7 +1571,7 @@ function generateFormattedModelCardMarkdown(format, data) {
 
 ### 4. Technical Documentation & Record-Keeping (Articles 11 & 12)
 - **Automated Logging:** Enabled via immutable audit trail
-- **Hash Integrity:** SHA-256 validated
+- **Hash Integrity:** ${(data.audit_hash || currentAuditData?.audit_hash) ? 'SHA-256 (' + (data.audit_hash || currentAuditData.audit_hash) + ')' : 'SHA-256 Validated'}
 - **Audit Retention Policy:** >= 6 months tamper-evident persistence
 
 ### 5. Transparency & Human Oversight (Articles 13 & 14)
@@ -1583,11 +1597,12 @@ The target AI system has completed automated governance and cybersecurity evalua
 
 ### Key Performance Pillars (0–100)
 - **Security & Robustness:** ${dims['Security & Robustness'] ?? '—'}
+- **Safety & Reliability:** ${dims['Safety & Reliability'] ?? '—'}
 - **Fairness & Non-Discrimination:** ${dims['Fairness & Non-Discrimination'] ?? '—'}
 - **Transparency & Explainability:** ${dims['Transparency & Explainability'] ?? '—'}
 - **Privacy & Data Governance:** ${dims['Privacy & Data Governance'] ?? '—'}
 - **Human Oversight & Agency:** ${dims['Human Oversight & Agency'] ?? '—'}
-- **Safety & Reliability:** ${dims['Safety & Reliability'] ?? '—'}
+- **Accountability & Governance:** ${dims['Accountability & Governance'] ?? '—'}
 
 ### Primary Governance Bottleneck
 - **Bottleneck Dimension:** ${scoring.bottleneck_dimension || 'Safety & Reliability'} (${scoring.bottleneck_score ?? '—'}/100)

@@ -1283,7 +1283,7 @@ body {
   flex-shrink: 0;
 }
 .log-badge.DISCOVERY { background: rgba(0, 123, 167, 0.20); color: #1A9FD0; }
-.log-badge.PROBE { background: rgba(255, 230, 0, 0.15); color: #FFE600; }
+.log-badge.PROBE, .log-badge.AUDIT { background: rgba(255, 230, 0, 0.15); color: #FFE600; }
 .log-badge.WARNING { background: rgba(222, 176, 74, 0.20); color: #F0C86E; }
 .log-badge.DANGER { background: rgba(224, 85, 85, 0.20); color: #F77878; }
 .log-badge.COMPLETE { background: rgba(77, 187, 110, 0.15); color: #6EDB8E; }

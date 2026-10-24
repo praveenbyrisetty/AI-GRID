@@ -1,14 +1,16 @@
 """
-AI-GRID Questionnaire-Based Audit Engine (v3.0)
+AI-GRID Questionnaire-Based Audit Engine (v4.0)
 
-Implements the 30 Research-Grounded Question Bank (5 per dimension x 6 dimensions)
+Implements the 35 Research-Grounded Question Bank (5 per dimension x 7 dimensions)
 grounded in QB4AIRA (Lee et al., 2024), Pfau & Jung (IEEE TAI 2026), EU AI Act (Articles 9-15),
-NIST AI RMF 1.0, ISO/IEC 42001, OWASP Top 10, and MITRE ATLAS.
+NIST AI 100-1, OWASP Top 10, and MITRE ATLAS.
 
-Employs Multi-Tier Evidence Weighting (T1=1.0, T2=0.8, T3=0.6) and Empirical
-Risk Minimization (ERM) Bottleneck-Penalized Trust Scoring (AAS).
+Employs Multi-Tier Evidence Weighting (T1=1.0, T2=0.8, T3=0.6; all active audits currently T3)
+and bottleneck-penalised aggregate scoring (AAS), inspired by average-case versus worst-case ERM.
 """
 
+import hashlib
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from compliance_engines import (
@@ -122,7 +124,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "QB4AIRA §Security; Pfau & Jung (IEEE TAI 2026) §Robustness",
         "eu_ai_act_ref": "Art. 15(4)",
         "nist_rmf_ref": "MEASURE 2.7",
-        "owasp_ref": "OWASP LLM01 / MCP01",
+        "owasp_ref": "OWASP LLM01 (Prompt Injection)",
         "mitre_atlas_ref": "AML.T0029"
     },
     {
@@ -141,7 +143,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "QB4AIRA §Monitoring; RBAAF Governance Framework",
         "eu_ai_act_ref": "Art. 9(2)(b)",
         "nist_rmf_ref": "MANAGE 4.2",
-        "owasp_ref": "OWASP MCP04",
+        "owasp_ref": "OWASP LLM04 (Data Poisoning)",
         "mitre_atlas_ref": "AML.T0015"
     },
     {
@@ -160,7 +162,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "OWASP MCP Top 10 (MCP04); NIST SP 800-218 (SSDF)",
         "eu_ai_act_ref": "Art. 15(2)",
         "nist_rmf_ref": "GOVERN 1.7",
-        "owasp_ref": "OWASP LLM03 / MCP04",
+        "owasp_ref": "OWASP LLM03 (Supply Chain Vulnerabilities)",
         "mitre_atlas_ref": "AML.T0015"
     },
     {
@@ -179,7 +181,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "OWASP LLM Top 10; MCPSHIELD (Acharya & Gupta, 2026)",
         "eu_ai_act_ref": "Art. 15(4)",
         "nist_rmf_ref": "MEASURE 2.7",
-        "owasp_ref": "OWASP LLM01 / MCP01",
+        "owasp_ref": "OWASP LLM01 (Prompt Injection)",
         "mitre_atlas_ref": "AML.T0054"
     },
     {
@@ -198,7 +200,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "OWASP MCP Top 10 (MCP07); Google Research Agentic Security (2026)",
         "eu_ai_act_ref": "Art. 15(3)",
         "nist_rmf_ref": "MANAGE 2.4",
-        "owasp_ref": "OWASP MCP07",
+        "owasp_ref": "OWASP API04 (Resource Consumption)",
         "mitre_atlas_ref": "AML.T0043"
     },
 
@@ -419,7 +421,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "NIST SP 800-53 (SC-28); GDPR Article 32(1)(a)",
         "eu_ai_act_ref": "Art. 10(5)",
         "nist_rmf_ref": "GOVERN 1.2",
-        "owasp_ref": "OWASP LLM06 / MCP07",
+        "owasp_ref": "OWASP LLM06 (Sensitive Data Disclosure)",
         "mitre_atlas_ref": "AML.T0015"
     },
     {
@@ -438,7 +440,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "NIST SP 800-53 (SC-8); RFC 8446 (TLS 1.3)",
         "eu_ai_act_ref": "Art. 15(3)",
         "nist_rmf_ref": "GOVERN 1.2",
-        "owasp_ref": "OWASP MCP07",
+        "owasp_ref": "OWASP API04 (Resource Consumption)",
         "mitre_atlas_ref": "AML.T0043"
     },
     {
@@ -495,7 +497,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "ISO/IEC 42001:2023 §A.7; QB4AIRA §Governance",
         "eu_ai_act_ref": "Art. 10(2)",
         "nist_rmf_ref": "GOVERN 1.1",
-        "owasp_ref": "OWASP MCP04",
+        "owasp_ref": "OWASP LLM04 (Data Poisoning)",
         "mitre_atlas_ref": "AML.T0015"
     },
 
@@ -537,7 +539,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "Pfau & Jung (IEEE TAI 2026) §Human Agency; EU AI Act Art. 14(4)",
         "eu_ai_act_ref": "Art. 14(4)",
         "nist_rmf_ref": "GOVERN 1.4",
-        "owasp_ref": "OWASP LLM08 / MCP06",
+        "owasp_ref": "OWASP LLM08 (Excessive Agency)",
         "mitre_atlas_ref": "AML.T0054"
     },
     {
@@ -556,7 +558,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "Pfau & Jung (IEEE TAI 2026) §Human Agency; Dhanorkar et al. (2026)",
         "eu_ai_act_ref": "Art. 14(4)(e)",
         "nist_rmf_ref": "GOVERN 1.4",
-        "owasp_ref": "OWASP MCP06",
+        "owasp_ref": "OWASP LLM08 (Excessive Agency)",
         "mitre_atlas_ref": "AML.T0054"
     },
     {
@@ -617,7 +619,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "ISO/IEC 42001 §A.8; QB4AIRA §Accountability",
         "eu_ai_act_ref": "Art. 9(9)",
         "nist_rmf_ref": "MANAGE 4.1",
-        "owasp_ref": "OWASP MCP06",
+        "owasp_ref": "OWASP LLM08 (Excessive Agency)",
         "mitre_atlas_ref": "AML.T0054"
     },
     {
@@ -716,7 +718,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "QB4AIRA §Safety; Pfau & Jung (IEEE TAI 2026) §Robustness",
         "eu_ai_act_ref": "Art. 15(1)",
         "nist_rmf_ref": "MANAGE 2.2",
-        "owasp_ref": "OWASP LLM01 / MCP03",
+        "owasp_ref": "OWASP LLM01 (Prompt Injection)",
         "mitre_atlas_ref": "AML.T0043"
     },
     {
@@ -735,7 +737,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         "research_source": "RBAAF Safety Scaffold; Pfau & Jung (IEEE TAI 2026) §Safety",
         "eu_ai_act_ref": "Art. 9(2)(a)",
         "nist_rmf_ref": "MANAGE 2.2",
-        "owasp_ref": "OWASP LLM05 / MCP03",
+        "owasp_ref": "OWASP LLM05 (Improper Output Handling)",
         "mitre_atlas_ref": "AML.T0029"
     },
     {
@@ -913,22 +915,13 @@ def calculate_dimension_scores(answers: Dict[str, Any],
             raw_avg = dim_totals[dim] / dim_counts[dim]
             dimension_scores[dim] = round(raw_avg, 1)
 
-    # Provide backward-compatibility for legacy callers expecting composite dimension
-    s_over = dimension_scores.get("Human Oversight & Agency")
-    s_acct = dimension_scores.get("Accountability & Governance")
-    if s_over is not None and s_acct is not None:
-        dimension_scores["Human Oversight & Accountability"] = round((s_over + s_acct) / 2.0, 1)
-    elif s_over is not None:
-        dimension_scores["Human Oversight & Accountability"] = s_over
-    elif s_acct is not None:
-        dimension_scores["Human Oversight & Accountability"] = s_acct
-
     return dimension_scores, findings, logs
 
 
 def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: float = 0.6) -> Dict[str, Any]:
     """
-    Computes Bottleneck-Penalized Trust Score (AAS) via bottleneck-penalised aggregate:
+    Computes Bottleneck-Penalized Trust Score (AAS) via bottleneck-penalised aggregate,
+    inspired by average-case versus worst-case ERM:
     AAS = alpha * mean(S) + (1 - alpha) * min(S)
     Dimensions with score=None are excluded from mean and min.
     Withholds AAS if fewer than 4 dimensions have evidence.
@@ -999,7 +992,7 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: fl
 def generate_audit_from_questionnaire(answers: Dict[str, Any],
                                       evidence_tier: str = "T3") -> Dict[str, Any]:
     """
-    Takes user questionnaire answers and executes the complete 6-dimension audit.
+    Takes user questionnaire answers and executes the complete 7-dimension audit.
     Integrates all research-grounded compliance engines.
     """
     logs: List[Dict[str, str]] = []
@@ -1018,9 +1011,9 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
     log("DISCOVERY", f"Operating Domain: {domain_label} | Architecture: {architecture} | Topology: {deployment_type}", "SUCCESS")
     log("DISCOVERY", f"Evidence Tier: {evidence_tier} (Confidence Weight: {1.0 if evidence_tier=='T1' else (0.8 if evidence_tier=='T2' else 0.6)})", "INFO")
 
-    # Phase 1: Compute 6 Dimension Scores
+    # Phase 1: Compute 7 Dimension Scores
     dimensions, findings, audit_logs = calculate_dimension_scores(answers, evidence_tier=evidence_tier)
-    log("EVALUATION", f"Computed 6 dimension scores across 30 research-grounded question items.", "SUCCESS")
+    log("EVALUATION", f"Computed 7 dimension scores across 35 research-grounded question items.", "SUCCESS")
 
     # Phase 2: Compute Bottleneck AAS
     scoring = compute_aas_and_bottleneck(dimensions, alpha=0.6)
@@ -1087,13 +1080,12 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
         },
         "threat_landscape": {
             "owasp_llm_top_10": threat_crosswalk["owasp_llm_top_10"],
-            "owasp_mcp_top_10": threat_crosswalk["owasp_mcp_top_10"],
             "mitre_atlas_techniques": threat_crosswalk["mitre_atlas_techniques"]
         },
         "remediation_plan": findings,
         "audit_logs": logs + audit_logs,
-        "probe_summary": {
-            "total_questions": 30,
+        "audit_summary": {
+            "total_questions": 35,
             "evidence_tier": evidence_tier,
             "confidence_weight": metadata["evidence_confidence_weight"],
             "findings_count": len(findings),
@@ -1110,5 +1102,10 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
 
     # Generate Google Model Card
     audit_payload["model_card"] = generate_google_model_card(audit_payload)
+
+    # Compute SHA-256 integrity hash of canonical payload
+    canonical_bytes = json.dumps(audit_payload, sort_keys=True, default=str).encode("utf-8")
+    audit_payload["audit_hash"] = hashlib.sha256(canonical_bytes).hexdigest()
+    audit_payload["sha256_hash"] = audit_payload["audit_hash"]
 
     return audit_payload
