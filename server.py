@@ -510,6 +510,6 @@ if __name__ == "__main__":
     print(f" Dashboard URL: http://{host}:{port}")
     print(" Architecture: Questionnaire-Based AI Governance & Compliance Auditing")
     print(" Frameworks: EU AI Act (Arts 9-15) | NIST AI 100-1 | OWASP LLM Top 10")
-    print(" Persistence: SQLite (data/aigrid_audits.db)")
+    print(" Persistence: SQLite (aigrid_audits.db)")
     print("=================================================================")
     app.run(host=host, port=port, debug=False)

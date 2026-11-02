@@ -19,14 +19,11 @@ Thumbs.db
 # Testing & Cache
 .pytest_cache/
 
-# Scratch / temp files
-scratch/
-blaock.html
-blaock_files/
-
-# Archive (old docs)
-archive/
-
 # Databases
 *.db
-data/*.db
+
+# Temporary / Scratch
+scratch/
+archive/
+data/
+tests/

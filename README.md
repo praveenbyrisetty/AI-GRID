@@ -6,7 +6,6 @@
 [![Framework](https://img.shields.io/badge/Framework-Flask%20%7C%20REST%20API-orange.svg)](https://flask.palletsprojects.com/)
 [![Standards](https://img.shields.io/badge/Standards-EU%20AI%20Act%20(Art.%209--15)%20%7C%20NIST%20AI%20100--1-emerald.svg)](https://artificialintelligenceact.eu/)
 [![Taxonomy](https://img.shields.io/badge/Taxonomy-QB4AIRA%20(IEEE%202024)-purple.svg)](https://doi.org/10.1109/MS.2024.3512577)
-[![Tests](https://img.shields.io/badge/Tests-34%20Passed%20(pytest)-brightgreen.svg)](tests/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -120,12 +119,6 @@ pip install -r requirements.txt
 python server.py
 ```
 Open **`http://localhost:8000`** in any modern web browser.
-
-### Running Test Verification Suite
-Execute the full 34-test verification suite (unit tests, API security, compliance indicators, and empirical experiments):
-```bash
-python -m pytest tests/ -v
-```
 
 ---
 

@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger("aigrid.audit_store")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+DATA_DIR = BASE_DIR
 DB_PATH = os.path.join(DATA_DIR, "aigrid_audits.db")
 
 
