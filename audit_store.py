@@ -20,8 +20,14 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger("aigrid.audit_store")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = BASE_DIR
-DB_PATH = os.path.join(DATA_DIR, "aigrid_audits.db")
+
+# Serverless platforms (e.g. Vercel, AWS Lambda) have read-only filesystems except /tmp
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    DEFAULT_DB_PATH = "/tmp/aigrid_audits.db"
+else:
+    DEFAULT_DB_PATH = os.path.join(BASE_DIR, "aigrid_audits.db")
+
+DB_PATH = os.environ.get("AIGRID_DB_PATH", DEFAULT_DB_PATH)
 
 
 class AuditStore:
@@ -29,8 +35,16 @@ class AuditStore:
 
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path or DB_PATH
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        self._init_db()
+        try:
+            db_dir = os.path.dirname(self.db_path)
+            if db_dir:
+                os.makedirs(db_dir, exist_ok=True)
+            self._init_db()
+        except (sqlite3.OperationalError, PermissionError, OSError) as e:
+            # Fallback to /tmp if current directory is read-only (e.g. Vercel)
+            logger.warning(f"Failed to initialize SQLite at {self.db_path} ({e}), falling back to /tmp/aigrid_audits.db")
+            self.db_path = "/tmp/aigrid_audits.db"
+            self._init_db()
 
     def _get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)

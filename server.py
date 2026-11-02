@@ -50,21 +50,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger("aigrid.server")
 
-app = Flask(__name__, static_folder="public", static_url_path="")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PUBLIC_DIR = os.path.join(BASE_DIR, "public")
+
+app = Flask(__name__, static_folder=PUBLIC_DIR, static_url_path="")
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2MB max payload limit
 
-# Restrict CORS to trusted origins
-_allowed_origins_env = os.environ.get("AIGRID_ALLOWED_ORIGINS", "")
-if _allowed_origins_env:
+# Configure CORS
+_allowed_origins_env = os.environ.get("AIGRID_ALLOWED_ORIGINS", "").strip()
+if _allowed_origins_env == "*":
+    ALLOWED_ORIGINS = "*"
+elif _allowed_origins_env:
     ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
 else:
-    ALLOWED_ORIGINS = [
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+    ALLOWED_ORIGINS = "*"
 
 CORS(
     app,
@@ -176,7 +176,7 @@ def validate_json_body() -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
 # ================================================================
 @app.route("/")
 def index():
-    resp = send_from_directory("public", "index.html")
+    resp = send_from_directory(PUBLIC_DIR, "index.html")
     if not app.config.get("TESTING"):
         resp.set_cookie("aigrid_session", API_KEY, httponly=False, samesite="Lax", max_age=86400)
     return resp
@@ -190,10 +190,10 @@ def static_files(path):
     if safe_path == "api" or safe_path.startswith("api\\") or safe_path.startswith("api/"):
         return jsonify({"success": False, "error": "Not Found"}), 404
 
-    full_path = os.path.join("public", safe_path)
+    full_path = os.path.join(PUBLIC_DIR, safe_path)
     if os.path.exists(full_path) and os.path.isfile(full_path):
-        return send_from_directory("public", safe_path)
-    return send_from_directory("public", "index.html")
+        return send_from_directory(PUBLIC_DIR, safe_path)
+    return send_from_directory(PUBLIC_DIR, "index.html")
 
 
 # ================================================================
@@ -504,7 +504,7 @@ def get_sensitivity_analysis():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    host = os.environ.get("AIGRID_HOST", "127.0.0.1")
+    host = os.environ.get("AIGRID_HOST", os.environ.get("HOST", "0.0.0.0"))
     print("=================================================================")
     print(f" AI-GRID Trust Assurance & GRC Server (v4.0) Running on port {port}")
     print(f" Dashboard URL: http://{host}:{port}")
