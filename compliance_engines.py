@@ -477,7 +477,7 @@ def evaluate_eu_ai_act_compliance(domain: str,
             regulatory_tier = "HIGH RISK (Art. 6(1)/Annex I or Annex III §5)"
         else:
             regulatory_tier = "HIGH RISK (Annex III)"
-        regulatory_color = "orange"
+        regulatory_color = "red"
         tier_legal_basis = high_risk_domains[matched_k]
         market_placement_permitted = True
     elif any(k in domain_clean for k in ("ecommerce", "entertainment", "general")):

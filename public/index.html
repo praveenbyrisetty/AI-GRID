@@ -192,7 +192,7 @@
 
 
             <!-- KPI 4: Compliance Assessment -->
-            <div class="kpi-card">
+            <div class="kpi-card" id="kpiCardEu">
               <div class="kpi-top">
                 <span class="kpi-label">EU AI Act Classification</span>
                 <span class="badge info" id="kpiEuBadge">STANDBY</span>
@@ -509,13 +509,13 @@
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk; confirm route Article 6(1)/Annex I or Annex III §5)">
-                  🏥 Clinical Diagnostic AI (High-Risk)
+                  🏥 Clinical Diagnostic AI <span class="badge critical" style="margin-left:6px; font-size:9px;">HIGH RISK</span>
                 </button>
                 <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk under Annex III)">
-                  💳 Credit Scoring AI (High-Risk)
+                  💳 Credit Scoring AI <span class="badge critical" style="margin-left:6px; font-size:9px;">HIGH RISK</span>
                 </button>
                 <button class="btn-secondary sm" onclick="loadPresetProfile('assistant')" title="Load General Purpose AI Assistant (Minimal Risk)">
-                  🤖 General Assistant (Minimal Risk)
+                  🤖 General Assistant <span class="badge success" style="margin-left:6px; font-size:9px;">MINIMAL RISK</span>
                 </button>
                 <button class="btn-secondary sm" onclick="clearWizardAnswers()" title="Clear form answers">
                   🧹 Clear Answers

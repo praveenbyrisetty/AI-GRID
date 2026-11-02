@@ -1,3 +1,4 @@
+
 /**
  * AI-GRID Enterprise Control Plane (v4.0)
  * High-Assurance AI Governance & Compliance Auditing Platform
@@ -394,7 +395,10 @@ function clearAuditUI() {
   }
 
   const euTier = document.getElementById("kpiEuTier");
-  if (euTier) euTier.textContent = "UNASSESSED";
+  if (euTier) {
+    euTier.textContent = "UNASSESSED";
+    euTier.style.color = "var(--text-secondary)";
+  }
 
   const euStatus = document.getElementById("kpiEuStatus");
   if (euStatus) euStatus.textContent = "Awaiting statutory article evaluation";
@@ -403,6 +407,11 @@ function clearAuditUI() {
   if (euBadge) {
     euBadge.textContent = "STANDBY";
     euBadge.className = "badge info";
+  }
+
+  const kpiCardEu = document.getElementById("kpiCardEu");
+  if (kpiCardEu) {
+    kpiCardEu.classList.remove("risk-high", "risk-minimal");
   }
 
   // Verdict banner
@@ -513,7 +522,10 @@ function clearAuditUI() {
     euBadgeEl.className = "badge info";
   }
   const euTierName = document.getElementById("euTierName");
-  if (euTierName) euTierName.textContent = "Awaiting Assessment";
+  if (euTierName) {
+    euTierName.textContent = "Awaiting Assessment";
+    euTierName.style.color = "var(--text-primary)";
+  }
   const euLegalBasis = document.getElementById("euLegalBasis");
   if (euLegalBasis) euLegalBasis.textContent = "—";
   const euMarket = document.getElementById("euMarketPermitted");
@@ -757,9 +769,52 @@ function applyAuditDataToUI(data, tierText) {
   }
 
   const eu = data.compliance?.eu_ai_act || {};
-  document.getElementById("kpiEuTier").textContent = eu.tier || "HIGH RISK";
-  document.getElementById("kpiEuStatus").textContent = `${eu.conformant_articles || '6/7'} Articles Technical Conformity`;
-  document.getElementById("kpiEuBadge").textContent = eu.tier && eu.tier.includes("HIGH") ? "ANNEX III" : "MINIMAL";
+  const isHighRisk = eu.tier && (eu.tier.includes("HIGH") || eu.tier.includes("PROHIBITED") || eu.tier.includes("Annex III"));
+  const isMinimalRisk = eu.tier && (eu.tier.includes("MINIMAL") || eu.tier.includes("Unregulated") || eu.tier.includes("LOW"));
+
+  const euTierEl = document.getElementById("kpiEuTier");
+  if (euTierEl) {
+    euTierEl.textContent = eu.tier || "HIGH RISK";
+    if (isHighRisk) {
+      euTierEl.style.color = "var(--critical)";
+    } else if (isMinimalRisk) {
+      euTierEl.style.color = "var(--success)";
+    } else {
+      euTierEl.style.color = "var(--text-primary)";
+    }
+  }
+
+  const euStatusEl = document.getElementById("kpiEuStatus");
+  if (euStatusEl) {
+    euStatusEl.textContent = `${eu.conformant_articles || '6/7'} Articles Technical Conformity`;
+  }
+
+  const euBadgeEl = document.getElementById("kpiEuBadge");
+  if (euBadgeEl) {
+    if (isHighRisk) {
+      euBadgeEl.textContent = eu.tier && eu.tier.includes("PROHIBITED") ? "PROHIBITED" : (eu.tier && eu.tier.includes("Annex III") ? "ANNEX III • HIGH RISK" : "HIGH RISK");
+      euBadgeEl.className = "badge critical";
+    } else if (isMinimalRisk) {
+      euBadgeEl.textContent = "MINIMAL RISK";
+      euBadgeEl.className = "badge success";
+    } else if (eu.tier && eu.tier.includes("LIMITED")) {
+      euBadgeEl.textContent = "LIMITED RISK (ART. 50)";
+      euBadgeEl.className = "badge warning";
+    } else {
+      euBadgeEl.textContent = "STANDBY";
+      euBadgeEl.className = "badge info";
+    }
+  }
+
+  const kpiCardEu = document.getElementById("kpiCardEu");
+  if (kpiCardEu) {
+    kpiCardEu.classList.remove("risk-high", "risk-minimal");
+    if (isHighRisk) {
+      kpiCardEu.classList.add("risk-high");
+    } else if (isMinimalRisk) {
+      kpiCardEu.classList.add("risk-minimal");
+    }
+  }
 
   // 3. Summary Posture Card Updates
   const ovBadge = document.getElementById("overviewStatusBadge");
@@ -779,7 +834,7 @@ function applyAuditDataToUI(data, tierText) {
   const sumTier = document.getElementById("summaryTierBadge");
   if (sumTier) {
     sumTier.textContent = eu.tier || "ANNEX III §5";
-    sumTier.className = "badge " + (eu.tier && eu.tier.includes("HIGH") ? "warning" : "success");
+    sumTier.className = "badge " + (isHighRisk ? "critical" : (isMinimalRisk ? "success" : "warning"));
   }
 
   // 4. Radar Chart & Dimension Cards
@@ -839,10 +894,27 @@ function applyAuditDataToUI(data, tierText) {
   const euBadge = document.getElementById("euBadge");
   if (euBadge) {
     euBadge.textContent = eu.tier ? `${eu.tier}` : "UNCLASSIFIED";
-    euBadge.className = `badge ${eu.tier && eu.tier.includes("HIGH") ? "warning" : (eu.tier && eu.tier.includes("PROHIBITED") ? "critical" : "info")}`;
+    if (isHighRisk) {
+      euBadge.className = "badge critical";
+    } else if (isMinimalRisk) {
+      euBadge.className = "badge success";
+    } else if (eu.tier && eu.tier.includes("LIMITED")) {
+      euBadge.className = "badge warning";
+    } else {
+      euBadge.className = "badge info";
+    }
   }
   const euTierName = document.getElementById("euTierName");
-  if (euTierName) euTierName.textContent = eu.tier || "UNCLASSIFIED";
+  if (euTierName) {
+    euTierName.textContent = eu.tier || "UNCLASSIFIED";
+    if (isHighRisk) {
+      euTierName.style.color = "var(--critical)";
+    } else if (isMinimalRisk) {
+      euTierName.style.color = "var(--success)";
+    } else {
+      euTierName.style.color = "var(--text-primary)";
+    }
+  }
   const euLegalBasis = document.getElementById("euLegalBasis");
   if (euLegalBasis) euLegalBasis.textContent = eu.legal_basis || "General AI System (Requires Domain Classification)";
   const euMarket = document.getElementById("euMarketPermitted");
@@ -1452,30 +1524,43 @@ function renderEuArticlesTable(articles) {
   const tbody = document.getElementById("euArticlesTbody");
   if (!tbody || !articles || articles.length === 0) return;
 
-  tbody.innerHTML = articles.map(a => `
-    <tr onclick="openArticleDrawer('${escapeHtml(a.article).replace(/[^0-9]/g, '')}')">
-      <td><strong>${escapeHtml(a.article)}</strong><br><small style="color:var(--text-secondary);">${escapeHtml(a.title)}</small></td>
-      <td><small>${escapeHtml(a.requirement)}</small></td>
-      <td><strong>${a.score ?? '—'}/100</strong></td>
-      <td><span class="badge ${a.status === 'CONFORMANT' ? 'success' : (a.status === 'PARTIAL' ? 'warning' : 'critical')}">${escapeHtml(a.status)}</span></td>
-      <td><small style="color:var(--text-secondary);">${(a.mandatory_controls || []).map(c => escapeHtml(c)).join(" &bull; ")}</small></td>
-    </tr>
-  `).join("");
+  tbody.innerHTML = articles.map(a => {
+    const isConformant = a.status && (a.status.includes("CONFORM") || a.status === "PASS");
+    const isRisk = a.status && (a.status.includes("RISK") || a.status.includes("NON_CONFORM") || a.status.includes("ACTION"));
+    const badgeClass = isConformant ? "success" : (isRisk ? "critical" : "warning");
+    const badgeText = isConformant ? "CONFORMANT" : (isRisk ? (a.status.includes("HIGH_RISK") ? "HIGH RISK" : "NON-CONFORMANT RISK") : escapeHtml(a.status));
+
+    return `
+      <tr onclick="openArticleDrawer('${escapeHtml(a.article).replace(/[^0-9]/g, '')}')">
+        <td><strong>${escapeHtml(a.article)}</strong><br><small style="color:var(--text-secondary);">${escapeHtml(a.title)}</small></td>
+        <td><small>${escapeHtml(a.requirement)}</small></td>
+        <td><strong>${a.score ?? '—'}/100</strong></td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td><small style="color:var(--text-secondary);">${(a.mandatory_controls || []).map(c => escapeHtml(c)).join(" &bull; ")}</small></td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderRemediationTable(plan) {
   const tbody = document.getElementById("remediationBody");
   if (!tbody || !plan || plan.length === 0) return;
 
-  tbody.innerHTML = plan.map((item, idx) => `
-    <tr onclick="openFindingDrawer(${idx})">
-      <td><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : (item.priority === 'HIGH' ? 'warning' : 'info')}">${escapeHtml(item.priority)}</span></td>
-      <td><strong>${escapeHtml(item.dimension)}</strong></td>
-      <td>${escapeHtml(item.finding)}</td>
-      <td><strong style="color:var(--primary-500);">${escapeHtml(item.action)}</strong></td>
-      <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref || 'Art. 9')}</small></td>
-    </tr>
-  `).join("");
+  tbody.innerHTML = plan.map((item, idx) => {
+    const isHighOrCritical = item.priority === 'CRITICAL' || item.priority === 'HIGH';
+    const isLowOrResolved = item.priority === 'LOW' || item.priority === 'RESOLVED' || item.priority === 'OPTIMAL';
+    const badgeClass = isHighOrCritical ? 'critical' : (isLowOrResolved ? 'success' : 'warning');
+
+    return `
+      <tr onclick="openFindingDrawer(${idx})">
+        <td><span class="badge ${badgeClass}">${escapeHtml(item.priority)}</span></td>
+        <td><strong>${escapeHtml(item.dimension)}</strong></td>
+        <td>${escapeHtml(item.finding)}</td>
+        <td><strong style="color:var(--primary-500);">${escapeHtml(item.action)}</strong></td>
+        <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref || 'Art. 9')}</small></td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function openFindingDrawer(idx) {
