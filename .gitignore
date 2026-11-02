@@ -24,6 +24,9 @@ scratch/
 blaock.html
 blaock_files/
 
+# Archive (old docs)
+archive/
+
 # Databases
 *.db
 data/*.db
