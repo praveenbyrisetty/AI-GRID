@@ -827,24 +827,31 @@ def get_questions() -> List[Dict[str, Any]]:
     return QUESTIONS
 
 
-def calculate_dimension_scores(answers: Dict[str, Any],
-                               evidence_tier: str = "T3") -> Tuple[Dict[str, float], List[Dict[str, Any]], List[Dict[str, Any]]]:
+def calculate_dimension_scores(
+    answers: Dict[str, Any],
+    evidence_tier: str = "T3",
+    verified_evidence: Optional[List[Dict[str, Any]]] = None
+) -> Tuple[Dict[str, Optional[float]], List[Dict[str, Any]], List[Dict[str, str]], Dict[str, Any]]:
     """
-    Computes 6-dimension scores from question answers using Multi-Tier Evidence Weighting:
-    - Tier 1 (Runtime Verification): weight = 1.0
-    - Tier 2 (Declared metadata/schema): weight = 0.8
-    - Tier 3 (Self-attested questionnaire response): weight = 0.6
+    Computes 7 dimension scores using multi-tier evidence weighting:
+    - Verified items (Tier 1): weight = 1.0, score overridden by empirical verifier
+    - Unverified self-attestations (Tier 3): weight = 0.6, claimed answer score
+    Also calculates the Attestation Gap between claimed and verified assurance.
     """
     tier_weights = {"T1": 1.0, "T2": 0.8, "T3": 0.6}
-    w_evidence = tier_weights.get(evidence_tier, 0.6)
+    default_w = tier_weights.get(evidence_tier, 0.6)
 
-    # Buckets for dimension scoring
-    dim_totals: Dict[str, float] = {d: 0.0 for d in DIMENSIONS_LIST}
-    dim_counts: Dict[str, int] = {d: 0 for d in DIMENSIONS_LIST}
+    # Index verified evidence items by item_id
+    v_map: Dict[str, Dict[str, Any]] = {}
+    if verified_evidence:
+        for v in verified_evidence:
+            if isinstance(v, dict) and "item_id" in v:
+                v_map[v["item_id"]] = v
+
     findings: List[Dict[str, Any]] = []
     logs: List[Dict[str, str]] = []
 
-    def finding(dim: str, sev: str, issue: str, action: str, eu_ref: str = "", nist_ref: str = ""):
+    def finding(dim: str, sev: str, issue: str, action: str, eu_ref: str = "", nist_ref: str = "", tier: str = "T3", weight: float = 0.6):
         badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
         findings.append({
             "priority": sev,
@@ -854,18 +861,22 @@ def calculate_dimension_scores(answers: Dict[str, Any],
             "action": action,
             "eu_ai_act_ref": eu_ref,
             "nist_ref": nist_ref,
-            "evidence_tier": evidence_tier,
-            "evidence_weight": w_evidence
+            "evidence_tier": tier,
+            "evidence_weight": weight
         })
 
-    # Build question lookup
+    # Buckets for weighted scoring:
+    # dim -> list of (score_0_to_1, evidence_weight)
+    dim_verified_items: Dict[str, List[Tuple[float, float]]] = {d: [] for d in DIMENSIONS_LIST}
+    # dim -> list of claimed_score_0_to_1
+    dim_claimed_items: Dict[str, List[float]] = {d: [] for d in DIMENSIONS_LIST}
+
     q_map = {q["id"]: q for q in QUESTIONS if not q.get("is_identity")}
 
     for q_id, q_def in q_map.items():
         dim = q_def["dimension"]
         user_val = answers.get(q_id)
         if user_val is None:
-            # Unanswered question: do NOT count as 0.5 default
             continue
 
         matched_opt = None
@@ -875,45 +886,95 @@ def calculate_dimension_scores(answers: Dict[str, Any],
                 break
 
         if matched_opt is None:
-            # Invalid/unrecognized value: do NOT count as 0.5 default
             continue
 
-        opt_score = float(matched_opt.get("score", 0.0))
-        opt_label = matched_opt.get("label", "")
+        claimed_score = float(matched_opt.get("score", 0.0))
+        dim_claimed_items[dim].append(claimed_score)
 
-        dim_totals[dim] += (opt_score * 100.0)
-        dim_counts[dim] += 1
+        # Check if empirical verified evidence exists for this question
+        if q_id in v_map:
+            v_item = v_map[q_id]
+            eff_score = float(v_item.get("verified_score", 0.0))
+            eff_tier = "T1"
+            eff_weight = 1.0
+            logs.append({
+                "timestamp": datetime.now().isoformat(),
+                "event": "VERIFIED_EVIDENCE_APPLIED",
+                "message": f"Verified evidence override for {q_id}: claimed={claimed_score:.2f}, verified={eff_score:.2f} (Tier T1, weight 1.0)."
+            })
+        else:
+            eff_score = claimed_score
+            eff_tier = evidence_tier
+            eff_weight = default_w
 
-        # Check for deficiencies
-        if opt_score == 0.0:
+        dim_verified_items[dim].append((eff_score, eff_weight))
+
+        # Record deficiency finding based on effective score
+        if eff_score == 0.0:
             finding(
                 dim=dim,
                 sev="CRITICAL" if dim in ("Security & Robustness", "Safety & Reliability") else "HIGH",
-                issue=f"{q_def['label']} — Control absent: {opt_label}",
+                issue=f"{q_def['label']} — Control absent: {matched_opt.get('label', '')}",
                 action=f"Remediate control mapped to {q_def.get('eu_ai_act_ref', 'compliance')} and {q_def.get('nist_rmf_ref', '')}.",
                 eu_ref=q_def.get("eu_ai_act_ref", ""),
-                nist_ref=q_def.get("nist_rmf_ref", "")
+                nist_ref=q_def.get("nist_rmf_ref", ""),
+                tier=eff_tier,
+                weight=eff_weight
             )
-        elif opt_score <= 0.6:
+        elif eff_score <= 0.6:
             finding(
                 dim=dim,
                 sev="MEDIUM",
-                issue=f"{q_def['label']} — Partial implementation: {opt_label}",
+                issue=f"{q_def['label']} — Partial implementation: {matched_opt.get('label', '')}",
                 action=f"Upgrade control to comprehensive status per {q_def.get('research_source', '')}.",
                 eu_ref=q_def.get("eu_ai_act_ref", ""),
-                nist_ref=q_def.get("nist_rmf_ref", "")
+                nist_ref=q_def.get("nist_rmf_ref", ""),
+                tier=eff_tier,
+                weight=eff_weight
             )
 
-    # Compute normalized dimension scores
+    # Compute verified dimension scores and claimed dimension scores
     dimension_scores: Dict[str, Optional[float]] = {}
-    for dim in DIMENSIONS_LIST:
-        if dim_counts[dim] == 0:
-            dimension_scores[dim] = None
-        else:
-            raw_avg = dim_totals[dim] / dim_counts[dim]
-            dimension_scores[dim] = round(raw_avg, 1)
+    claimed_scores: Dict[str, Optional[float]] = {}
+    attestation_gap: Dict[str, Any] = {"dimensions": {}, "composite_gap": 0.0}
 
-    return dimension_scores, findings, logs
+    for dim in DIMENSIONS_LIST:
+        items = dim_verified_items[dim]
+        c_items = dim_claimed_items[dim]
+
+        if not items:
+            dimension_scores[dim] = None
+            claimed_scores[dim] = None
+        else:
+            w_sum = sum(s * w for s, w in items)
+            w_total = sum(w for _, w in items)
+            dim_score = round(100.0 * (w_sum / w_total), 1) if w_total > 0 else None
+            dimension_scores[dim] = dim_score
+
+            c_score = round(100.0 * (sum(c_items) / len(c_items)), 1) if c_items else None
+            claimed_scores[dim] = c_score
+
+            gap = round((c_score - dim_score), 1) if (c_score is not None and dim_score is not None) else 0.0
+            attestation_gap["dimensions"][dim] = {
+                "claimed_score": c_score,
+                "verified_score": dim_score,
+                "gap": gap,
+                "verified_count": sum(1 for s, w in items if w == 1.0)
+            }
+
+    # Calculate overall composite gap
+    c_aas_obj = compute_aas_and_bottleneck(claimed_scores, alpha=0.6)
+    v_aas_obj = compute_aas_and_bottleneck(dimension_scores, alpha=0.6)
+    c_aas = c_aas_obj.get("aas_score")
+    v_aas = v_aas_obj.get("aas_score")
+    if c_aas is not None and v_aas is not None:
+        attestation_gap["composite_gap"] = round(c_aas - v_aas, 1)
+        attestation_gap["claimed_aas"] = c_aas
+        attestation_gap["verified_aas"] = v_aas
+    else:
+        attestation_gap["composite_gap"] = 0.0
+
+    return dimension_scores, findings, logs, attestation_gap
 
 
 def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: float = 0.6) -> Dict[str, Any]:
@@ -987,8 +1048,11 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: fl
     }
 
 
-def generate_audit_from_questionnaire(answers: Dict[str, Any],
-                                      evidence_tier: str = "T3") -> Dict[str, Any]:
+def generate_audit_from_questionnaire(
+    answers: Dict[str, Any],
+    evidence_tier: str = "T3",
+    verified_evidence: Optional[List[Dict[str, Any]]] = None
+) -> Dict[str, Any]:
     """
     Takes user questionnaire answers and executes the complete 7-dimension audit.
     Integrates all research-grounded compliance engines.
@@ -1010,7 +1074,7 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
     log("DISCOVERY", f"Evidence Tier: {evidence_tier} (Confidence Weight: {1.0 if evidence_tier=='T1' else (0.8 if evidence_tier=='T2' else 0.6)})", "INFO")
 
     # Phase 1: Compute 7 Dimension Scores
-    dimensions, findings, audit_logs = calculate_dimension_scores(answers, evidence_tier=evidence_tier)
+    dimensions, findings, audit_logs, attestation_gap = calculate_dimension_scores(answers, evidence_tier=evidence_tier, verified_evidence=verified_evidence)
     log("EVALUATION", "Computed 7 dimension scores across 35 research-grounded question items.", "SUCCESS")
 
     # Phase 2: Compute Bottleneck AAS
@@ -1091,6 +1155,8 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
         "audit_mode": "questionnaire",
         "aif360": fairness_metrics,
         "remediation_priority": counterfactual,
+        "verified_evidence": verified_evidence or [],
+        "attestation_gap": attestation_gap
     }
 
     # Generate Google Model Card

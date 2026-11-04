@@ -50,6 +50,12 @@
             </span>
             <span class="nav-text">Governance Questionnaire</span>
           </a>
+          <a class="nav-item" onclick="showPage('page-verify', this)" id="nav-verify" title="Empirical Evidence Verification">
+            <span class="nav-icon-wrap">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            </span>
+            <span class="nav-text">Evidence Verification (T1)</span>
+          </a>
 
           <div class="nav-section-label">Assurance &amp; Governance</div>
           <a class="nav-item" onclick="showPage('page-compliance', this)" id="nav-compliance" title="EU AI Act Articles 9-15">
@@ -559,6 +565,164 @@
               </button>
             </div>
           </section>
+        </div>
+      </div>
+
+      <!-- ============================================================= -->
+      <!-- SCREEN: EMPIRICAL EVIDENCE VERIFICATION (TIER T1)             -->
+      <!-- ============================================================= -->
+      <div class="page" id="page-verify">
+        <div class="page-inner">
+          <div class="page-header-row">
+            <div>
+              <h2 class="page-header-title">Empirical Evidence Verification (Tier T1)</h2>
+              <p class="page-header-subtitle">Deterministic runtime verification across 5 governance pillars. Replaces self-attestation with checked empirical evidence and computes Attestation Gap.</p>
+            </div>
+            <div class="page-header-actions">
+              <button class="btn-primary sm" onclick="applyVerifiedEvidenceToActiveAudit()">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Compile Audit With Verified Evidence</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Verified Evidence Summary Banner -->
+          <div class="card" style="margin-bottom:20px; border-left:4px solid var(--primary-500); background:linear-gradient(135deg, rgba(0, 123, 167, 0.08), rgba(0, 123, 167, 0.02));">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+              <div>
+                <h4 style="margin:0 0 6px 0; font-size:16px; font-weight:700;">Verified Evidence Dossier</h4>
+                <p style="margin:0; font-size:13px; color:var(--text-secondary);">
+                  Active verified modules: <strong id="verifiedModulesCount" style="color:var(--primary-500);">0 of 5 verified</strong>. Verified items are awarded Tier T1 weight (1.0) and override questionnaire responses.
+                </p>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button class="btn-secondary sm" onclick="clearVerifiedEvidence()">Reset All Evidence</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5 Modular Verification Cards -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+
+            <!-- 1. Fairness Verifier -->
+            <div class="card" id="card-verify-fairness">
+              <div class="card-header-row" style="margin-bottom:12px;">
+                <div>
+                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">1. Demographic Fairness (DIR / SPD)</h3>
+                  <span class="badge info">Q10 &bull; Art. 10(2)(f) &bull; MEASURE 2.11</span>
+                </div>
+                <span class="badge" id="badge-fairness-status" style="display:none;">UNVERIFIED</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
+                Upload predictions CSV with columns <code>protected_attribute</code>, <code>y_true</code>, <code>y_pred</code>. Computes Disparate Impact Ratio, Statistical Parity Difference, and Equal Opportunity Difference.
+              </p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Privileged Group Value:</label>
+                  <input type="text" id="fairnessPrivilegedVal" value="male" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                </div>
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Predictions CSV File:</label>
+                  <input type="file" id="fairnessFileInput" accept=".csv" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                </div>
+                <button class="btn-secondary sm" onclick="executeVerifier('fairness')">Verify Demographic Fairness</button>
+                <div id="fairnessResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+              </div>
+            </div>
+
+            <!-- 2. Dependencies / SBOM Verifier -->
+            <div class="card" id="card-verify-dependencies">
+              <div class="card-header-row" style="margin-bottom:12px;">
+                <div>
+                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">2. AI-BOM &amp; CVE Supply Chain</h3>
+                  <span class="badge info">Q3 &bull; NIST SP 800-218 &bull; OWASP LLM03</span>
+                </div>
+                <span class="badge" id="badge-dependencies-status" style="display:none;">UNVERIFIED</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
+                Upload <code>requirements.txt</code> or CycloneDX JSON SBOM. Matches runtime dependencies against <code>data/ai_cve_epss_registry.csv</code> for CVSS&ge;7 vulnerabilities.
+              </p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">SBOM / Requirements File:</label>
+                  <input type="file" id="dependenciesFileInput" accept=".json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                </div>
+                <button class="btn-secondary sm" onclick="executeVerifier('dependencies')">Verify Supply Chain SBOM</button>
+                <div id="dependenciesResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+              </div>
+            </div>
+
+            <!-- 3. TLS Verifier -->
+            <div class="card" id="card-verify-tls">
+              <div class="card-header-row" style="margin-bottom:12px;">
+                <div>
+                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">3. In-Transit Encryption (TLS Probe)</h3>
+                  <span class="badge info">Q17 &bull; RFC 8446 (TLS 1.3) &bull; SC-8</span>
+                </div>
+                <span class="badge" id="badge-tls-status" style="display:none;">UNVERIFIED</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
+                Probes public model serving endpoint for TLS 1.3 protocol and certificate validity. Hardened with SSRF protection (accepts only standard ports 443/8443; rejects private/loopback IPs).
+              </p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Endpoint Hostname:</label>
+                  <input type="text" id="tlsHostInput" placeholder="e.g., api.anthropic.com or huggingface.co" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                </div>
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Port (443 or 8443):</label>
+                  <input type="number" id="tlsPortInput" value="443" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                </div>
+                <button class="btn-secondary sm" onclick="executeVerifier('tls')">Probe TLS &amp; Certificate</button>
+                <div id="tlsResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+              </div>
+            </div>
+
+            <!-- 4. Log Integrity Verifier -->
+            <div class="card" id="card-verify-log_integrity">
+              <div class="card-header-row" style="margin-bottom:12px;">
+                <div>
+                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">4. Tamper-Evident Audit Logging</h3>
+                  <span class="badge info">Q27 &bull; EU AI Act Art. 12 &bull; ISO 42001 &sect;A.8</span>
+                </div>
+                <span class="badge" id="badge-log_integrity-status" style="display:none;">UNVERIFIED</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
+                Upload JSONL log file with SHA-256 hash chain (<code>prev_hash</code>, <code>data</code>, <code>hash</code>). Validates unbroken genesis and cryptographic tamper resistance.
+              </p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">JSONL Hash-Chain Log File:</label>
+                  <input type="file" id="logIntegrityFileInput" accept=".jsonl,.json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                </div>
+                <button class="btn-secondary sm" onclick="executeVerifier('log_integrity')">Verify Cryptographic Hash Chain</button>
+                <div id="logIntegrityResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+              </div>
+            </div>
+
+            <!-- 5. Robustness Verifier -->
+            <div class="card" id="card-verify-robustness">
+              <div class="card-header-row" style="margin-bottom:12px;">
+                <div>
+                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">5. Adversarial Robustness Degradation</h3>
+                  <span class="badge info">Q1 &bull; EU AI Act Art. 15(4) &bull; MEASURE 2.7</span>
+                </div>
+                <span class="badge" id="badge-robustness-status" style="display:none;">UNVERIFIED</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
+                Upload precomputed evaluations CSV with columns <code>clean_prediction</code>, <code>perturbed_prediction</code>, <code>ground_truth</code>. Measures empirical accuracy drop under perturbation.
+              </p>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div>
+                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Robustness Evaluation CSV:</label>
+                  <input type="file" id="robustnessFileInput" accept=".csv" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                </div>
+                <button class="btn-secondary sm" onclick="executeVerifier('robustness')">Measure Degradation Drop</button>
+                <div id="robustnessResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
 

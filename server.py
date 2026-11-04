@@ -36,6 +36,13 @@ from compliance_engines import (
     generate_google_model_card,
     get_dataset_catalog,
 )
+from verifiers import (
+    verify_fairness,
+    verify_dependencies,
+    verify_tls,
+    verify_log_integrity,
+    verify_robustness,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -258,8 +265,12 @@ def run_questionnaire_audit():
     if not isinstance(answers, dict):
         return jsonify({"success": False, "error": "'answers' must be a JSON dictionary"}), 400
 
+    verified_evidence = body.get("verified_evidence", [])
+    if not isinstance(verified_evidence, list):
+        verified_evidence = []
+
     try:
-        results = auditor.run_questionnaire_audit(answers)
+        results = auditor.run_questionnaire_audit(answers, verified_evidence=verified_evidence)
         results["disclaimer"] = DISCLAIMER_TEXT
 
         # Persist audit run to SQLite
@@ -292,6 +303,78 @@ def get_current_audit():
         return jsonify({"success": True, "active": True, "data": latest})
 
     return jsonify({"success": True, "active": False, "data": None})
+
+
+# ================================================================
+# ENDPOINT: Empirical Evidence Verifiers (Tier T1, weight 1.0)
+# ================================================================
+ALLOWED_EXTENSIONS = {"csv", "json", "txt", "jsonl"}
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/api/verify/<module>", methods=["POST"])
+def verify_module(module: str):
+    valid_modules = {"fairness", "dependencies", "tls", "log_integrity", "robustness"}
+    if module not in valid_modules:
+        return jsonify({
+            "success": False,
+            "error": f"Invalid verifier module '{module}'. Supported modules: {', '.join(sorted(valid_modules))}."
+        }), 400
+
+    client_ip = request.remote_addr or "unknown"
+    claimed_value = None
+    content_str = ""
+    params = {}
+
+    if request.content_type and "multipart/form-data" in request.content_type:
+        if "file" in request.files:
+            file_obj = request.files["file"]
+            if file_obj.filename == "":
+                return jsonify({"success": False, "error": "No file selected for upload."}), 400
+            if not allowed_file(file_obj.filename):
+                return jsonify({"success": False, "error": "File extension not allowed. Must be CSV, JSON, TXT, or JSONL."}), 400
+            content_bytes = file_obj.read(2 * 1024 * 1024 + 1)
+            if len(content_bytes) > 2 * 1024 * 1024:
+                return jsonify({"success": False, "error": "File exceeds 2 MB upload limit."}), 413
+            content_str = content_bytes.decode("utf-8", errors="replace")
+
+        params = request.form.to_dict()
+        claimed_value = params.get("claimed_value")
+    elif request.is_json:
+        body = request.get_json(silent=True) or {}
+        content_str = body.get("content") or body.get("csv_data") or body.get("log_data") or ""
+        claimed_value = body.get("claimed_value")
+        params = body
+    else:
+        content_str = request.get_data(as_text=True)
+
+    try:
+        if module == "fairness":
+            priv_val = params.get("privileged_value", "male")
+            res = verify_fairness(content_str, privileged_value=priv_val, claimed_value=claimed_value)
+        elif module == "dependencies":
+            res = verify_dependencies(content_str, claimed_value=claimed_value)
+        elif module == "tls":
+            host = str(params.get("host", "")).strip()
+            port_val = params.get("port", 443)
+            try:
+                port_num = int(port_val)
+            except (ValueError, TypeError):
+                port_num = 443
+            res = verify_tls(host=host, port=port_num, claimed_value=claimed_value, client_ip=client_ip)
+        elif module == "log_integrity":
+            res = verify_log_integrity(content_str, claimed_value=claimed_value)
+        elif module == "robustness":
+            res = verify_robustness(content_str, claimed_value=claimed_value)
+        else:
+            return jsonify({"success": False, "error": "Unknown module"}), 400
+
+        return jsonify({"success": True, "data": res})
+    except Exception as e:
+        logger.exception(f"Error executing verifier '{module}'")
+        return jsonify({"success": False, "error": f"Verification error in {module}: {str(e)}"}), 500
 
 
 # ================================================================

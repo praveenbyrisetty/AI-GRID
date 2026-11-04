@@ -20,6 +20,7 @@ let isTerminalPaused = false;
 const pageTitles = {
   "page-overview": "AI Assurance Overview",
   "page-setup": "AI Governance Questionnaire",
+  "page-verify": "Empirical Evidence Verification (Tier T1)",
   "page-compliance": "EU AI Act Regulatory Compliance",
   "page-history": "Audit Records & History",
   "page-question-bank": "Research Question Bank (35 Items)",
@@ -1425,7 +1426,7 @@ async function submitQuestionnaire() {
     const res = await fetch("/api/audit/questionnaire", {
       method: "POST",
       headers: getAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ answers: wizardAnswers })
+      body: JSON.stringify({ answers: wizardAnswers, verified_evidence: verifiedEvidenceStore })
     });
     if (res.status === 401) {
       handleAuthError(res);
@@ -1814,4 +1815,152 @@ function showToast(msg) {
     toast.style.transition = "all 0.2s ease";
     setTimeout(() => toast.remove(), 200);
   }, 3200);
+}
+
+
+// =========================================================================
+// EMPIRICAL EVIDENCE VERIFICATION CLIENT CONTROLLER (TIER T1)
+// =========================================================================
+let verifiedEvidenceStore = [];
+
+function updateVerifiedEvidenceBadgeCount() {
+  const countEl = document.getElementById("verifiedModulesCount");
+  if (countEl) {
+    countEl.textContent = `${verifiedEvidenceStore.length} of 5 verified`;
+  }
+}
+
+function clearVerifiedEvidence() {
+  verifiedEvidenceStore = [];
+  updateVerifiedEvidenceBadgeCount();
+  ["fairness", "dependencies", "tls", "log_integrity", "robustness"].forEach(mod => {
+    const badge = document.getElementById(`badge-${mod}-status`);
+    if (badge) badge.style.display = "none";
+    const box = document.getElementById(`${mod}ResultBox`);
+    if (box) { box.style.display = "none"; box.innerHTML = ""; }
+  });
+  showToast("All verified evidence items cleared.");
+}
+
+async function executeVerifier(moduleName) {
+  const box = document.getElementById(`${moduleName}ResultBox`);
+  const badge = document.getElementById(`badge-${moduleName}-status`);
+  if (box) {
+    box.style.display = "block";
+    box.innerHTML = `<span style="color:var(--text-muted);">Executing empirical ${moduleName} verification...</span>`;
+  }
+
+  try {
+    let res;
+    if (moduleName === "tls") {
+      const host = (document.getElementById("tlsHostInput")?.value || "").trim();
+      const port = parseInt(document.getElementById("tlsPortInput")?.value || "443", 10);
+      if (!host) {
+        alert("Please enter a valid hostname for TLS probe.");
+        return;
+      }
+      res = await fetch("/api/verify/tls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ host, port })
+      });
+    } else {
+      let fileInputId = "";
+      if (moduleName === "fairness") fileInputId = "fairnessFileInput";
+      else if (moduleName === "dependencies") fileInputId = "dependenciesFileInput";
+      else if (moduleName === "log_integrity") fileInputId = "logIntegrityFileInput";
+      else if (moduleName === "robustness") fileInputId = "robustnessFileInput";
+
+      const fileInput = document.getElementById(fileInputId);
+      if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert("Please select a file to upload for verification.");
+        if (box) box.style.display = "none";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      if (moduleName === "fairness") {
+        const privVal = document.getElementById("fairnessPrivilegedVal")?.value || "male";
+        formData.append("privileged_value", privVal);
+      }
+
+      res = await fetch(`/api/verify/${encodeURIComponent(moduleName)}`, {
+        method: "POST",
+        body: formData
+      });
+    }
+
+    const json = await res.json();
+    if (json.success && json.data) {
+      const v = json.data;
+      // Store or replace in verifiedEvidenceStore
+      verifiedEvidenceStore = verifiedEvidenceStore.filter(e => e.module !== moduleName);
+      verifiedEvidenceStore.push(v);
+      updateVerifiedEvidenceBadgeCount();
+
+      if (badge) {
+        badge.style.display = "inline-block";
+        if (v.verified_score >= 1.0) {
+          badge.className = "badge success";
+          badge.textContent = "VERIFIED (1.0)";
+        } else if (v.verified_score >= 0.5) {
+          badge.className = "badge warning";
+          badge.textContent = `PARTIAL (${v.verified_score.toFixed(1)})`;
+        } else {
+          badge.className = "badge danger";
+          badge.textContent = "DEFICIT (0.0)";
+        }
+      }
+
+      if (box) {
+        box.innerHTML = `
+          <div style="color:var(--text-primary); margin-bottom:4px;"><strong>Status:</strong> ${v.claim_supported ? '<span style="color:var(--success);">Claim Supported</span>' : '<span style="color:var(--warning);">Claim Deficit</span>'} (Score: ${v.verified_score.toFixed(2)})</div>
+          <div style="color:var(--text-secondary); margin-bottom:6px;">${escapeHtml(v.details)}</div>
+          <div style="font-size:11px; color:var(--text-muted);"><pre style="margin:0; white-space:pre-wrap;">${escapeHtml(JSON.stringify(v.metrics, null, 2))}</pre></div>
+        `;
+      }
+      showToast(`${moduleName} evidence verified successfully!`);
+    } else {
+      if (box) box.innerHTML = `<span style="color:var(--critical);">Verification failed: ${escapeHtml(json.error || 'Unknown error')}</span>`;
+      alert("Verification Failed: " + (json.error || "Unknown error"));
+    }
+  } catch (err) {
+    if (box) box.innerHTML = `<span style="color:var(--critical);">Network error: ${escapeHtml(err.message)}</span>`;
+    alert("Verification Error: " + err.message);
+  }
+}
+
+async function applyVerifiedEvidenceToActiveAudit() {
+  if (verifiedEvidenceStore.length === 0) {
+    alert("No verified evidence items recorded yet. Please run at least one verifier before compiling.");
+    return;
+  }
+  showToast(`Compiling audit with ${verifiedEvidenceStore.length} verified evidence overrides...`);
+  // If wizardAnswers empty, pick healthcare preset baseline
+  if (!wizardAnswers || Object.keys(wizardAnswers).length === 0) {
+    wizardAnswers = { ...PRESET_PROFILES.healthcare };
+  }
+  try {
+    const res = await fetch("/api/audit/questionnaire", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        answers: wizardAnswers,
+        verified_evidence: verifiedEvidenceStore
+      })
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      currentAuditData = json.data;
+      applyAuditDataToUI(json.data, `Tier T1 Verified (${verifiedEvidenceStore.length} Empirical Items)`);
+      loadAuditHistory();
+      showToast("Audit compiled with verified evidence overrides!");
+      showPage("page-overview");
+    } else {
+      alert("Audit Compilation Failed: " + (json.error || "Unknown error"));
+    }
+  } catch (e) {
+    alert("Error submitting audit with verified evidence: " + e.message);
+  }
 }

@@ -238,12 +238,15 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
         "pre_mitigation": None,
         "post_mitigation_reweighed": None,
         "reference_benchmark_example": {
-            "dataset_name": baseline["dataset_name"],
-            "sample_count": baseline["sample_count"],
-            "protected_attribute": baseline["protected_attribute"],
-            "empirical_dir": baseline["empirical_dir"],
-            "empirical_spd": baseline["empirical_spd"],
+            "dataset_name": baseline.get("dataset_name", "UCI Statlog (German Credit Fairness Data)"),
+            "sample_count": baseline.get("sample_count", 1000),
+            "protected_attribute": baseline.get("protected_attribute", "gender (female=unprivileged, male=privileged)"),
+            "empirical_dir": baseline.get("empirical_dir", 0.897),
+            "empirical_spd": baseline.get("empirical_spd", -0.075),
             "note": "UCI German Credit reference dataset provided solely as an illustrative reference benchmark, NOT target model metrics.",
+        } if baseline.get("loaded") else {
+            "loaded": False,
+            "error": baseline.get("error", "dataset file not found")
         },
         "regulatory_alignment": {
             "eu_ai_act": "Article 10(2)(f) - Examination of possible biases in training datasets",

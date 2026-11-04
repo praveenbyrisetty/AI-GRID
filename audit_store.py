@@ -154,6 +154,22 @@ class AuditStore:
                 bottleneck_score, overall_confidence, payload_json,
             ))
 
+            # Store verified evidence items
+            for ev in payload.get("verified_evidence", []):
+                cursor.execute("""
+                    INSERT INTO audit_evidence (
+                        audit_id, dimension, source, tier, value, description, timestamp
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    audit_id,
+                    ev.get("dimension", "General"),
+                    ev.get("module", "verifier"),
+                    "T1",
+                    float(ev.get("verified_score", 0.0)) * 100.0 if ev.get("verified_score") is not None else None,
+                    ev.get("details", ""),
+                    datetime.now().isoformat(),
+                ))
+
             # Store findings
             findings = payload.get("remediation_plan", [])
             for f in findings:

@@ -1,5 +1,5 @@
 """
-AI-GRID Master Audit Orchestrator (v4.0)
+AI-GRID Master Audit Orchestrator (v5.0)
 
 Orchestrates multi-dimensional trustworthy AI governance audits based on
 research-grounded structured questionnaires (Tier T3 self-attestation)
@@ -8,7 +8,7 @@ and the 7 Trust Dimensions.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from ai_profile_engine import (
     get_questions,
@@ -27,11 +27,20 @@ class AIGRIDAuditor:
     def __init__(self):
         self.last_results: Optional[Dict[str, Any]] = None
 
-    def run_questionnaire_audit(self, answers: Dict[str, Any]) -> Dict[str, Any]:
+    def run_questionnaire_audit(
+        self,
+        answers: Dict[str, Any],
+        verified_evidence: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
         """
-        Executes an audit from structured questionnaire responses (Tier T3).
+        Executes an audit from structured questionnaire responses (Tier T3)
+        with empirical verified evidence overrides (Tier T1).
         """
-        results = generate_audit_from_questionnaire(answers, evidence_tier="T3")
+        results = generate_audit_from_questionnaire(
+            answers,
+            evidence_tier="T3",
+            verified_evidence=verified_evidence
+        )
         self.last_results = results
         return results
 
