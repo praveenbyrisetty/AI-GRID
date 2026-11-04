@@ -1,5 +1,8 @@
 # 📚 Research Foundations & 2026 Literature Base
 
+> [!IMPORTANT]
+> **Verification Notice**: Verify every reference before citing.
+
 This document catalogs the verified scientific papers, IEEE publications, and technical literature underpinning the **AI-GRID** governance and security framework.
 
 ---
@@ -27,46 +30,11 @@ This document catalogs the verified scientific papers, IEEE publications, and te
 | **EU AI Act Compliance** | Explicitly maps technical design choices to **EU AI Act legislative requirements and GDPR** — directly supports your regulatory compliance engine |
 | **Implementation Focus** | Bridges the gap between **high-level ethics principles → concrete technical implementation** — this is exactly what your `ai_profile_engine.py` questionnaire logic does |
 | **Human Oversight** | Emphasizes **"human agency and oversight"** to prevent uncontrolled AI decisions — directly maps to your Accountability & Oversight dimension |
-| **Interdisciplinary Approach** | Requires collaboration between **developers, legal experts, and ethicists** for use-case-specific assessment — matches your dual-mode (Questionnaire + MCP Audit) design philosophy |
+| **Interdisciplinary Approach** | Requires collaboration between **developers, legal experts, and ethicists** for use-case-specific assessment — matches your evaluation (Questionnaire + Empirical Evidence Verification) design philosophy |
 
 ---
 
 ## 📖 15 SUPPORTING PAPERS (ALL 2026)
-
----
-
-### Category 1: MCP & Agentic AI Security
-
-#### Paper 1: MCPSHIELD — Formal Security Framework for MCP
-| Field | Details |
-|:------|:--------|
-| **Title** | "A Formal Security Framework for MCP-Based AI Agents: Threat Taxonomy, Verification Models, and Defense Mechanisms" |
-| **Authors** | Nirajan Acharya, Gaurav Kumar Gupta |
-| **Source** | **arXiv:2604.05969** (April 7, 2026) |
-| **Relevance** | 🎯 Introduces MCPSHIELD — 7 threat categories, 23 attack vectors across 4 attack surfaces from analysis of 177,000+ MCP tools. Proposes defense-in-depth architecture with 91% threat coverage. Directly maps to your MCP live audit mode. |
-
-#### Paper 2: Agentic AI Framework for Intrusion Detection (AAIF)
-| Field | Details |
-|:------|:--------|
-| **Title** | "The Agentic AI Framework (AAIF): A Policy-Enforced Architecture for Accountable and High-Performance Intrusion Detection" |
-| **Authors** | Ibrahim Adabara, Bashir Olaniyi Sadiq, et al. |
-| **Source** | **Frontiers in Artificial Intelligence**, Vol. 9, DOI: [10.3389/frai.2026.1755696](https://doi.org/10.3389/frai.2026.1755696) |
-| **Relevance** | 🎯 Policy-enforced architecture using **declarative YAML-based governance** for AI agent auditability, aligned with **NIST AI RMF 2.0**. |
-
-#### Paper 3: SoK — Systems Security for Agentic Computing
-| Field | Details |
-|:------|:--------|
-| **Title** | "SoK: Systems Security Foundations for Agentic Computing" |
-| **Authors** | Google Research team |
-| **Source** | **Google Research / arXiv:2512.01295** |
-| **Relevance** | 🎯 Argues that **hardening a single AI model is insufficient** — advocates end-to-end systems security for agent-tool interactions with 11 attack case studies. Directly supports AI-GRID's approach of probing the **MCP security boundary**. |
-
-#### Paper 4: Agentic AI and Cybersecurity — Survey
-| Field | Details |
-|:------|:--------|
-| **Title** | "A Survey of Agentic AI and Cybersecurity: Challenges, Opportunities and Use-case Prototypes" |
-| **Source** | **arXiv:2601.05293** (January 2026) |
-| **Relevance** | 🎯 Maps **agent collusion, memory poisoning, oversight evasion** threats — directly relevant to your Security & Robustness dimension and tool-poisoning detection. |
 
 ---
 
@@ -177,8 +145,7 @@ This document catalogs the verified scientific papers, IEEE publications, and te
 | **Safety & Reliability** | Base Paper (IEEE TAI), Paper 15 (AAJR) |
 | **Privacy & Data Governance** | Paper 11 (Differential Privacy), Paper 6 (EU Law) |
 | **Accountability & Oversight** | Paper 12 (ACM FAccT), Paper 5 (MDPI) |
-| **Security & Robustness** | Paper 1 (MCPSHIELD), Paper 3 (Google SoK), Paper 4 (arXiv), Paper 15 (AAJR) |
+| **Security & Robustness** | Paper 15 (AAJR) |
 | **Societal Impact** | Paper 14 (Patterns), Paper 9 (arXiv) |
-| **MCP Agent Security** | Paper 1 (MCPSHIELD), Paper 3 (Google SoK), Paper 4 (arXiv) |
 | **EU AI Act Compliance** | Paper 5 (MDPI), Paper 6 (arXiv), Paper 7 (ORE) |
 | **NIST AI RMF** | Paper 2 (Frontiers AAIF), Base Paper (IEEE TAI) |

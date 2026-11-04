@@ -99,9 +99,9 @@ def test_threat_crosswalk_evidence_based():
     dims = {"Security & Robustness": 50.0, "Safety & Reliability": 40.0}
     threat_res = map_owasp_and_atlas(findings=findings, dimensions=dims)
 
-    mcp_codes = [t["code"] for t in threat_res["owasp_llm_top_10"]]
-    assert "LLM02" in mcp_codes
-    assert "LLM05" in mcp_codes
+    owasp_codes = [t["code"] for t in threat_res["owasp_llm_top_10"]]
+    assert "LLM02" in owasp_codes
+    assert "LLM05" in owasp_codes
 
     atlas_ids = [t["id"] for t in threat_res["mitre_atlas_techniques"]]
     assert "AML.T0054" in atlas_ids
