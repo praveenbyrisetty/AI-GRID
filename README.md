@@ -64,14 +64,14 @@ Where:
 AI-GRID executes fairness and risk calculations natively against 3 empirical datasets located in `data/`:
 
 1. **UCI Machine Learning Repository: Statlog (German Credit Data)** (`data/german_credit_fairness.csv`):
-   - **Sample Volume**: 1,002 rows, 10 attributes.
+   - **Sample Volume**: 1000 rows, 10 attributes.
    - **Protected Demographics**: Gender (`female` unprivileged, `male` privileged), Age, Foreign Worker.
-   - **Metrics**: Disparate Impact Ratio (DIR = 0.896), Statistical Parity Difference (SPD = -0.075), and Kamiran &amp; Calders (2012) sample reweighing weights.
+   - **Metrics**: Disparate Impact Ratio (DIR = 0.897), Statistical Parity Difference (SPD = -0.075), and Kamiran &amp; Calders (2012) sample reweighing weights.
 2. **Clinical Patient Safety &amp; Dosage Benchmark Cohort** (`data/clinical_patient_safety.csv`):
-   - **Sample Volume**: 299 patient records, 13 clinical vitals.
-   - **Verification**: 100% rejection rate on corrupted vitals, 28.4% output safety clamping rate, and 94.6% physician HITL approval rate.
+   - **Sample Volume**: 297 patient records, 13 clinical vitals.
+   - **Verification**: 6.1% output safety clamping rate, 100% physician HITL approval rate, high-risk cohort 16.2%, corrupted_input_rejection_rate = null (not computable; 0 corrupted rows in dataset).
 3. **AI Framework CVE &amp; EPSS Compound Registry** (`data/ai_cve_epss_registry.csv`):
-   - **Sample Volume**: 50 verified enterprise CVEs targeting PyTorch, TorchServe, LangChain, Transformers, ONNX, and NumPy.
+   - **Sample Volume**: 46 verified enterprise CVEs targeting PyTorch, TorchServe, LangChain, Transformers, ONNX, and NumPy.
    - **Formula**: $\text{Compound Risk} = \text{CVSS (0-10)} \times \text{EPSS (0-1)} \times \text{Asset Criticality Multiplier}$.
 
 ---

@@ -765,7 +765,7 @@ function applyAuditDataToUI(data, tierText) {
   }
   const cveBadgeEl = document.getElementById("kpiCveBadge");
   if (cveBadgeEl) {
-    cveBadgeEl.textContent = `${data.vulnerability_scan?.total_indexed_cves || 50} INDEXED`;
+    cveBadgeEl.textContent = `${data.vulnerability_scan?.total_indexed_cves || 46} INDEXED`;
   }
 
   const eu = data.compliance?.eu_ai_act || {};
@@ -1646,7 +1646,7 @@ function generateFormattedModelCardMarkdown(format, data) {
 - **Status:** ${(dims['Safety & Reliability'] >= 70 && dims['Security & Robustness'] >= 70) ? 'CONFORMANT' : 'REMEDIATION REQUIRED'}
 - **Safety & Reliability Score:** ${dims['Safety & Reliability'] ?? '—'}/100
 - **Continuous Drift Monitoring:** Verified via post-market telemetry
-- **Known Failure Mode Rejection:** 100% rejection on corrupted input payloads
+- **Known Failure Mode Rejection:** Output bounds clamping & verified guardrails
 
 ### 3. Data & Data Governance Conformance (Article 10)
 - **Status:** ${(dims['Fairness & Non-Discrimination'] >= 70 && dims['Privacy & Data Governance'] >= 70) ? 'CONFORMANT' : 'REMEDIATION REQUIRED'}

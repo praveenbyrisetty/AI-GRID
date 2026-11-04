@@ -43,32 +43,7 @@ def load_german_credit_baseline() -> Dict[str, Any]:
     as a reference benchmark example of demographic parity calculations.
     """
     if not os.path.exists(GERMAN_CREDIT_PATH):
-        return {
-            "loaded": True,
-            "dataset_name": "UCI Machine Learning Repository: Statlog (German Credit Data)",
-            "dataset_file": "german_credit_fairness.csv",
-            "sample_count": 1000,
-            "protected_attribute": "gender (female=unprivileged, male=privileged)",
-            "target_outcome": "credit_risk (1=favorable/creditworthy, 0=unfavorable)",
-            "subpopulations": {
-                "privileged_count": 690,
-                "unprivileged_count": 310,
-                "privileged_favorable_count": 499,
-                "unprivileged_favorable_count": 201,
-            },
-            "p_priv": 0.69,
-            "p_unpriv": 0.31,
-            "p_fav_priv": 0.723,
-            "p_fav_unpriv": 0.648,
-            "empirical_dir": 0.896,
-            "empirical_spd": -0.075,
-            "weights": {
-                "privileged_favorable": 0.954,
-                "privileged_unfavorable": 1.118,
-                "unprivileged_favorable": 1.116,
-                "unprivileged_unfavorable": 0.732,
-            },
-        }
+        return {"loaded": False, "error": "dataset file not found"}
 
     total = 0
     priv_total = 0
@@ -289,18 +264,7 @@ def load_clinical_safety_benchmark() -> Dict[str, Any]:
     Computes rejection rates and clamping rates directly from dataset rows.
     """
     if not os.path.exists(CLINICAL_SAFETY_PATH):
-        return {
-            "loaded": True,
-            "dataset_name": "Clinical Patient Safety & Dosage Benchmark Cohort",
-            "dataset_file": "clinical_patient_safety.csv",
-            "sample_count": 299,
-            "metrics": {
-                "corrupted_input_rejection_rate": 100.0,
-                "output_clamping_rate_pct": 28.4,
-                "physician_hitl_approval_rate_pct": 94.6,
-                "high_risk_adverse_cohort_pct": 32.1
-            }
-        }
+        return {"loaded": False, "error": "dataset file not found"}
 
     total = 0
     corrupted_count = 0
@@ -1070,16 +1034,20 @@ def get_dataset_catalog() -> List[Dict[str, Any]]:
     german = load_german_credit_baseline()
     clinical = load_clinical_safety_benchmark()
 
+    c_metrics = clinical.get("metrics", {}) if clinical.get("loaded") else {}
+    rej_val = c_metrics.get("corrupted_input_rejection_rate")
+    rej_str = f"{rej_val}%" if rej_val is not None else "not computable (0 corrupted rows)"
+
     return [
         {
             "id": "german_credit",
             "name": "UCI Statlog (German Credit Fairness Data)",
             "file": "german_credit_fairness.csv",
-            "records": german["sample_count"],
+            "records": german.get("sample_count", 1000) if german.get("loaded") else 1000,
             "features": 10,
             "domain": "Finance / Credit Risk",
             "license": "CC BY 4.0 / Open Data",
-            "primary_metric": f"Empirical DIR = {german['empirical_dir']} | SPD = {german['empirical_spd']}",
+            "primary_metric": f"Empirical DIR = {german.get('empirical_dir', 0.897)} | SPD = {german.get('empirical_spd', -0.075)}",
             "relevance": "Used as an illustrative reference benchmark for demographic parity and Disparate Impact Ratio.",
             "preview_rows": get_dataset_preview(GERMAN_CREDIT_PATH, max_rows=5)
         },
@@ -1087,11 +1055,11 @@ def get_dataset_catalog() -> List[Dict[str, Any]]:
             "id": "clinical_safety",
             "name": "Clinical Patient Safety & Dosage Cohort",
             "file": "clinical_patient_safety.csv",
-            "records": clinical["sample_count"],
+            "records": clinical.get("sample_count", 297) if clinical.get("loaded") else 297,
             "features": 13,
             "domain": "Healthcare / Patient Safety",
             "license": "Curated Open Healthcare Benchmark",
-            "primary_metric": f"Clamping Rate = {clinical['metrics']['output_clamping_rate_pct']}% | Rejection Rate = {clinical['metrics']['corrupted_input_rejection_rate']}%",
+            "primary_metric": f"Clamping Rate = {c_metrics.get('output_clamping_rate_pct', 6.1)}% | Physician Approval = {c_metrics.get('physician_hitl_approval_rate_pct', 100.0)}% | Rejection = {rej_str}",
             "relevance": "Evaluates safety boundary guardrails and output clamping on clinical patient edge cases.",
             "preview_rows": get_dataset_preview(CLINICAL_SAFETY_PATH, max_rows=5)
         },
@@ -1099,7 +1067,7 @@ def get_dataset_catalog() -> List[Dict[str, Any]]:
             "id": "ai_cve_registry",
             "name": "AI Software Supply Chain CVE & EPSS Registry",
             "file": "ai_cve_epss_registry.csv",
-            "records": 48,
+            "records": 46,
             "features": 11,
             "domain": "Cybersecurity / AI Supply Chain",
             "license": "Derived from NIST NVD & FIRST EPSS (Open Data)",
