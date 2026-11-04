@@ -18,7 +18,7 @@ def test_eu_ai_act_prohibited_and_high_risk_classification():
         "Fairness & Non-Discrimination": 75.0,
         "Transparency & Explainability": 85.0,
         "Privacy & Data Governance": 90.0,
-        "Human Oversight & Accountability": 70.0,
+        "Human Oversight & Agency": 70.0, "Accountability & Governance": 70.0,
         "Safety & Reliability": 80.0,
     }
     # Healthcare -> High-Risk System
@@ -40,7 +40,7 @@ def test_eu_ai_act_classification_independent_of_scores():
     """Verify regulatory tier is strictly domain-based and does NOT change when AAS/dimension scores fluctuate."""
     high_scores = {d: 98.0 for d in [
         "Security & Robustness", "Fairness & Non-Discrimination", "Transparency & Explainability",
-        "Privacy & Data Governance", "Human Oversight & Accountability", "Safety & Reliability"
+        "Privacy & Data Governance", "Human Oversight & Agency", "Accountability & Governance", "Safety & Reliability"
     ]}
     low_scores = {d: 15.0 for d in high_scores}
 
@@ -64,7 +64,7 @@ def test_nist_ai_rmf_crosswalk():
         "Fairness & Non-Discrimination": 75.0,
         "Transparency & Explainability": 85.0,
         "Privacy & Data Governance": 90.0,
-        "Human Oversight & Accountability": 70.0,
+        "Human Oversight & Agency": 70.0, "Accountability & Governance": 70.0,
         "Safety & Reliability": 80.0,
     }
     nist_res = evaluate_nist_ai_rmf(dims)
@@ -144,7 +144,7 @@ def test_model_card_generation():
             "Fairness & Non-Discrimination": 75.0,
             "Transparency & Explainability": 85.0,
             "Privacy & Data Governance": 60.0,
-            "Human Oversight & Accountability": 75.0,
+            "Human Oversight & Agency": 75.0, "Accountability & Governance": 75.0,
             "Safety & Reliability": 75.0,
         },
         "compliance": {"eu_ai_act": {"tier": "High-Risk AI System"}},
@@ -154,3 +154,50 @@ def test_model_card_generation():
     assert "TestModel" in card["markdown"]
     assert "High-Risk AI System" in card["markdown"]
     assert "DISCLAIMER" in card["markdown"]
+
+
+def test_accountability_wiring_eu_and_nist():
+    """Verify Accountability & Governance is correctly wired to EU Art 11/12 and NIST GOVERN/MEASURE/MANAGE."""
+    dims = {
+        "Security & Robustness": 80.0,
+        "Safety & Reliability": 80.0,
+        "Fairness & Non-Discrimination": 80.0,
+        "Transparency & Explainability": 70.0,
+        "Privacy & Data Governance": 80.0,
+        "Human Oversight & Agency": 90.0,
+        "Accountability & Governance": 50.0,  # Distinct low score
+    }
+    eu_res = evaluate_eu_ai_act_compliance(domain="General Purpose AI", autonomy_level="semi_autonomous", dimensions=dims)
+    articles = {a["article"]: a for a in eu_res["article_level_conformance"]["articles"]}
+
+    # Article 12 must use Accountability score (50.0)
+    assert articles["Article 12"]["score"] == 50.0
+    assert articles["Article 12"]["status"] == "PARTIAL"
+
+    # Article 11 must use mean of Transparency (70.0) and Accountability (50.0) -> 60.0
+    assert articles["Article 11"]["score"] == 60.0
+    assert articles["Article 11"]["status"] == "PARTIAL"
+
+    # Article 14 must use Human Oversight & Agency (90.0)
+    assert articles["Article 14"]["score"] == 90.0
+    assert articles["Article 14"]["status"] == "INDICATIVE_CONFORMANT"
+
+    # NIST AI RMF
+    nist_res = evaluate_nist_ai_rmf(dimensions=dims)
+    funcs = nist_res["functions"]
+
+    # GOVERN function score should average Human Oversight (90), Privacy (80), Accountability (50) -> 73.3
+    assert funcs["GOVERN"]["score"] == 73.3
+
+    # GOVERN 2.1 must use Accountability (50.0)
+    gov_subcats = {s["id"]: s for s in funcs["GOVERN"]["subcategories"]}
+    assert "GOVERN 2.1" in gov_subcats
+    assert gov_subcats["GOVERN 2.1"]["score"] == 50.0
+
+    # MEASURE 2.5 must use Accountability (50.0)
+    meas_subcats = {s["id"]: s for s in funcs["MEASURE"]["subcategories"]}
+    assert meas_subcats["MEASURE 2.5"]["score"] == 50.0
+
+    # MANAGE 4.1 must use Accountability (50.0)
+    man_subcats = {s["id"]: s for s in funcs["MANAGE"]["subcategories"]}
+    assert man_subcats["MANAGE 4.1"]["score"] == 50.0

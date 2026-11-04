@@ -134,7 +134,7 @@ def test_api_sensitivity_analysis(client, auth_headers):
         "Transparency & Explainability": 70.0,
         "Fairness & Non-Discrimination": 80.0,
         "Privacy & Data Governance": 90.0,
-        "Human Oversight & Accountability": 65.0,
+        "Human Oversight & Agency": 65.0, "Accountability & Governance": 65.0,
         "Security & Robustness": 75.0,
     }
     resp = client.post("/api/analysis/sensitivity", json={"dimensions": dims})

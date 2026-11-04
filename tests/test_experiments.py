@@ -57,7 +57,7 @@ def test_experiment_2_alpha_sensitivity():
         "Fairness & Non-Discrimination": 90.0,
         "Transparency & Explainability": 90.0,
         "Privacy & Data Governance": 90.0,
-        "Human Oversight & Accountability": 90.0,
+        "Human Oversight & Agency": 90.0, "Accountability & Governance": 90.0,
         "Safety & Reliability": 20.0,  # Critical bottleneck
     }
     res = compute_aas_and_bottleneck(dimensions, alpha=0.6)

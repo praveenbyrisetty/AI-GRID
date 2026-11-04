@@ -438,8 +438,8 @@ def evaluate_eu_ai_act_compliance(domain: str,
     fair_score = dimensions.get("Fairness & Non-Discrimination")
     trans_score = dimensions.get("Transparency & Explainability")
     priv_score = dimensions.get("Privacy & Data Governance")
-    over_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability")
-    acct_score = dimensions.get("Accountability & Governance") or over_score
+    over_score = dimensions.get("Human Oversight & Agency")
+    acct_score = dimensions.get("Accountability & Governance")
     safe_score = dimensions.get("Safety & Reliability")
 
     def determine_status(score: Optional[float], conf_dim: str, threshold: float = 70.0) -> str:
@@ -482,8 +482,8 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "article": "Article 11",
             "title": "Technical Documentation",
             "requirement": "Detailed technical documentation drawn up before placement on market (system architecture, parameters, validation).",
-            "status": determine_status(trans_score, "Transparency & Explainability", 65.0),
-            "score": round(trans_score, 1) if trans_score is not None else None,
+            "status": determine_status(safe_avg(trans_score, acct_score), "Transparency & Explainability", 65.0),
+            "score": safe_avg(trans_score, acct_score),
             "mandatory_controls": ["Comprehensive Model Card", "Validation test benchmarks", "Dependency inventory"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
@@ -491,8 +491,8 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "article": "Article 12",
             "title": "Record-Keeping & Logging",
             "requirement": "Automatic logging of events during operation ensuring traceability and post-market monitoring.",
-            "status": determine_status(safe_avg(over_score, sec_score), "Human Oversight & Accountability", 65.0),
-            "score": safe_avg(over_score, sec_score),
+            "status": determine_status(acct_score, "Accountability & Governance", 65.0),
+            "score": round(acct_score, 1) if acct_score is not None else None,
             "mandatory_controls": ["Decision audit trail", "Tamper-evident logs", "Audit log retention >= 6 months"],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
@@ -509,7 +509,7 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "article": "Article 14",
             "title": "Human Oversight",
             "requirement": "Designed to be effectively overseen by natural persons; ability to override, interrupt, or stop system.",
-            "status": determine_status(over_score, "Human Oversight & Accountability", 70.0),
+            "status": determine_status(over_score, "Human Oversight & Agency", 70.0),
             "score": round(over_score, 1) if over_score is not None else None,
             "mandatory_controls": ["Human oversight gates", "Emergency stop mechanism", "Escalation protocol"],
             "assessment_type": "Technical Pre-Audit Indicator"
@@ -564,8 +564,8 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, An
     fair_score = dimensions.get("Fairness & Non-Discrimination")
     trans_score = dimensions.get("Transparency & Explainability")
     priv_score = dimensions.get("Privacy & Data Governance")
-    over_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability")
-    acct_score = dimensions.get("Accountability & Governance") or over_score
+    over_score = dimensions.get("Human Oversight & Agency")
+    acct_score = dimensions.get("Accountability & Governance")
     safe_score = dimensions.get("Safety & Reliability")
 
     def safe_round(val: Optional[float]) -> Optional[float]:
@@ -581,7 +581,7 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, An
         valid = [s for s in scores if s is not None]
         return round(sum(valid) / len(valid), 1) if valid else None
 
-    gov_score = avg_scores(over_score, priv_score)
+    gov_score = avg_scores(over_score, priv_score, acct_score)
     map_score = avg_scores(fair_score, trans_score)
     meas_score = avg_scores(fair_score, trans_score, sec_score)
     man_score = avg_scores(safe_score, sec_score)
@@ -594,6 +594,7 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, An
                 {"id": "GOVERN 1.1", "name": "Legal, regulatory, and policy priorities recognized and understood", "score": safe_round(priv_score), "status": subcat_status(priv_score)},
                 {"id": "GOVERN 1.2", "name": "AI lifecycle policies, processes, and practices actively implemented", "score": safe_round(priv_score), "status": subcat_status(priv_score)},
                 {"id": "GOVERN 1.4", "name": "Accountability structures and human oversight roles defined", "score": safe_round(over_score), "status": subcat_status(over_score)},
+                {"id": "GOVERN 2.1", "name": "Roles, responsibilities, and accountability structures transparently established", "score": safe_round(acct_score), "status": subcat_status(acct_score)},
                 {"id": "GOVERN 1.7", "name": "AI system inventory, software dependencies, and supply chain tracked", "score": safe_round(sec_score), "status": subcat_status(sec_score)}
             ]
         },
@@ -611,7 +612,7 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, An
             "score": meas_score,
             "status": subcat_status(meas_score),
             "subcategories": [
-                {"id": "MEASURE 2.5", "name": "AI system monitored through continuous automated logs and metrics", "score": safe_round(over_score), "status": subcat_status(over_score)},
+                {"id": "MEASURE 2.5", "name": "AI system monitored through continuous automated logs and metrics", "score": safe_round(acct_score), "status": subcat_status(acct_score)},
                 {"id": "MEASURE 2.6", "name": "Explainability, interpretability, and output attribution evaluated", "score": safe_round(trans_score), "status": subcat_status(trans_score)},
                 {"id": "MEASURE 2.7", "name": "Cybersecurity, adversarial resilience, and integrity quantified", "score": safe_round(sec_score), "status": subcat_status(sec_score)},
                 {"id": "MEASURE 2.8", "name": "Safety boundaries, failure containment, and clamping evaluated", "score": safe_round(safe_score), "status": subcat_status(safe_score)},
@@ -624,7 +625,7 @@ def evaluate_nist_ai_rmf(dimensions: Dict[str, Optional[float]]) -> Dict[str, An
             "subcategories": [
                 {"id": "MANAGE 2.2", "name": "Input validation, anomaly containment, and safety clamping deployed", "score": safe_round(safe_score), "status": subcat_status(safe_score)},
                 {"id": "MANAGE 2.4", "name": "Third-party dependency and integration risks controlled", "score": safe_round(sec_score), "status": subcat_status(sec_score)},
-                {"id": "MANAGE 4.1", "name": "Incident response, rollback, and kill-switch mechanisms operational", "score": safe_round(over_score), "status": subcat_status(over_score)},
+                {"id": "MANAGE 4.1", "name": "Incident response, rollback, and kill-switch mechanisms operational", "score": safe_round(acct_score), "status": subcat_status(acct_score)},
                 {"id": "MANAGE 4.2", "name": "Continuous drift monitoring and degradation alerting established", "score": safe_round(sec_score), "status": subcat_status(sec_score)}
             ]
         }
@@ -645,7 +646,7 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
     Maps findings to OWASP Top 10 for LLMs and MITRE ATLAS Matrix.
     """
     sec_score = dimensions.get("Security & Robustness") or 50.0
-    over_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability") or 50.0
+    over_score = dimensions.get("Human Oversight & Agency") or 50.0
     safe_score = dimensions.get("Safety & Reliability") or 50.0
 
     owasp_llm_active = []
