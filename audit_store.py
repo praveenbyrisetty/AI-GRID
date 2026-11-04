@@ -193,7 +193,7 @@ class AuditStore:
                 return None
 
     def get_latest_audit(self, audit_mode: Optional[str] = None) -> Optional[Dict[str, Any]]:
-        """Retrieves the most recent audit, optionally filtered by mode ('mcp' or 'questionnaire')."""
+        """Retrieves the most recent audit, optionally filtered by mode ('questionnaire')."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             if audit_mode:

@@ -2,15 +2,11 @@
 Unit Tests for AI-GRID Compliance & Responsible AI Engines (v4.0)
 """
 
-import pytest
 from compliance_engines import (
     evaluate_eu_ai_act_compliance,
     evaluate_nist_ai_rmf,
     map_owasp_and_atlas,
-    compute_fairness_metrics,
-    analyze_risk_cohorts,
     solve_remediation_priority,
-    scan_ai_vulnerabilities,
     generate_google_model_card,
 )
 
@@ -88,7 +84,7 @@ def test_threat_crosswalk_evidence_based():
             "dimension": "Security & Robustness",
             "finding": "Tools with dangerous capabilities (exec)",
             "action": "Sandbox tool execution",
-            "owasp_ref": "MCP02",
+            "owasp_ref": "LLM02",
             "mitre_atlas_ref": "AML.T0054",
         },
         {
@@ -96,16 +92,16 @@ def test_threat_crosswalk_evidence_based():
             "dimension": "Safety & Reliability",
             "finding": "Input boundary testing rejected 0 bad inputs",
             "action": "Add input validation",
-            "owasp_ref": "MCP05",
+            "owasp_ref": "LLM05",
             "mitre_atlas_ref": "AML.T0043",
         },
     ]
     dims = {"Security & Robustness": 50.0, "Safety & Reliability": 40.0}
     threat_res = map_owasp_and_atlas(findings=findings, dimensions=dims)
 
-    mcp_codes = [t["code"] for t in threat_res["owasp_mcp_top_10"]]
-    assert "MCP02" in mcp_codes
-    assert "MCP05" in mcp_codes
+    mcp_codes = [t["code"] for t in threat_res["owasp_llm_top_10"]]
+    assert "LLM02" in mcp_codes
+    assert "LLM05" in mcp_codes
 
     atlas_ids = [t["id"] for t in threat_res["mitre_atlas_techniques"]]
     assert "AML.T0054" in atlas_ids
@@ -140,7 +136,7 @@ def test_model_card_generation():
             "version": "1.0.0",
             "domain": "Healthcare",
             "model_architecture": "Transformer",
-            "deployment_type": "mcp_agent",
+            "deployment_type": "autonomous_agent",
         },
         "scoring": {"aas_score": 75.0, "trust_grade": "B", "bottleneck_dimension": "Privacy"},
         "dimensions": {

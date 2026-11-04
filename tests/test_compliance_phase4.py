@@ -3,8 +3,6 @@ Tests for Phase 4: Elimination of Fabricated Numbers & Sanitize Compliance.
 Demonstrates existing bugs and validates rigorous mathematical and regulatory compliance.
 """
 
-import os
-import pytest
 from compliance_engines import (
     evaluate_eu_ai_act_compliance,
     compute_fairness_metrics,

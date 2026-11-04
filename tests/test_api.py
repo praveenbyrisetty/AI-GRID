@@ -3,7 +3,6 @@ Integration Tests for AI-GRID REST API & Endpoints (v4.0)
 Questionnaire-Based AI Governance & Compliance Auditing Platform
 """
 
-import json
 import pytest
 from server import app
 import server
@@ -83,13 +82,7 @@ def test_api_questionnaire_input_validation(client, auth_headers):
     assert resp.status_code == 400
 
 
-def test_api_mcp_returns_410_gone(client, auth_headers):
-    """Verify /api/audit/mcp returns 410 Gone indicating removal."""
-    resp = client.post("/api/audit/mcp", json={"demo_profile": "good"}, headers=auth_headers)
-    assert resp.status_code == 410
-    data = resp.get_json()
-    assert data["success"] is False
-    assert "removed" in data["error"].lower()
+
 
 
 def test_api_audit_history_and_get(client, auth_headers):

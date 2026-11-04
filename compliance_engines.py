@@ -9,7 +9,7 @@ Provides transparently named audit engines:
 3. Remediation Priority Ranker (severity-based finding prioritization)
 4. EU AI Act Article-by-Article Compliance Engine (Articles 9 to 15 + Annex III classification)
 5. NIST AI RMF 1.0 Subcategory Mapper (NIST AI 100-1: GOVERN, MAP, MEASURE, MANAGE)
-6. OWASP Top 10 for LLMs & OWASP MCP Top 10 Risk Mapper
+6. OWASP Top 10 for LLMs & Threat Mapper
 7. MITRE ATLAS Adversarial Threat Technique Mapper
 8. AI Software Supply Chain CVE & EPSS Compound Risk Scanner (static registry)
 9. Model Card Generator (inspired by Mitchell et al., 2019 format)
@@ -21,9 +21,8 @@ guaranteed regulatory compliance. Professional review is recommended.
 import csv
 import io
 import os
-import math
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -308,70 +307,7 @@ def load_clinical_safety_benchmark() -> Dict[str, Any]:
     }
 
 
-def analyze_risk_cohorts(dimensions: Dict[str, Optional[float]],
-                         findings: List[Dict[str, Any]],
-                         metadata: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Slices system behavior into risk cohorts using rule-based classification.
-    """
-    clinical_bench = load_clinical_safety_benchmark()
-    domain = metadata.get("domain", "General Purpose AI")
 
-    cohorts = []
-
-    # Cohort 1: Critical Input Anomaly / Corrupted Data
-    sec_score = dimensions.get("Security & Robustness") or 50.0
-    cohorts.append({
-        "cohort_name": "Input Anomaly & Out-of-Bounds Cohort",
-        "cohort_description": "Inputs with negative values, extreme outliers, or non-numeric types",
-        "sample_percentage": 15.0,
-        "risk_level": "CRITICAL" if sec_score < 60 else ("HIGH" if sec_score < 75 else "LOW"),
-        "error_rate_estimate_pct": round(max(0.5, (100.0 - sec_score) * 0.45), 1),
-        "observed_failure_mode": "Silent execution with corrupted parameters",
-        "affected_subgroup": "Edge cases & sensor error inputs"
-    })
-
-    # Cohort 2: Autonomous / HITL Governance
-    oversight_score = dimensions.get("Human Oversight & Agency") or dimensions.get("Human Oversight & Accountability") or 50.0
-    cohorts.append({
-        "cohort_name": "High-Autonomy Decision Cohort",
-        "cohort_description": "Decisions executed without human-in-the-loop review",
-        "sample_percentage": 25.0,
-        "risk_level": "CRITICAL" if oversight_score < 50 else ("HIGH" if oversight_score < 70 else "LOW"),
-        "error_rate_estimate_pct": round(max(1.0, (100.0 - oversight_score) * 0.35), 1),
-        "observed_failure_mode": "Unchecked cascading failure in high-impact scenarios",
-        "affected_subgroup": "Direct automated actuation"
-    })
-
-    # Cohort 3: Extreme Prediction Boundary / Clamping
-    safety_score = dimensions.get("Safety & Reliability") or 50.0
-    cohorts.append({
-        "cohort_name": "Boundary & Safety Clamping Regime",
-        "cohort_description": "Outputs near physical or regulatory maximum limits",
-        "sample_percentage": 10.0,
-        "risk_level": "HIGH" if safety_score < 65 else "LOW",
-        "error_rate_estimate_pct": round(max(1.5, (100.0 - safety_score) * 0.40), 1),
-        "observed_failure_mode": "Unclamped dosage or recommendation exceeding safe operating bounds",
-        "affected_subgroup": "High-severity edge cases"
-    })
-
-    max_cohort_risk = "LOW"
-    for c in cohorts:
-        if c["risk_level"] == "CRITICAL":
-            max_cohort_risk = "CRITICAL"
-            break
-        elif c["risk_level"] == "HIGH":
-            max_cohort_risk = "HIGH"
-
-    return {
-        "engine": "Illustrative Rule-Based Risk Cohort Engine (heuristic, not measured)",
-        "cohort_disclaimer": "Cohort distributions (15%, 25%, 10%) and estimated error rates are illustrative rule-based heuristics derived from dimension scores, not measured from production telemetry.",
-        "cohort_count": len(cohorts),
-        "overall_cohort_risk": max_cohort_risk,
-        "clinical_safety_benchmark": clinical_bench,
-        "cohorts": cohorts,
-        "methodology": "Illustrative rule-based subgroup slicing across input anomaly distributions and autonomy regimes (heuristic, not measured)."
-    }
 
 
 # =====================================================================
@@ -426,7 +362,6 @@ def solve_remediation_priority(current_aas: Optional[float],
 
 
 # Backwards compatibility alias
-solve_prescriptive_counterfactual = solve_remediation_priority
 
 
 # =====================================================================
@@ -791,7 +726,6 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
     return {
         "engine": "OWASP & MITRE ATLAS Threat Crosswalk",
         "owasp_llm_top_10": owasp_llm_active,
-        "owasp_mcp_top_10": owasp_llm_active,  # Backwards compatibility alias
         "mitre_atlas_techniques": atlas_techniques,
     }
 

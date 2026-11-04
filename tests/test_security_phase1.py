@@ -3,8 +3,6 @@ Phase 1 Security Tests: Verify all Phase 1 security controls and regressions.
 """
 
 import html
-import json
-import os
 import pytest
 from server import app, is_rate_limited, AUDIT_RATE_LIMIT
 import server

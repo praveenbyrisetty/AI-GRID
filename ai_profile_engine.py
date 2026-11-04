@@ -15,12 +15,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 from compliance_engines import (
     compute_fairness_metrics,
-    analyze_risk_cohorts,
     solve_remediation_priority,
     evaluate_eu_ai_act_compliance,
     evaluate_nist_ai_rmf,
     map_owasp_and_atlas,
-    scan_ai_vulnerabilities,
     generate_google_model_card,
 )
 
@@ -140,7 +138,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Security & Robustness",
-        "research_source": "QB4AIRA §Monitoring; RBAAF Governance Framework",
+        "research_source": "QB4AIRA §Monitoring; ISO/IEC 42001:2023",
         "eu_ai_act_ref": "Art. 9(2)(b)",
         "nist_rmf_ref": "MANAGE 4.2",
         "owasp_ref": "OWASP LLM04 (Data Poisoning)",
@@ -159,7 +157,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Security & Robustness",
-        "research_source": "OWASP MCP Top 10 (MCP04); NIST SP 800-218 (SSDF)",
+        "research_source": "NIST SP 800-218 (SSDF); OWASP LLM Top 10 (LLM03)",
         "eu_ai_act_ref": "Art. 15(2)",
         "nist_rmf_ref": "GOVERN 1.7",
         "owasp_ref": "OWASP LLM03 (Supply Chain Vulnerabilities)",
@@ -178,7 +176,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Security & Robustness",
-        "research_source": "OWASP LLM Top 10; MCPSHIELD (Acharya & Gupta, 2026)",
+        "research_source": "OWASP LLM Top 10; MITRE ATLAS",
         "eu_ai_act_ref": "Art. 15(4)",
         "nist_rmf_ref": "MEASURE 2.7",
         "owasp_ref": "OWASP LLM01 (Prompt Injection)",
@@ -197,7 +195,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Security & Robustness",
-        "research_source": "OWASP MCP Top 10 (MCP07); Google Research Agentic Security (2026)",
+        "research_source": "OWASP API Security Top 10 (API4)",
         "eu_ai_act_ref": "Art. 15(3)",
         "nist_rmf_ref": "MANAGE 2.4",
         "owasp_ref": "OWASP API04 (Resource Consumption)",
@@ -517,7 +515,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Human Oversight & Agency",
-        "research_source": "QB4AIRA §Accountability; Dhanorkar et al. (ACM FAccT 2026)",
+        "research_source": "QB4AIRA §Accountability; Mitchell et al. (2019) Model Cards",
         "eu_ai_act_ref": "Art. 14(1)",
         "nist_rmf_ref": "GOVERN 1.4",
         "owasp_ref": "OWASP LLM08",
@@ -555,7 +553,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Human Oversight & Agency",
-        "research_source": "Pfau & Jung (IEEE TAI 2026) §Human Agency; Dhanorkar et al. (2026)",
+        "research_source": "Pfau & Jung (IEEE TAI 2026) §Human Agency; NIST AI 100-1",
         "eu_ai_act_ref": "Art. 14(4)(e)",
         "nist_rmf_ref": "GOVERN 1.4",
         "owasp_ref": "OWASP LLM08 (Excessive Agency)",
@@ -734,7 +732,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Safety & Reliability",
-        "research_source": "RBAAF Safety Scaffold; Pfau & Jung (IEEE TAI 2026) §Safety",
+        "research_source": "EU AI Act Article 9; Pfau & Jung (IEEE TAI 2026) §Safety",
         "eu_ai_act_ref": "Art. 9(2)(a)",
         "nist_rmf_ref": "MANAGE 2.2",
         "owasp_ref": "OWASP LLM05 (Improper Output Handling)",
@@ -791,7 +789,7 @@ QUESTIONS: List[Dict[str, Any]] = [
         ],
         "required": True,
         "dimension": "Safety & Reliability",
-        "research_source": "QB4AIRA §Reliability; RBAAF Verification Framework",
+        "research_source": "QB4AIRA §Reliability; NIST AI 100-1",
         "eu_ai_act_ref": "Art. 15(1)",
         "nist_rmf_ref": "MEASURE 2.8",
         "owasp_ref": "OWASP LLM05",
@@ -833,7 +831,7 @@ def calculate_dimension_scores(answers: Dict[str, Any],
                                evidence_tier: str = "T3") -> Tuple[Dict[str, float], List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Computes 6-dimension scores from question answers using Multi-Tier Evidence Weighting:
-    - Tier 1 (Automated MCP probe): weight = 1.0
+    - Tier 1 (Runtime Verification): weight = 1.0
     - Tier 2 (Declared metadata/schema): weight = 0.8
     - Tier 3 (Self-attested questionnaire response): weight = 0.6
     """
@@ -1013,7 +1011,7 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
 
     # Phase 1: Compute 7 Dimension Scores
     dimensions, findings, audit_logs = calculate_dimension_scores(answers, evidence_tier=evidence_tier)
-    log("EVALUATION", f"Computed 7 dimension scores across 35 research-grounded question items.", "SUCCESS")
+    log("EVALUATION", "Computed 7 dimension scores across 35 research-grounded question items.", "SUCCESS")
 
     # Phase 2: Compute Bottleneck AAS
     scoring = compute_aas_and_bottleneck(dimensions, alpha=0.6)
@@ -1038,9 +1036,7 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
 
     # Phase 5: Empirical Benchmark Engines
     fairness_metrics = compute_fairness_metrics(answers=answers, fairness_score=dimensions.get("Fairness & Non-Discrimination"))
-    risk_cohorts = analyze_risk_cohorts(dimensions=dimensions, findings=findings, metadata={"domain": domain_label})
     counterfactual = solve_remediation_priority(current_aas=aas, dimensions=dimensions, findings=findings, target_score=76.0)
-    vulnerability_scan = scan_ai_vulnerabilities(domain=domain_label)
 
     # Construct Metadata Payload
     metadata = {
@@ -1094,10 +1090,7 @@ def generate_audit_from_questionnaire(answers: Dict[str, Any],
         },
         "audit_mode": "questionnaire",
         "aif360": fairness_metrics,
-        "cohort_analysis": risk_cohorts,
         "remediation_priority": counterfactual,
-        "prescriptive_counterfactual": counterfactual,
-        "vulnerability_scan": vulnerability_scan
     }
 
     # Generate Google Model Card

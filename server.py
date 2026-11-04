@@ -24,7 +24,6 @@ import hmac
 import logging
 import os
 import secrets
-import sys
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -35,11 +34,8 @@ from aigrid_auditor import AIGRIDAuditor
 from ai_profile_engine import get_questions, compute_aas_and_bottleneck
 from audit_store import AuditStore
 from compliance_engines import (
-    compute_fairness_metrics,
-    analyze_risk_cohorts,
     solve_remediation_priority,
     generate_google_model_card,
-    scan_ai_vulnerabilities,
     get_dataset_catalog,
 )
 
@@ -290,23 +286,7 @@ def run_questionnaire_audit():
         return jsonify({"success": False, "error": "Failed to process questionnaire audit"}), 500
 
 
-# ================================================================
-# DEPRECATED / REMOVED MCP & COMPARISON ENDPOINTS (410 GONE)
-# ================================================================
-@app.route("/api/audit/mcp", methods=["POST"])
-def mcp_removed():
-    return jsonify({
-        "success": False,
-        "error": "MCP protocol probing has been removed. AI-GRID operates exclusively as a questionnaire-based governance auditing engine."
-    }), 410
 
-
-@app.route("/api/audit/compare", methods=["POST"])
-def compare_removed():
-    return jsonify({
-        "success": False,
-        "error": "Attestation Discrepancy comparison against MCP has been removed. Platform operates exclusively as a questionnaire-based governance engine."
-    }), 410
 
 
 # ================================================================
@@ -437,29 +417,7 @@ def get_counterfactual():
         return jsonify({"success": False, "error": "Failed to calculate remediation priorities"}), 500
 
 
-# ================================================================
-# ENDPOINT: CVSS, EPSS & CVE AI Supply Chain Vulnerability Scanner
-# ================================================================
-@app.route("/api/security/cve-scan", methods=["GET", "POST"])
-def run_cve_scan():
-    global last_audit_data
-    body = {}
-    if request.is_json:
-        parsed, _ = validate_json_body()
-        if parsed:
-            body = parsed
 
-    try:
-        domain = str(body.get(
-            "domain",
-            last_audit_data.get("model_metadata", {}).get("domain", "General Purpose AI")
-        ))
-        asset_criticality = str(body.get("asset_criticality", "Mission-Critical"))
-        vuln_res = scan_ai_vulnerabilities(domain=domain, asset_criticality=asset_criticality)
-        return jsonify({"success": True, "data": vuln_res})
-    except Exception as e:
-        logger.exception("Error executing CVE scan")
-        return jsonify({"success": False, "error": "Failed to execute vulnerability scan"}), 500
 
 
 # ================================================================

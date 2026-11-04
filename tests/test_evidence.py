@@ -2,17 +2,13 @@
 Unit & Integration Tests for AI-GRID Evidence Model & Scoring Engine (v4.0)
 """
 
-import pytest
 from evidence import (
     Evidence,
-    SecurityFinding,
-    DimensionResult,
     compute_weighted_dimension_score,
     aggregate_dimension_scores,
-    compute_aas,
-    DIMENSIONS_LIST,
     TIER_WEIGHTS,
 )
+from ai_profile_engine import compute_aas_and_bottleneck
 
 
 def test_evidence_weighting():
@@ -98,7 +94,8 @@ def test_compute_aas_bottleneck_penalty():
         Evidence(dimension="Safety & Reliability", source="p:p04", tier="T1", value=20.0),  # Bottleneck
     ]
     results = aggregate_dimension_scores(evidence)
-    aas_res = compute_aas(results, alpha=0.6)
+    dims = {k: v.score for k, v in results.items()}
+    aas_res = compute_aas_and_bottleneck(dims, alpha=0.6)
 
     # Mean = (90*6 + 20) / 7 = 560 / 7 = 80.0
     # Bottleneck = 20.0
@@ -108,8 +105,6 @@ def test_compute_aas_bottleneck_penalty():
     assert aas_res["aas_score"] == 56.0
     assert aas_res["trust_grade"] == "D"
     assert len(aas_res["sensitivity_curve"]) == 9
-    assert aas_res["is_fully_evidenced"] is True
-    assert aas_res["evidence_sufficiency_pct"] == 100.0
 
 
 def test_compute_aas_with_missing_evidence_impact():
@@ -119,11 +114,8 @@ def test_compute_aas_with_missing_evidence_impact():
         Evidence(dimension="Safety & Reliability", source="p:p04", tier="T1", value=70.0),
     ]
     results = aggregate_dimension_scores(partial_evidence)
-    aas_res = compute_aas(results, alpha=0.6)
+    dims = {k: v.score for k, v in results.items()}
+    aas_res = compute_aas_and_bottleneck(dims, alpha=0.6)
 
     assert aas_res["aas_score"] is None
-    assert aas_res["status"] == "INSUFFICIENT_EVIDENCE"
-    assert aas_res["is_fully_evidenced"] is False
-    assert len(aas_res["missing_evidence_dimensions"]) == 5
-    assert "Privacy & Data Governance" in aas_res["missing_evidence_dimensions"]
-    assert aas_res["evidence_sufficiency_pct"] == round(100.0 * 2 / 7, 1)
+    assert aas_res["status"] == "INSUFFICIENT_EVIDENCE" 

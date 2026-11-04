@@ -16,12 +16,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from config import (
     TIER_WEIGHTS,
-    ALPHA_DEFAULT,
-    MIN_DIMENSIONS_FOR_AAS,
     MIN_EVIDENCE_FOR_SUFFICIENCY,
     SUFFICIENCY_CONFIDENCE_THRESHOLD,
     DIMENSIONS_LIST,
-    GRADE_THRESHOLDS,
 )
 
 
@@ -32,7 +29,7 @@ class Evidence:
 
     Attributes:
         dimension:  Which of the 6 trust dimensions this evidence relates to.
-        source:     Where this evidence came from (e.g., "mcp_probe:P04", "questionnaire:q1").
+        source:     Where this evidence came from (e.g., "runtime_probe:P04", "questionnaire:q1").
         tier:       Evidence confidence tier — "T1" (runtime), "T2" (metadata), "T3" (self-attested).
         value:      Normalized score contribution (0.0 to 100.0), or None if inconclusive.
         raw_data:   The original observation data (tool response, answer text, etc.).
@@ -65,7 +62,7 @@ class SecurityFinding:
         action:         Recommended remediation action.
         evidence_ref:   Reference to the Evidence source.
         eu_ai_act_ref:  Relevant EU AI Act article (if applicable).
-        owasp_ref:      Relevant OWASP LLM/MCP code (if applicable).
+        owasp_ref:      Relevant OWASP LLM code (if applicable).
         mitre_atlas_ref: Relevant MITRE ATLAS technique ID (if applicable).
     """
     severity: str
@@ -183,57 +180,6 @@ def aggregate_dimension_scores(
     return results
 
 
-def compute_aas(
-    dimension_results: Dict[str, DimensionResult],
-    alpha: float = ALPHA_DEFAULT,
-) -> Dict[str, Any]:
-    """
-    Computes the Assurance Adequacy Score (AAS) with bottleneck penalty:
-        AAS = α × mean(S) + (1-α) × min(S)
-    using a bottleneck-penalised aggregate.
-
-    Rules:
-        - Dimensions without evidence (score is None) NEVER enter mean or min.
-        - Withhold AAS (aas_score = None, status = 'INSUFFICIENT_EVIDENCE')
-          if fewer than 4 of 7 dimensions have evidence.
-
-    Returns:
-        Dictionary containing AAS, breakdown, confidence, sensitivity curve, and status.
-    """
-    valid_results = [r for r in dimension_results.values() if r.score is not None]
-    valid_scores = [r.score for r in valid_results]
-    confidences = [r.confidence for r in valid_results]
-    missing_evidence_dims = [
-        r.name for r in dimension_results.values() if r.score is None
-    ]
-    sufficiency_pct = round(
-        100.0 * len(valid_scores) / max(len(dimension_results), 1),
-        1,
-    )
-
-    # Withhold AAS if fewer than MIN_DIMENSIONS_FOR_AAS dimensions have evidence
-    if len(valid_scores) < MIN_DIMENSIONS_FOR_AAS:
-        avg_score = round(sum(valid_scores) / len(valid_scores), 1) if valid_scores else None
-        min_score = min(valid_scores) if valid_scores else None
-        btn_dim = next((r.name for r in valid_results if r.score == min_score), None) if valid_scores else None
-        return {
-            "aas_score": None,
-            "weighted_average": avg_score,
-            "bottleneck_score": min_score,
-            "bottleneck_dimension": btn_dim,
-            "trust_grade": "INSUFFICIENT_EVIDENCE",
-            "alpha_parameter": alpha,
-            "overall_confidence": round(sum(confidences) / len(confidences), 3) if confidences else 0.0,
-            "missing_evidence_dimensions": missing_evidence_dims,
-            "evidence_sufficiency_pct": sufficiency_pct,
-            "is_fully_evidenced": len(missing_evidence_dims) == 0,
-            "sensitivity_curve": [],
-            "dimension_confidences": {
-                name: round(r.confidence, 3) for name, r in dimension_results.items()
-            },
-            "status": "INSUFFICIENT_EVIDENCE",
-            "message": f"AAS withheld: only {len(valid_scores)}/7 dimensions have evidence (minimum {MIN_DIMENSIONS_FOR_AAS} required).",
-        }
 
     weighted_average = sum(valid_scores) / len(valid_scores)
     bottleneck_score = min(valid_scores)

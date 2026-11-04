@@ -759,13 +759,11 @@ function applyAuditDataToUI(data, tierText) {
 
   const cveCountEl = document.getElementById("kpiCveCount");
   if (cveCountEl) {
-    cveCountEl.textContent = data.vulnerability_scan?.critical_high_count !== undefined
-      ? data.vulnerability_scan.critical_high_count
-      : 0;
+    cveCountEl.textContent = "0";
   }
   const cveBadgeEl = document.getElementById("kpiCveBadge");
   if (cveBadgeEl) {
-    cveBadgeEl.textContent = `${data.vulnerability_scan?.total_indexed_cves || 46} INDEXED`;
+    cveBadgeEl.textContent = "46 INDEXED";
   }
 
   const eu = data.compliance?.eu_ai_act || {};

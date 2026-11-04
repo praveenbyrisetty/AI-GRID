@@ -2,7 +2,6 @@
 Research Validation Tests: Experiment 1 (Multi-Risk Profiling) & Experiment 2 (Sensitivity Analysis)
 """
 
-import pytest
 from aigrid_auditor import AIGRIDAuditor
 from ai_profile_engine import get_questions, compute_aas_and_bottleneck
 

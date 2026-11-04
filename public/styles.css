@@ -314,9 +314,7 @@ body {
 .sidebar.collapsed .nav-text,
 .sidebar.collapsed .auditor-meta,
 .sidebar.collapsed .governance-status-text,
-.sidebar.collapsed .mcp-status-text {
-  display: none !important;
-}
+
 
 .sidebar.collapsed .nav-item {
   justify-content: center;
@@ -441,15 +439,7 @@ body {
 }
 
 .governance-status-pill,
-.mcp-status-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  padding: 4px 6px;
-}
+
 
 .status-beacon-dot {
   width: 7px;
