@@ -192,41 +192,18 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-async function syncSessionAuth() {
-  try {
-    const res = await fetch("/api/status");
-    const json = await res.json();
-    if (json && json.session_token) {
-      localStorage.setItem("ai_grid_api_key", json.session_token);
-    }
-  } catch (e) {
-    console.warn("Could not sync session token", e);
-  }
-}
-
 function getAuthHeaders(extraHeaders = {}) {
-  const headers = { ...extraHeaders };
-  const key = localStorage.getItem("ai_grid_api_key") || "";
-  if (key) {
-    headers["X-API-Key"] = key;
-  }
-  return headers;
+  return { ...extraHeaders };
 }
 
 async function handleAuthError(res) {
-  if (res && res.status === 401) {
-    await syncSessionAuth();
-    showToast("Session authenticated. Please re-run audit.");
-  }
+  // No-op in unauthenticated local/demo mode
 }
 
 // =========================================================================
 // INITIALIZATION
 // =========================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  // 0. Auto-sync session authentication token seamlessly
-  syncSessionAuth();
-
   // 1. Initialize Theme: Executive Dark by default, or user's stored preference
   const savedTheme = localStorage.getItem("ai_grid_theme") || "dark";
   if (savedTheme === "dark") {

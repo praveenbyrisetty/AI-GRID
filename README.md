@@ -105,6 +105,11 @@ AI-GRID executes fairness and risk calculations natively against 3 empirical dat
 
 ## Getting Started
 
+> [!IMPORTANT]
+> **Authentication & Deployment Security Notice**:
+> AI-GRID operates **without authentication** and is designed specifically for local evaluation, research, and demonstration environments. **Do not enter sensitive, proprietary, or regulated patient/customer data on a public deployment.**
+
+
 ### Prerequisites
 - Python 3.10+
 - Flask &amp; Flask-CORS

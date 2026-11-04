@@ -5,7 +5,6 @@ Phase 1 Security Tests: Verify all Phase 1 security controls and regressions.
 import html
 import pytest
 from server import app, is_rate_limited, AUDIT_RATE_LIMIT
-import server
 
 
 @pytest.fixture
@@ -17,29 +16,25 @@ def client():
 
 def test_post_audit_routes_require_api_key(client):
     """
-    POST /api/audit/* endpoints require an API key and reject unauthenticated requests with 401.
+    POST /api/audit/* endpoints operate without authentication in local/demo mode.
     """
     resp = client.post("/api/audit/questionnaire", json={"answers": {"model_name": "TestAI"}})
-    assert resp.status_code == 401
-    assert "Unauthorized" in resp.get_json()["error"]
+    assert resp.status_code == 200
+    assert resp.get_json()["success"] is True
 
 
 def test_audit_reset_is_post_only_and_requires_auth(client):
     """
-    /api/audit/reset is POST only (GET -> 405) and requires API key (unauthenticated POST -> 401).
+    /api/audit/reset is POST only (GET -> 405) and succeeds without API key in local/demo mode.
     """
     # GET rejected with 405
     get_resp = client.get("/api/audit/reset")
     assert get_resp.status_code == 405
 
-    # Unauthenticated POST rejected with 401
+    # POST succeeds without API key
     post_resp = client.post("/api/audit/reset")
-    assert post_resp.status_code == 401
-
-    # Authenticated POST succeeds
-    auth_resp = client.post("/api/audit/reset", headers={"X-API-Key": server.API_KEY})
-    assert auth_resp.status_code == 200
-    assert auth_resp.get_json()["success"] is True
+    assert post_resp.status_code == 200
+    assert post_resp.get_json()["success"] is True
 
 
 def test_rate_limiting_enforcement():

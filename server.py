@@ -20,10 +20,8 @@ Features:
 """
 
 from collections import defaultdict
-import hmac
 import logging
 import os
-import secrets
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -68,11 +66,7 @@ CORS(
     supports_credentials=False,
 )
 
-# API Key Authentication
-API_KEY = os.environ.get("AIGRID_API_KEY")
-if not API_KEY:
-    API_KEY = secrets.token_hex(24)
-    print(f"[SECURITY] Generated random API key: {API_KEY}")
+# Authentication: None (Local/Demo deployment mode)
 
 # Rate Limiting for audit routes
 AUDIT_RATE_LIMIT = int(os.environ.get("AIGRID_RATE_LIMIT", "30"))
@@ -91,24 +85,18 @@ def is_rate_limited(client_id: str) -> bool:
     return False
 
 
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({
+        "success": False,
+        "error": "Payload exceeds 2 MB upload limit."
+    }), 413
+
+
 @app.before_request
-def enforce_audit_security():
-    """Enforces API key authentication and rate limiting on all POST /api/audit/* routes."""
-    if request.method == "POST" and request.path.startswith("/api/audit/"):
-        client_key = request.headers.get("X-API-Key")
-        if not client_key:
-            auth_header = request.headers.get("Authorization", "")
-            if auth_header.startswith("Bearer "):
-                client_key = auth_header[7:].strip()
-        if not client_key:
-            client_key = request.cookies.get("aigrid_session")
-
-        if not client_key or not hmac.compare_digest(client_key, API_KEY):
-            return jsonify({
-                "success": False,
-                "error": "Unauthorized: Invalid or missing API Key for audit execution."
-            }), 401
-
+def enforce_rate_limiting():
+    """Enforces per-IP rate limiting on all POST requests."""
+    if request.method == "POST":
         if not app.config.get("TESTING"):
             client_ip = request.remote_addr or "unknown"
             if is_rate_limited(client_ip):
@@ -203,7 +191,6 @@ def health():
         "version": "4.0.0",
         "dimensions": 7,
         "question_bank_size": 35,
-        "session_token": API_KEY,
         "evidence_tiers": {
             "T1": {"description": "Declared Architecture & Specifications", "weight": 1.0},
             "T2": {"description": "Benchmark & Technical Evidence Validation", "weight": 0.8},
@@ -314,8 +301,26 @@ def get_current_audit():
 def get_audit_history():
     try:
         limit = min(100, max(1, int(request.args.get("limit", 20))))
-        history = store.list_audits(limit=limit)
-        return jsonify({"success": True, "count": len(history), "data": history})
+        raw_history = store.list_audits(limit=limit)
+        # Return only summary fields, never full stored answers
+        history_summaries = []
+        for r in raw_history:
+            history_summaries.append({
+                "id": r.get("audit_id"),
+                "audit_id": r.get("audit_id"),
+                "model_name": r.get("model_name"),
+                "timestamp": r.get("created_at"),
+                "created_at": r.get("created_at"),
+                "aas": r.get("aas_score"),
+                "aas_score": r.get("aas_score"),
+                "grade": r.get("trust_grade"),
+                "trust_grade": r.get("trust_grade"),
+                "domain": r.get("domain", "General Purpose AI"),
+                "model_version": r.get("model_version", "1.0.0"),
+                "bottleneck_dimension": r.get("bottleneck_dimension"),
+                "bottleneck_score": r.get("bottleneck_score"),
+            })
+        return jsonify({"success": True, "count": len(history_summaries), "data": history_summaries})
     except Exception as e:
         logger.exception("Error listing audit history")
         return jsonify({"success": False, "error": "Failed to load audit history"}), 500
@@ -327,6 +332,9 @@ def get_audit_by_id(audit_id: str):
         audit = store.get_audit(audit_id)
         if not audit:
             return jsonify({"success": False, "error": f"Audit {audit_id} not found"}), 404
+        # Strip raw answers if present to guarantee summary exposure only
+        if "answers" in audit:
+            del audit["answers"]
         return jsonify({"success": True, "data": audit})
     except Exception as e:
         logger.exception(f"Error fetching audit {audit_id}")

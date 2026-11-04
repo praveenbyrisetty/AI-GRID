@@ -5,7 +5,6 @@ Questionnaire-Based AI Governance & Compliance Auditing Platform
 
 import pytest
 from server import app
-import server
 
 
 @pytest.fixture
@@ -17,7 +16,7 @@ def client():
 
 @pytest.fixture
 def auth_headers():
-    return {"X-API-Key": server.API_KEY}
+    return {}
 
 
 def test_api_status(client):
@@ -29,6 +28,7 @@ def test_api_status(client):
     assert data["dimensions"] == 7
     assert "evidence_tiers" in data
     assert "disclaimer" in data
+    assert "session_token" not in data
 
 
 def test_api_security_headers(client):
