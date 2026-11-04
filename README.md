@@ -1,4 +1,4 @@
-# AI-GRID (v4.0)
+# AI-GRID (v5.0.0)
 
 ### Empirical AI Governance, Risk &amp; Compliance Operating System
 
@@ -6,6 +6,7 @@
 [![Framework](https://img.shields.io/badge/Framework-Flask%20%7C%20REST%20API-orange.svg)](https://flask.palletsprojects.com/)
 [![Standards](https://img.shields.io/badge/Standards-EU%20AI%20Act%20(Art.%209--15)%20%7C%20NIST%20AI%20100--1-emerald.svg)](https://artificialintelligenceact.eu/)
 [![Taxonomy](https://img.shields.io/badge/Taxonomy-QB4AIRA%20(IEEE%202024)-purple.svg)](https://doi.org/10.1109/MS.2024.3512577)
+[![Evidence Tiers](https://img.shields.io/badge/Evidence%20Tiers-T1%20Verified%20%7C%20T3%20Attested-blueviolet.svg)](#empirical-verification-modules-tier-t1)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -14,15 +15,16 @@
 
 **AI-GRID** is a research-grounded AI Governance, Risk, and Compliance (GRC) evaluation platform engineered to quantify, audit, and remediate systemic AI risks before production deployment.
 
-Grounded in **QB4AIRA** (Lee et al., IEEE 2024), the **EU AI Act** (Regulation (EU) 2024/1689 Articles 9–15), and **NIST AI 100-1** (AI Risk Management Framework), AI-GRID evaluates AI systems across 7 empirical trust dimensions using a structured 35-item technical control question bank.
+Grounded in **QB4AIRA** (Lee et al., IEEE 2024), the **EU AI Act** (Regulation (EU) 2024/1689 Articles 9–15), **NIST AI 100-1** (AI Risk Management Framework), and **ISO/IEC 42001**, AI-GRID evaluates AI systems across 7 empirical trust dimensions using a structured 35-item technical control question bank combined with empirical evidence verifiers.
 
 AI-GRID incorporates:
-1. **35-Item Research Questionnaire (Evidence Tier T3)**: Structured technical controls across 7 international trust pillars with academic citations and regulatory clause mappings.
-2. **Bottleneck-Penalised Aggregate (inspired by average-case versus worst-case ERM)**: Penalizes composite assurance by the weakest dimension ($\min S_d$) to prevent averaging out critical governance vulnerabilities.
-3. **EU AI Act Technical Pre-Audit Conformance Matrix**: Evaluates classification under Article 6(1) / Annex I or Annex III §5 and checks conformity against mandatory technical obligations in Articles 9 through 15.
-4. **NIST AI 100-1 Lifecycle Crosswalk**: Maps findings to GOVERN, MAP, MEASURE, and MANAGE core functions and subcategories.
-5. **Persistent Audit Ledger**: SQLite-backed audit history tracking longitudinal assessments, provenance metadata, and technical findings across server restarts.
-6. **Mathematical Sensitivity Stress Curve**: Monotonically explores risk appetite across $\alpha \in [0.1, 0.9]$.
+1. **35-Item Technical Control Question Bank**: Structured technical controls across 7 international trust pillars with academic citations and regulatory clause mappings.
+2. **Empirical Evidence Verifiers (Tier T1)**: Real-time verification modules for fairness disparity, CycloneDX SBOM dependencies, TLS security, cryptographic log chains, and perturbation accuracy drops.
+3. **Attestation Gap Analysis**: Automatically measures and visualizes discrepancies between self-asserted claims ($S_{\text{claimed}}$) and verified evidence ($S_{\text{verified}}$).
+4. **Bottleneck-Penalised Aggregate (AAS)**: Penalizes composite assurance by the weakest dimension ($\min S_d$) using a convex combination ($\alpha = 0.60$) to prevent averaging out critical governance vulnerabilities.
+5. **EU AI Act Technical Pre-Audit Conformance Matrix**: Evaluates classification under Article 6(1) / Annex I or Annex III §5 and checks conformity against mandatory technical obligations in Articles 9 through 15 (with Article 12 wired to Accountability).
+6. **NIST AI 100-1 Lifecycle Crosswalk**: Maps findings to GOVERN, MAP, MEASURE, and MANAGE core functions and subcategories.
+7. **Persistent Audit Ledger**: SQLite-backed audit history tracking longitudinal assessments, provenance metadata, and technical findings across server restarts.
 
 ---
 
@@ -32,7 +34,7 @@ AI-GRID evaluates AI trustworthiness across seven consolidated dimensions aligne
 
 | # | Trust Dimension | Scope &amp; Focus | Regulatory &amp; Industry Standards |
 |:---:|:---|:---|:---|
-| **1** | **Security &amp; Robustness** | Adversarial robustness, concept drift monitoring, AI software bill of materials (AI-BOM), independent red teaming, and API rate limiting / mTLS. | EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP LLM Top 10 &bull; MITRE ATLAS |
+| **1** | **Security &amp; Robustness** | Adversarial robustness, concept drift monitoring, AI software bill of materials (AI-BOM), independent red teaming, and API rate limiting. | EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP LLM Top 10 &bull; MITRE ATLAS |
 | **2** | **Safety &amp; Reliability** | Corrupted input rejection, input/output validation, active guardrails (&ge; 3 active), deterministic output bounds clamping, and formal failure mode testing. | EU AI Act Art. 9 &amp; 15(1) &bull; NIST MANAGE 2.2 |
 | **3** | **Fairness &amp; Non-Discrimination** | Demographic representation, class balance, coverage gaps, dataset volume adequacy, and disparate impact metrics (DIR &ge; 0.80, SPD &le; 0.10). | EU AI Act Art. 10(2)(f) &bull; NIST MEASURE 2.11 &bull; EEOC 80% Rule &bull; Kamiran &amp; Calders (2012) |
 | **4** | **Transparency &amp; Explainability** | Local feature attributions (TreeSHAP/LIME), prediction-level reasoning summaries, Model Cards, and calibrated uncertainty bounds. | EU AI Act Art. 13 &bull; NIST MAP 1.5 &bull; Mitchell et al. (2019) |
@@ -42,20 +44,49 @@ AI-GRID evaluates AI trustworthiness across seven consolidated dimensions aligne
 
 ---
 
-## Mathematical Formulation: Bottleneck-Penalized Aggregate (AAS)
+## Empirical Verification Modules (Tier T1)
 
-In cybersecurity and safety-critical engineering, arithmetic averages mask catastrophic failure modes: an AI system scoring 95% in Transparency and Privacy but **10% in Security** is completely unsafe for production deployment.
+AI-GRID provides 5 automated, empirical verification endpoints (`POST /api/verify/<module>`) that replace subjective claims with verified measurements:
 
-AI-GRID calculates the composite **Assurance Adequacy Score (AAS)** using a bottleneck-penalised aggregate, inspired by average-case versus worst-case ERM:
+1. **Fairness Audit (`/api/verify/fairness`)**:
+   - Upload predictions CSV (`protected_attribute`, `y_true`, `y_pred`).
+   - Computes Disparate Impact Ratio (DIR), Statistical Parity Difference (SPD), and Equal Opportunity Difference (EOD).
+   - Replaces claimed answer for `q10_fairness_audit` with empirical compliance score (1.0, 0.5, or 0.0).
+2. **AI-BOM &amp; Dependency Vulnerability Scan (`/api/verify/dependencies`)**:
+   - Upload CycloneDX JSON SBOM or `requirements.txt`.
+   - Cross-references packages against the local enterprise CVE registry (`data/ai_cve_epss_registry.csv`).
+   - Replaces claimed answer for `q3_aibom_inventory` (Tier T1: 1.0 if clean CycloneDX; 0.5 if high CVE or requirements only).
+3. **TLS Encryption &amp; Certificate Prober (`/api/verify/tls`)**:
+   - Probes specified host and port (443 / 8443) using Python `ssl`.
+   - SSRF-protected: rejects private IPs, loopback, link-local, multicast, and cloud metadata endpoints.
+   - Evaluates TLS 1.3/1.2 negotiation and certificate validity for `q17_encryption_transit`.
+4. **Log Tamper-Evidence Audit (`/api/verify/log-integrity`)**:
+   - Upload JSONL audit log containing `prev_hash`, `data`, and `hash`.
+   - Cryptographically verifies SHA-256 hash chains starting from genesis block for `q27_tamper_evident_logs`.
+5. **Adversarial Robustness Evaluation (`/api/verify/robustness`)**:
+   - Upload clean predictions and perturbed evaluation CSV.
+   - Measures classification accuracy degradation $\Delta \text{Acc}$ for `q1_adversarial_testing`.
+
+---
+
+## Mathematical Formulation: Bottleneck AAS &amp; Attestation Gap
+
+AI-GRID calculates composite assurance using a bottleneck-penalised aggregate:
 
 $$\text{AAS} = \alpha \cdot \bar{S} + (1 - \alpha) \cdot \min_{d \in \{1 \dots 7\}} S_d \quad (\alpha = 0.60)$$
 
 Where:
 - $\bar{S} = \frac{1}{7} \sum_{d=1}^{7} S_d$ is the global weighted average across all 7 dimensions.
-- $\min_d S_d$ isolates the **Primary Governance Bottleneck** (weakest constraint).
+- $\min_d S_d$ isolates the **Primary Governance Bottleneck**.
 - Dimension scores incorporate evidence weighting:
   $$S_d = 100 \times \frac{\sum_{i=1}^{n_d} w_i \cdot s_i \cdot w_{\text{evidence}, i}}{\sum_{i=1}^{n_d} w_i \cdot w_{\text{evidence}, i}}$$
-  with $w_{\text{evidence}} = 0.60$ for self-attested questionnaire items. (Note: in the questionnaire-first control plane, all active evidence is currently Tier T3).
+  where $w_{\text{evidence}} = 1.0$ for Tier T1 verified artifacts and $w_{\text{evidence}} = 0.6$ for Tier T3 self-attested items.
+
+### Attestation Gap Formulation
+The attestation discrepancy quantifies the difference between self-attested claims and verified empirical reality:
+
+$$\Delta_d = S_{d, \text{claimed}} - S_{d, \text{verified}}$$
+$$\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified}}$$
 
 ---
 
@@ -64,11 +95,11 @@ Where:
 AI-GRID executes fairness and risk calculations natively against 3 empirical datasets located in `data/`:
 
 1. **UCI Machine Learning Repository: Statlog (German Credit Data)** (`data/german_credit_fairness.csv`):
-   - **Sample Volume**: 1000 rows, 10 attributes.
+   - **Sample Volume**: 1,000 rows, 10 attributes.
    - **Protected Demographics**: Gender (`female` unprivileged, `male` privileged), Age, Foreign Worker.
    - **Metrics**: Disparate Impact Ratio (DIR = 0.897), Statistical Parity Difference (SPD = -0.075), and Kamiran &amp; Calders (2012) sample reweighing weights.
 2. **Clinical Patient Safety &amp; Dosage Benchmark Cohort** (`data/clinical_patient_safety.csv`):
-   - **Sample Volume**: 297 patient records, 13 clinical vitals.
+   - **Sample Volume**: 297 patient records, 13 clinical vitals (blood pressure, heart rate, dosage, lab values). Provenance: derived from clinical patient monitoring benchmark dataset.
    - **Verification**: 6.1% output safety clamping rate, 100% physician HITL approval rate, high-risk cohort 16.2%, corrupted_input_rejection_rate = null (not computable; 0 corrupted rows in dataset).
 3. **AI Framework CVE &amp; EPSS Compound Registry** (`data/ai_cve_epss_registry.csv`):
    - **Sample Volume**: 46 verified enterprise CVEs targeting PyTorch, TorchServe, LangChain, Transformers, ONNX, and NumPy.
@@ -80,10 +111,10 @@ AI-GRID executes fairness and risk calculations natively against 3 empirical dat
 
 * **EU AI Act (Regulation (EU) 2024/1689)**:
   - **Intended Purpose Classification**: Categorized strictly by intended domain (Annex III High-Risk vs Article 5 Prohibited vs Article 50 Limited vs Minimal). The legal risk tier is NEVER derived from audit/AAS scores.
-  - **Articles 9–15 Technical Pre-Audit Indicators**: Evaluates empirical technical criteria for risk management, data governance, documentation, logging, transparency, human oversight, and robustness.
+  - **Articles 9–15 Technical Pre-Audit Indicators**: Evaluates empirical technical criteria for risk management (Art. 9), data governance (Art. 10), technical documentation (Art. 11 wired to mean(Transparency, Accountability)), record-keeping/logging (Art. 12 wired to Accountability), transparency (Art. 13), human oversight (Art. 14), and robustness/cybersecurity (Art. 15).
   - *Statutory Notice*: Pre-audit indicators do NOT constitute legal advice or formal CE-mark certification by a Notified Body.
 * **NIST AI RMF 1.0 (NIST AI 100-1)**:
-  - Crosswalked across **GOVERN, MAP, MEASURE, MANAGE** lifecycle functions.
+  - Crosswalked across **GOVERN, MAP, MEASURE, MANAGE** lifecycle functions. GOVERN 2.1, MEASURE 2.5, and MANAGE 4.1 are directly wired to the Accountability dimension.
 * **OWASP &amp; MITRE ATLAS Threat Crosswalk**:
   - Maps identified vulnerabilities to OWASP Top 10 for LLMs and MITRE ATLAS matrix technique IDs.
 * **Model Cards for Model Reporting (Mitchell et al., 2019)**:
@@ -96,9 +127,9 @@ AI-GRID executes fairness and risk calculations natively against 3 empirical dat
 | Capability | Engineering Implementation | Verification Status |
 |:---|:---|:---|
 | **Questionnaire Engine** | 35 scored questions grounded in QB4AIRA (Lee et al., 2024) and EU AI Act Articles 9–15 (`ai_profile_engine.py`). | **Grounded in Academic Literature** |
+| **Evidence Verifiers** | 5 automated empirical verification modules checking fairness, dependencies, TLS, hash chains, and robustness (`verifiers.py`). | **Empirically Verified (Tier T1)** |
 | **Audit Persistence** | Native SQLite ledger (`audit_store.py` -> `data/aigrid_audits.db`) storing complete audit dossiers, evidence items, and findings with SHA-256 integrity digests. | **Built-in `sqlite3` & `hashlib`** |
 | **Fairness Metrics** | Native computation of Disparate Impact Ratio (DIR) and Statistical Parity Difference (SPD) on UCI Statlog German Credit benchmark (`data/german_credit_fairness.csv`). | **Empirical Calculations** |
-| **Risk Cohort Slicing** | Illustrative rule-based risk cohorts, not measured: heuristic classification against Clinical Patient Safety benchmark (`data/clinical_patient_safety.csv`). | **Rule-Based Heuristic (Not Measured)** |
 | **Remediation Ranker** | Ranks findings by severity and bottleneck gap toward illustrative target AAS 76 without synthetic financial multipliers. | **Empirical Heuristic Ranking** |
 
 ---
@@ -108,7 +139,6 @@ AI-GRID executes fairness and risk calculations natively against 3 empirical dat
 > [!IMPORTANT]
 > **Authentication & Deployment Security Notice**:
 > AI-GRID operates **without authentication** and is designed specifically for local evaluation, research, and demonstration environments. **Do not enter sensitive, proprietary, or regulated patient/customer data on a public deployment.**
-
 
 ### Prerequisites
 - Python 3.10+
@@ -138,7 +168,8 @@ AI-GRID includes pre-configured reference profiles matching high-risk and standa
 
 ## Research Literature Citations
 
-1. **Pfau, D., &amp; Jung, A. (2026).** *Engineering Trustworthy AI: A Developer Guide for Empirical Risk Minimization.* IEEE Transactions on Artificial Intelligence, 7(5), 2560–2576. DOI: [10.1109/TAI.2025.3617936](https://doi.org/10.1109/TAI.2025.3617936).
+1. **National Institute of Standards and Technology (NIST) (2023).** *Artificial Intelligence Risk Management Framework (AI RMF 1.0).* NIST AI 100-1. DOI: [10.6028/NIST.AI.100-1](https://doi.org/10.6028/NIST.AI.100-1).
 2. **Lee, M. S., et al. (2024).** *QB4AIRA: A Question Bank for Responsible AI Risk Assessment.* IEEE Software, 42(3). DOI: [10.1109/MS.2024.3512577](https://doi.org/10.1109/MS.2024.3512577).
 3. **Mitchell, M., et al. (2019).** *Model Cards for Model Reporting.* ACM Conference on Fairness, Accountability, and Transparency (FAccT), pp. 220–229.
 4. **Kamiran, F., &amp; Calders, T. (2012).** *Data preprocessing techniques for classification without discrimination.* Knowledge and Information Systems, 33(1), 1–33.
+5. **International Organization for Standardization (2023).** *ISO/IEC 42001: Information technology — Artificial intelligence — Management system.* ISO.

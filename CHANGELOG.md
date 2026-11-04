@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.0] - 2026-11-04
+
+### Empirical Evidence Verification & Attestation Gap Engine (Phase 6)
+- **Empirical Verifiers Module (`verifiers.py`)**: Added 5 dedicated verification modules with REST endpoints (`POST /api/verify/<module>`):
+  - **Fairness (`/api/verify/fairness`)**: Computes Disparate Impact Ratio (DIR), Statistical Parity Difference (SPD), and Equal Opportunity Difference (EOD) on uploaded predictions CSVs to verify `q10_fairness_audit`.
+  - **Dependencies (`/api/verify/dependencies`)**: Cross-references CycloneDX JSON SBOMs or `requirements.txt` against the offline enterprise CVE registry (`data/ai_cve_epss_registry.csv`) to verify `q3_aibom_inventory`.
+  - **TLS Prober (`/api/verify/tls`)**: Probes host and port (443/8443) for TLS 1.3/1.2 negotiation and certificate validity with 5-second socket timeout and strict SSRF defenses to verify `q17_encryption_transit`.
+  - **Log Integrity (`/api/verify/log-integrity`)**: Cryptographically validates SHA-256 hash chains from genesis in uploaded JSONL logs to verify `q27_tamper_evident_logs`.
+  - **Adversarial Robustness (`/api/verify/robustness`)**: Measures accuracy drop between baseline and perturbed prediction CSVs to verify `q1_adversarial_testing`.
+- **Multi-Tier Evidence Weighting**: Upgraded dimension score computation in `ai_profile_engine.py` to weight Tier T1 verified artifacts at $w=1.0$ and Tier T3 self-attested items at $w=0.6$.
+- **Attestation Gap Analysis**: Computed dimension-level ($\Delta_d = S_{d,\text{claimed}} - S_{d,\text{verified}}$) and composite AAS gaps ($\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified}}$) to expose and prevent governance over-claiming.
+- **Verification UI**: Added dedicated "Evidence Verification (T1)" page (`#page-verify`) with card uploaders, real-time result inspector, active badge count, and integrated audit compiler.
+
+### Regulatory Crosswalk Wiring Fixes (Phase 5)
+- **EU AI Act Accountability Wiring**: Connected Article 12 (record-keeping/logging) directly to the Accountability & Governance score; wired Article 11 (technical documentation) to $\text{mean}(S_{\text{Transparency}}, S_{\text{Accountability}})$.
+- **NIST AI RMF 1.0 Wiring**: Included `acct_score` in the composite GOVERN function average; wired GOVERN 2.1, MEASURE 2.5, and MANAGE 4.1 to `acct_score`.
+- **Removed Deprecated Labels**: Eliminated legacy fallbacks to "Human Oversight & Accountability".
+
+### Security & Deployment Modernization (Phase 4)
+- **Unauthenticated Local/Demo Deployment**: Removed API key generation, cookie handling, session tokens, and client token storage in `public/app.js` and `server.py`.
+- **Upload Constraints**: Enforced 2 MB maximum request size (`MAX_CONTENT_LENGTH`) and whitelisted file extensions (`.csv`, `.json`, `.txt`, `.jsonl`).
+- **Data Leakage Mitigation**: Sanitized audit history endpoints (`/api/audit/history` and `/api/audit/<id>`) to return metadata summaries only, withholding stored raw questionnaire answers.
+
+### Codebase Hygiene & Removal of Dead Code (Phase 3)
+- **Removed Deprecated MCP Endpoints**: Purged 410 dead routes (`/api/audit/mcp`, `/api/audit/compare`), `AIGRIDMCPAuditor`, and `owasp_mcp_top_10` aliases.
+- **Removed Dead Risk Cohort & Scan Artifacts**: Removed `solve_prescriptive_counterfactual`, `analyze_risk_cohorts()`, and `/api/security/cve-scan`.
+- **Unified AAS Implementation**: Standardized composite scoring on `ai_profile_engine.compute_aas_and_bottleneck`, eliminating duplicate logic in `evidence.py`.
+- **Scrubbed Unverified Citations**: Replaced speculative or unverified references across question bank with verified sources (Mitchell et al. 2019, NIST AI 100-1, ISO/IEC 42001, EU AI Act).
+
+### Elimination of Fabricated Data & Metric Verification (Phase 2)
+- **Removed Hardcoded Fallback Dictionaries**: Removed synthetic fallback dicts in `load_german_credit_baseline()` and `load_clinical_safety_benchmark()`.
+- **Verified Benchmark Statistics**: Grounded all metrics in empirical dataset files (German Credit: 1,000 rows, DIR 0.897, SPD -0.075; Clinical: 297 rows, clamping 6.1%, physician approval 100%, high-risk cohort 16.2%, corrupted input rejection rate null; CVE registry: 46 rows).
+
+### Repository Restoration (Phase 1)
+- **Restored Test Suite & Datasets**: Restored `tests/`, `data/*.csv`, and `.github/workflows/ci.yml`.
+- **Cleaned Ignore Rules**: Configured `.gitignore` to track test and data assets while safely ignoring databases, virtual environments, and caches.
+
+---
+
 ## [4.0.0] - 2026-10-23
 
 ### Architecture Evolution: Pure Questionnaire AI Governance Engine
