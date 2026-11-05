@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.1] - 2026-11-05
+
+### Architecture Polish & Evidence Model Consolidation
+- **Consolidated Evidence Model into `ai_profile_engine.py`**: Removed legacy `evidence.py` containing half-deleted duplicate AAS logic. Migrated `Evidence`, `SecurityFinding`, `DimensionResult`, `compute_weighted_dimension_score`, and `aggregate_dimension_scores` into `ai_profile_engine.py`.
+- **Single Canonical AAS Engine**: Preserved `ai_profile_engine.compute_aas_and_bottleneck` as the sole source of truth for composite AAS and bottleneck penalty computation.
+- **Updated Test Imports**: Retargeted `tests/test_evidence.py` to import from `ai_profile_engine` and `config`.
+
+### Static Code Hygiene & Linter Cleanliness
+- **Zero-Warning Pyflakes Conformance**: Fixed all unused variables, unused globals, and unused imports across all root and test Python files:
+  - Removed unused exception variables (`except Exception:`) across `server.py`.
+  - Removed unnecessary `global last_audit_data` declarations where name was read-only in scope.
+  - Removed unused `os` import in `verifiers.py` and unused `io` import in `tests/test_verifiers.py`.
+
+### Regulatory Compliance & Crosswalk Verification
+- **NIST AI RMF 1.0 Accountability Sensitivity**: Confirmed wiring of `Accountability & Governance` score (`acct_score`) to GOVERN 2.1, MEASURE 2.5, MANAGE 4.1, and the composite GOVERN function average.
+- **New Unit Test**: Added `test_nist_govern_score_sensitive_to_accountability_score` in `tests/test_compliance.py` verifying that changing only the Accountability score directly modifies the NIST GOVERN score.
+
+### Documentation & Standards Alignment
+- **README Refinements**: Changed subtitle to "AI governance risk assessment framework with verified evidence".
+- **Entity Normalization**: Replaced all literal `&amp;` and `&ge;` instances with literal `&` and `>=` characters.
+- **Test Badge**: Added test-suite badge reflecting 55 passed verification tests.
+
+---
+
 ## [5.0.0] - 2026-11-05
 
 ### Empirical Evidence Verification & Attestation Gap Engine (Phase 6)
