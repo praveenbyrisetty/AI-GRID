@@ -2,13 +2,13 @@
 Unit & Integration Tests for AI-GRID Evidence Model & Scoring Engine (v4.0)
 """
 
-from evidence import (
+from ai_profile_engine import (
     Evidence,
     compute_weighted_dimension_score,
     aggregate_dimension_scores,
-    TIER_WEIGHTS,
+    compute_aas_and_bottleneck,
 )
-from ai_profile_engine import compute_aas_and_bottleneck
+from config import TIER_WEIGHTS
 
 
 def test_evidence_weighting():

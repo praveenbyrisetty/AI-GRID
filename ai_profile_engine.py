@@ -9,6 +9,7 @@ Employs Multi-Tier Evidence Weighting (T1=1.0, T2=0.8, T3=0.6; all active audits
 and bottleneck-penalised aggregate scoring (AAS), inspired by average-case versus worst-case ERM.
 """
 
+from dataclasses import dataclass, field
 import hashlib
 import json
 from datetime import datetime
@@ -20,6 +21,11 @@ from compliance_engines import (
     evaluate_nist_ai_rmf,
     map_owasp_and_atlas,
     generate_google_model_card,
+)
+from config import (
+    TIER_WEIGHTS,
+    MIN_EVIDENCE_FOR_SUFFICIENCY,
+    SUFFICIENCY_CONFIDENCE_THRESHOLD,
 )
 
 # ======================================================================
@@ -1046,6 +1052,133 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: fl
         "sensitivity_curve": sensitivity_curve,
         "status": "COMPUTED",
     }
+
+
+@dataclass
+class Evidence:
+    """
+    A single structured assessment observation with provenance metadata.
+    """
+    dimension: str
+    source: str
+    tier: str
+    value: Optional[float] = None
+    raw_data: Any = None
+    description: str = ""
+    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    finding: Optional["SecurityFinding"] = None
+
+    def weight(self) -> float:
+        return TIER_WEIGHTS.get(self.tier, 0.6)
+
+
+@dataclass
+class SecurityFinding:
+    """
+    A concrete security or governance finding generated from evidence.
+    """
+    severity: str
+    dimension: str
+    finding: str
+    action: str
+    evidence_ref: str = ""
+    eu_ai_act_ref: str = ""
+    owasp_ref: str = ""
+    mitre_atlas_ref: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
+        return {
+            "priority": self.severity,
+            "badge": badge_map.get(self.severity, "info"),
+            "dimension": self.dimension,
+            "finding": self.finding,
+            "action": self.action,
+            "evidence_ref": self.evidence_ref,
+            "eu_ai_act_ref": self.eu_ai_act_ref,
+            "owasp_ref": self.owasp_ref,
+            "mitre_atlas_ref": self.mitre_atlas_ref,
+        }
+
+
+@dataclass
+class DimensionResult:
+    """
+    Aggregated result for a single trust dimension after evidence weighting.
+    """
+    name: str
+    score: Optional[float]
+    confidence: float
+    evidence_count: int
+    tier_breakdown: Dict[str, int]
+    status: str = "SUFFICIENT"  # 'SUFFICIENT' | 'INSUFFICIENT_EVIDENCE'
+
+
+def compute_weighted_dimension_score(
+    evidence_items: List[Evidence],
+) -> Tuple[Optional[float], float]:
+    """
+    Computes evidence-weighted score and confidence for a dimension.
+    score = Σ(item.value × tier_weight[item.tier]) / Σ(tier_weight[item.tier])
+    confidence = 1 - (1 / (1 + n_effective))   where n_effective = Σ tier_weights
+    """
+    valid_items = [e for e in evidence_items if e.value is not None]
+    if not valid_items:
+        return (None, 0.0)
+
+    weighted_sum = 0.0
+    weight_total = 0.0
+
+    for e in valid_items:
+        w = TIER_WEIGHTS.get(e.tier, 0.6)
+        weighted_sum += e.value * w
+        weight_total += w
+
+    if weight_total == 0:
+        return (None, 0.0)
+
+    score = weighted_sum / weight_total
+    confidence = 1.0 - (1.0 / (1.0 + weight_total))
+
+    return (round(max(0.0, min(100.0, score)), 1), round(confidence, 3))
+
+
+def aggregate_dimension_scores(
+    all_evidence: List[Evidence],
+) -> Dict[str, DimensionResult]:
+    """
+    Groups evidence by dimension and computes weighted scores for all 7 dimensions.
+    """
+    dim_evidence: Dict[str, List[Evidence]] = {d: [] for d in DIMENSIONS_LIST}
+    for e in all_evidence:
+        if e.dimension in dim_evidence:
+            dim_evidence[e.dimension].append(e)
+
+    results = {}
+    for dim_name in DIMENSIONS_LIST:
+        items = dim_evidence[dim_name]
+        score, confidence = compute_weighted_dimension_score(items)
+
+        tier_counts: Dict[str, int] = {}
+        for e in items:
+            tier_counts[e.tier] = tier_counts.get(e.tier, 0) + 1
+
+        evidence_status = (
+            "SUFFICIENT"
+            if (len(items) >= MIN_EVIDENCE_FOR_SUFFICIENCY and confidence >= SUFFICIENCY_CONFIDENCE_THRESHOLD)
+            else "INSUFFICIENT_EVIDENCE"
+        )
+        results[dim_name] = DimensionResult(
+            name=dim_name,
+            score=score,
+            confidence=confidence,
+            evidence_count=len(items),
+            tier_breakdown=tier_counts,
+            status=evidence_status,
+        )
+
+    return results
+
 
 
 def generate_audit_from_questionnaire(
