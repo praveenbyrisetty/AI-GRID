@@ -166,10 +166,7 @@ def validate_json_body() -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
 # ================================================================
 @app.route("/")
 def index():
-    resp = send_from_directory(PUBLIC_DIR, "index.html")
-    if not app.config.get("TESTING"):
-        resp.set_cookie("aigrid_session", API_KEY, httponly=False, samesite="Lax", max_age=86400)
-    return resp
+    return send_from_directory(PUBLIC_DIR, "index.html")
 
 
 @app.route("/<path:path>")

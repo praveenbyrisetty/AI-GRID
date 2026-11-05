@@ -142,3 +142,24 @@ def test_api_sensitivity_analysis(client, auth_headers):
     data = resp.get_json()
     assert data["success"] is True
     assert len(data["data"]) == 9
+
+
+def test_index_route(client):
+    """Verify / route serves frontend HTML for GET and HEAD requests, even with TESTING=False."""
+    resp_get = client.get("/")
+    assert resp_get.status_code == 200
+    assert "text/html" in resp_get.content_type
+
+    resp_head = client.head("/")
+    assert resp_head.status_code == 200
+
+    orig_testing = app.config.get("TESTING", True)
+    try:
+        app.config["TESTING"] = False
+        with app.test_client() as prod_client:
+            res_get_prod = prod_client.get("/")
+            assert res_get_prod.status_code == 200
+            res_head_prod = prod_client.head("/")
+            assert res_head_prod.status_code == 200
+    finally:
+        app.config["TESTING"] = orig_testing
