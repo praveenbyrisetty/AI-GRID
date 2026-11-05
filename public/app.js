@@ -735,14 +735,7 @@ function applyAuditDataToUI(data, tierText) {
     bnBadge.className = `badge ${(sc.bottleneck_score !== undefined && sc.bottleneck_score < 80) ? "warning" : "success"}`;
   }
 
-  const cveCountEl = document.getElementById("kpiCveCount");
-  if (cveCountEl) {
-    cveCountEl.textContent = "0";
-  }
-  const cveBadgeEl = document.getElementById("kpiCveBadge");
-  if (cveBadgeEl) {
-    cveBadgeEl.textContent = "46 INDEXED";
-  }
+
 
   const eu = data.compliance?.eu_ai_act || {};
   const isHighRisk = eu.tier && (eu.tier.includes("HIGH") || eu.tier.includes("PROHIBITED") || eu.tier.includes("Annex III"));

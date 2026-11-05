@@ -19,7 +19,7 @@ Grounded in **QB4AIRA** (Lee et al., IEEE 2024), the **EU AI Act** (Regulation (
 
 AI-GRID incorporates:
 1. **35-Item Technical Control Question Bank**: Structured technical controls across 7 international trust pillars with academic citations and regulatory clause mappings.
-2. **Empirical Evidence Verifiers (Tier T1)**: Real-time verification modules for fairness disparity, CycloneDX SBOM dependencies, TLS security, cryptographic log chains, and perturbation accuracy drops.
+2. **Empirical Evidence Verifiers (Tier T1)**: Real-time verification modules for fairness disparity, CycloneDX SBOM dependencies via public OSV API, TLS security, cryptographic log chains, and perturbation accuracy drops.
 3. **Attestation Gap Analysis**: Automatically measures and visualizes discrepancies between self-asserted claims ($S_{\text{claimed}}$) and verified evidence ($S_{\text{verified}}$).
 4. **Bottleneck-Penalised Aggregate (AAS)**: Penalizes composite assurance by the weakest dimension ($\min S_d$) using a convex combination ($\alpha = 0.60$) to prevent averaging out critical governance vulnerabilities.
 5. **EU AI Act Technical Pre-Audit Conformance Matrix**: Evaluates classification under Article 6(1) / Annex I or Annex III §5 and checks conformity against mandatory technical obligations in Articles 9 through 15 (with Article 12 wired to Accountability).
@@ -48,24 +48,64 @@ AI-GRID evaluates AI trustworthiness across seven consolidated dimensions aligne
 
 AI-GRID provides 5 automated, empirical verification endpoints (`POST /api/verify/<module>`) that replace subjective claims with verified measurements:
 
-1. **Fairness Audit (`/api/verify/fairness`)**:
-   - Upload predictions CSV (`protected_attribute`, `y_true`, `y_pred`).
-   - Computes Disparate Impact Ratio (DIR), Statistical Parity Difference (SPD), and Equal Opportunity Difference (EOD).
-   - Replaces claimed answer for `q10_fairness_audit` with empirical compliance score (1.0, 0.5, or 0.0).
-2. **AI-BOM &amp; Dependency Vulnerability Scan (`/api/verify/dependencies`)**:
-   - Upload CycloneDX JSON SBOM or `requirements.txt`.
-   - Cross-references packages against the local enterprise CVE registry (`data/ai_cve_epss_registry.csv`).
-   - Replaces claimed answer for `q3_aibom_inventory` (Tier T1: 1.0 if clean CycloneDX; 0.5 if high CVE or requirements only).
-3. **TLS Encryption &amp; Certificate Prober (`/api/verify/tls`)**:
-   - Probes specified host and port (443 / 8443) using Python `ssl`.
-   - SSRF-protected: rejects private IPs, loopback, link-local, multicast, and cloud metadata endpoints.
-   - Evaluates TLS 1.3/1.2 negotiation and certificate validity for `q17_encryption_transit`.
-4. **Log Tamper-Evidence Audit (`/api/verify/log-integrity`)**:
-   - Upload JSONL audit log containing `prev_hash`, `data`, and `hash`.
-   - Cryptographically verifies SHA-256 hash chains starting from genesis block for `q27_tamper_evident_logs`.
-5. **Adversarial Robustness Evaluation (`/api/verify/robustness`)**:
-   - Upload clean predictions and perturbed evaluation CSV.
-   - Measures classification accuracy degradation $\Delta \text{Acc}$ for `q1_adversarial_testing`.
+### 1. Fairness Audit (`/api/verify/fairness`)
+Upload a predictions CSV with columns `protected_attribute`, `y_true`, and `y_pred`:
+```csv
+protected_attribute,y_true,y_pred
+male,1,1
+male,0,0
+female,1,1
+female,0,0
+```
+- **Metrics**: Computes Disparate Impact Ratio (DIR), Statistical Parity Difference (SPD), and Equal Opportunity Difference (EOD / TPR gap).
+- **Thresholds**: DIR $\ge 0.80$ and $|\text{SPD}| \le 0.10 \to 1.0$; DIR $\ge 0.70$ and $|\text{SPD}| \le 0.15 \to 0.5$; else $0.0$.
+- Replaces self-attested answer for `q10_fairness_audit`.
+
+### 2. Dependencies &amp; AI-BOM Verification (`/api/verify/dependencies`)
+Upload a CycloneDX JSON SBOM or plain `requirements.txt`:
+```text
+requests==2.31.0
+click==8.1.7
+pydantic==2.5.0
+```
+- **Method**: Queries the public OSV API (`POST https://api.osv.dev/v1/querybatch`, PyPI ecosystem, Python `urllib` only) with a 5-second timeout and up to 200 packages.
+- **Thresholds**: Valid CycloneDX with no CVSS $\ge 7.0$ match $\to 1.0$; requirements-only manifest or high vulnerability match $\to 0.5$.
+- **Offline / Failure Resilience**: If the OSV lookup is offline or unreachable, returns `"vulnerability lookup unavailable"` and preserves the claimed score without penalizing for network failure.
+- Replaces self-attested answer for `q3_aibom_inventory`.
+
+### 3. TLS Encryption &amp; Certificate Prober (`/api/verify/tls`)
+Submit target host and port via JSON payload:
+```json
+{
+  "host": "api.example.com",
+  "port": 443
+}
+```
+- **Method**: Probes target with Python `ssl` using a 5-second socket timeout (ports 443 and 8443 only).
+- **SSRF Defense**: Strictly blocks loopback, private (RFC 1918), link-local, multicast, and cloud metadata (`169.254.169.254`) IP addresses.
+- **Thresholds**: TLS 1.3 + valid non-expired certificate $\to 1.0$; TLS 1.2 + valid certificate $\to 0.6$; else $0.0$.
+- Replaces self-attested answer for `q17_encryption_transit`.
+
+### 4. Log Tamper-Evidence Audit (`/api/verify/log-integrity`)
+Upload a JSONL audit log containing `prev_hash`, `data`, and `hash`:
+```json
+{"prev_hash": "GENESIS", "data": {"event": "inference_completed"}, "hash": "6b86b273..."}
+```
+- **Method**: Cryptographically validates SHA-256 hash chains from genesis block: $\text{hash}_k = \text{SHA256}(\text{prev\_hash}_k + \text{data}_k)$.
+- **Thresholds**: Valid unbroken chain $\to 1.0$; broken link or altered entry $\to 0.0$.
+- Replaces self-attested answer for `q27_tamper_evident_logs`.
+
+### 5. Adversarial Robustness Evaluation (`/api/verify/robustness`)
+Upload clean baseline predictions and perturbed evaluation predictions CSV:
+```csv
+clean_prediction,perturbed_prediction,ground_truth
+1,1,1
+0,0,0
+1,0,1
+```
+- **Method**: Measures accuracy degradation: $\Delta \text{Acc} = \text{Acc}_{\text{clean}} - \text{Acc}_{\text{perturbed}}$.
+- **Thresholds**: Degradation $\Delta \text{Acc} \le 0.05$ (&le; 5%) $\to 1.0$; $\Delta \text{Acc} \le 0.15$ (&le; 15%) $\to 0.5$; drop $> 15\% \to 0.0$.
+- Replaces self-attested answer for `q1_adversarial_testing`.
 
 ---
 
@@ -90,23 +130,6 @@ $$\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified
 
 ---
 
-## Empirical Benchmark Datasets Used
-
-AI-GRID executes fairness and risk calculations natively against 3 empirical datasets located in `data/`:
-
-1. **UCI Machine Learning Repository: Statlog (German Credit Data)** (`data/german_credit_fairness.csv`):
-   - **Sample Volume**: 1,000 rows, 10 attributes.
-   - **Protected Demographics**: Gender (`female` unprivileged, `male` privileged), Age, Foreign Worker.
-   - **Metrics**: Disparate Impact Ratio (DIR = 0.897), Statistical Parity Difference (SPD = -0.075), and Kamiran &amp; Calders (2012) sample reweighing weights.
-2. **Clinical Patient Safety &amp; Dosage Benchmark Cohort** (`data/clinical_patient_safety.csv`):
-   - **Sample Volume**: 297 patient records, 13 clinical vitals (blood pressure, heart rate, dosage, lab values). Provenance: derived from clinical patient monitoring benchmark dataset.
-   - **Verification**: 6.1% output safety clamping rate, 100% physician HITL approval rate, high-risk cohort 16.2%, corrupted_input_rejection_rate = null (not computable; 0 corrupted rows in dataset).
-3. **AI Framework CVE &amp; EPSS Compound Registry** (`data/ai_cve_epss_registry.csv`):
-   - **Sample Volume**: 46 verified enterprise CVEs targeting PyTorch, TorchServe, LangChain, Transformers, ONNX, and NumPy.
-   - **Formula**: $\text{Compound Risk} = \text{CVSS (0-10)} \times \text{EPSS (0-1)} \times \text{Asset Criticality Multiplier}$.
-
----
-
 ## Regulatory Compliance &amp; Threat Engines
 
 * **EU AI Act (Regulation (EU) 2024/1689)**:
@@ -127,9 +150,8 @@ AI-GRID executes fairness and risk calculations natively against 3 empirical dat
 | Capability | Engineering Implementation | Verification Status |
 |:---|:---|:---|
 | **Questionnaire Engine** | 35 scored questions grounded in QB4AIRA (Lee et al., 2024) and EU AI Act Articles 9–15 (`ai_profile_engine.py`). | **Grounded in Academic Literature** |
-| **Evidence Verifiers** | 5 automated empirical verification modules checking fairness, dependencies, TLS, hash chains, and robustness (`verifiers.py`). | **Empirically Verified (Tier T1)** |
-| **Audit Persistence** | Native SQLite ledger (`audit_store.py` -> `data/aigrid_audits.db`) storing complete audit dossiers, evidence items, and findings with SHA-256 integrity digests. | **Built-in `sqlite3` & `hashlib`** |
-| **Fairness Metrics** | Native computation of Disparate Impact Ratio (DIR) and Statistical Parity Difference (SPD) on UCI Statlog German Credit benchmark (`data/german_credit_fairness.csv`). | **Empirical Calculations** |
+| **Evidence Verifiers** | 5 automated empirical verification modules checking fairness, dependencies (OSV API), TLS, hash chains, and robustness (`verifiers.py`). | **Empirically Verified (Tier T1)** |
+| **Audit Persistence** | Native SQLite ledger (`audit_store.py` -> `instance/aigrid_audits.db`) storing complete audit dossiers, evidence items, and findings with SHA-256 integrity digests. | **Built-in `sqlite3` & `hashlib`** |
 | **Remediation Ranker** | Ranks findings by severity and bottleneck gap toward illustrative target AAS 76 without synthetic financial multipliers. | **Empirical Heuristic Ranking** |
 
 ---

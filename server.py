@@ -34,7 +34,6 @@ from audit_store import AuditStore
 from compliance_engines import (
     solve_remediation_priority,
     generate_google_model_card,
-    get_dataset_catalog,
 )
 from verifiers import (
     verify_fairness,
@@ -204,20 +203,20 @@ def health():
             "T3": {"description": "Self-Attested Structured Questionnaire", "weight": 0.6},
         },
         "compliance_engines": [
-            "Custom Fairness Metrics (DIR, SPD, Sample Reweighing)",
-            "Rule-Based Risk Cohort Slicing",
+            "Custom Fairness Metrics (DIR, SPD from predictions)",
             "Remediation Priority Ranker",
             "EU AI Act Article-by-Article Evaluation (Articles 9-15)",
             "NIST AI 100-1 Function & Subcategory Crosswalk",
             "OWASP LLM Top 10 Threat Crosswalk",
             "MITRE ATLAS Matrix Mapper",
-            "AI Supply Chain Vulnerability Scanner (CVE/EPSS Snapshot)",
             "Google Model Card Generator (Mitchell et al., 2019)",
         ],
-        "datasets": [
-            "Statlog German Credit (UCI)",
-            "Clinical Patient Safety Benchmark",
-            "NIST NVD / EPSS AI Registry Snapshot",
+        "verifiers": [
+            "fairness",
+            "dependencies",
+            "tls",
+            "log-integrity",
+            "robustness",
         ],
         "disclaimer": DISCLAIMER_TEXT,
     })
@@ -509,19 +508,6 @@ def get_counterfactual():
 
 
 
-
-
-# ================================================================
-# ENDPOINT: Empirical Datasets Catalog
-# ================================================================
-@app.route("/api/datasets", methods=["GET"])
-def get_datasets():
-    try:
-        catalog = get_dataset_catalog()
-        return jsonify({"success": True, "data": catalog})
-    except Exception as e:
-        logger.exception("Error fetching datasets catalog")
-        return jsonify({"success": False, "error": "Failed to load datasets"}), 500
 
 
 # ================================================================

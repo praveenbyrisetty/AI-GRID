@@ -1,18 +1,14 @@
 """
-AI-GRID Compliance & Responsible AI Engines (v4.0)
+AI-GRID Compliance & Responsible AI Engines (v5.0)
 
 Provides transparently named audit engines:
-1. Custom Fairness Metrics Engine (DIR, SPD computation from dataset)
-   NOTE: Computes DIR/SPD directly from CSV data. Does NOT use the IBM AIF360 library.
-2. Rule-Based Risk Cohort Analysis Engine (subgroup risk slicing)
-   NOTE: Uses rule-based cohort classification. Does NOT use Microsoft Fairlearn.
-3. Remediation Priority Ranker (severity-based finding prioritization)
-4. EU AI Act Article-by-Article Compliance Engine (Articles 9 to 15 + Annex III classification)
-5. NIST AI RMF 1.0 Subcategory Mapper (NIST AI 100-1: GOVERN, MAP, MEASURE, MANAGE)
-6. OWASP Top 10 for LLMs & Threat Mapper
-7. MITRE ATLAS Adversarial Threat Technique Mapper
-8. AI Software Supply Chain CVE & EPSS Compound Risk Scanner (static registry)
-9. Model Card Generator (inspired by Mitchell et al., 2019 format)
+1. Custom Fairness Metrics Engine (DIR, SPD computation from predictions CSV)
+2. Remediation Priority Ranker (severity-based finding prioritization)
+3. EU AI Act Article-by-Article Compliance Engine (Articles 9 to 15 + Annex III classification)
+4. NIST AI 100-1 Subcategory Crosswalk (GOVERN, MAP, MEASURE, MANAGE)
+5. OWASP Top 10 for LLMs & Threat Mapper
+6. MITRE ATLAS Adversarial Threat Technique Mapper
+7. Google Model Card Generator (conforming to Mitchell et al., 2019 format)
 
 DISCLAIMER: This assessment does not constitute legal certification or
 guaranteed regulatory compliance. Professional review is recommended.
@@ -24,116 +20,20 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-GERMAN_CREDIT_PATH = os.path.join(DATA_DIR, "german_credit_fairness.csv")
-CLINICAL_SAFETY_PATH = os.path.join(DATA_DIR, "clinical_patient_safety.csv")
-AI_CVE_REGISTRY_PATH = os.path.join(DATA_DIR, "ai_cve_epss_registry.csv")
-
 
 # =====================================================================
 # 1. CUSTOM FAIRNESS METRICS ENGINE (DIR/SPD Computation)
-# Reference: UCI Machine Learning Repository: Statlog (German Credit Data)
 # =====================================================================
-
-def load_german_credit_baseline() -> Dict[str, Any]:
-    """
-    Loads empirical records from UCI Statlog (German Credit Data)
-    as a reference benchmark example of demographic parity calculations.
-    """
-    if not os.path.exists(GERMAN_CREDIT_PATH):
-        return {"loaded": False, "error": "dataset file not found"}
-
-    total = 0
-    priv_total = 0
-    unpriv_total = 0
-    priv_fav = 0
-    priv_unfav = 0
-    unpriv_fav = 0
-    unpriv_unfav = 0
-
-    with open(GERMAN_CREDIT_PATH, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            total += 1
-            gender = row.get("gender", "").lower()
-            risk = str(row.get("credit_risk", "")).strip()
-
-            is_priv = (gender == "male")
-            is_fav = (risk == "1")
-
-            if is_priv:
-                priv_total += 1
-                if is_fav:
-                    priv_fav += 1
-                else:
-                    priv_unfav += 1
-            else:
-                unpriv_total += 1
-                if is_fav:
-                    unpriv_fav += 1
-                else:
-                    unpriv_unfav += 1
-
-    p_priv = priv_total / max(total, 1)
-    p_unpriv = unpriv_total / max(total, 1)
-    p_fav_overall = (priv_fav + unpriv_fav) / max(total, 1)
-    p_unfav_overall = 1.0 - p_fav_overall
-
-    p_fav_priv = priv_fav / max(priv_total, 1)
-    p_fav_unpriv = unpriv_fav / max(unpriv_total, 1)
-
-    p_priv_fav_joint = priv_fav / max(total, 1)
-    p_priv_unfav_joint = priv_unfav / max(total, 1)
-    p_unpriv_fav_joint = unpriv_fav / max(total, 1)
-    p_unpriv_unfav_joint = unpriv_unfav / max(total, 1)
-
-    weights = {
-        "privileged_favorable": round((p_priv * p_fav_overall) / max(p_priv_fav_joint, 0.0001), 3),
-        "privileged_unfavorable": round((p_priv * p_unfav_overall) / max(p_priv_unfav_joint, 0.0001), 3),
-        "unprivileged_favorable": round((p_unpriv * p_fav_overall) / max(p_unpriv_fav_joint, 0.0001), 3),
-        "unprivileged_unfavorable": round((p_unpriv * p_unfav_overall) / max(p_unpriv_unfav_joint, 0.0001), 3),
-    }
-
-    dir_empirical = round(p_fav_unpriv / max(p_fav_priv, 0.0001), 3)
-    spd_empirical = round(p_fav_unpriv - p_fav_priv, 3)
-
-    return {
-        "loaded": True,
-        "dataset_name": "UCI Machine Learning Repository: Statlog (German Credit Data)",
-        "dataset_file": "german_credit_fairness.csv",
-        "sample_count": total,
-        "protected_attribute": "gender (female=unprivileged, male=privileged)",
-        "target_outcome": "credit_risk (1=favorable/creditworthy, 0=unfavorable)",
-        "subpopulations": {
-            "privileged_count": priv_total,
-            "unprivileged_count": unpriv_total,
-            "privileged_favorable_count": priv_fav,
-            "unprivileged_favorable_count": unpriv_fav,
-        },
-        "p_priv": round(p_priv, 3),
-        "p_unpriv": round(p_unpriv, 3),
-        "p_fav_priv": round(p_fav_priv, 3),
-        "p_fav_unpriv": round(p_fav_unpriv, 3),
-        "empirical_dir": dir_empirical,
-        "empirical_spd": spd_empirical,
-        "weights": weights,
-    }
-
 
 def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
                              metadata: Optional[Dict[str, Any]] = None,
                              fairness_score: Optional[float] = None,
                              predictions_csv: Optional[str] = None) -> Dict[str, Any]:
     """
-    Computes algorithmic fairness indicators (DIR, SPD) from data.
+    Computes algorithmic fairness indicators (DIR, SPD, EOD) from prediction data.
     - If user supplies a predictions CSV: metrics are computed strictly from that data.
-    - If no predictions CSV is provided: target model metrics are NOT fabricated;
-      the engine reports 'NO_EVALUATION_DATASET_PROVIDED' and provides UCI German Credit
-      strictly as an illustrative reference benchmark example.
+    - If no predictions CSV is provided: reports NO_EVALUATION_DATASET_PROVIDED honestly.
     """
-    baseline = load_german_credit_baseline()
-
     csv_data = None
     if predictions_csv:
         if os.path.exists(predictions_csv):
@@ -146,9 +46,9 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
         reader = csv.DictReader(io.StringIO(csv_data.strip()))
         rows = list(reader)
         if rows:
-            protected_col = next((c for c in rows[0].keys() if c.lower() in ("gender", "sex", "race", "ethnicity", "age")), None)
-            outcome_col = next((c for c in rows[0].keys() if c.lower() in ("prediction", "predicted", "outcome", "credit_risk", "label", "target", "approved")), None)
-            label_col = next((c for c in rows[0].keys() if c.lower() in ("true_label", "ground_truth", "actual")), None)
+            protected_col = next((c for c in rows[0].keys() if c.lower() in ("gender", "sex", "race", "ethnicity", "age", "protected_attribute")), None)
+            outcome_col = next((c for c in rows[0].keys() if c.lower() in ("prediction", "predicted", "outcome", "credit_risk", "label", "target", "approved", "y_pred")), None)
+            label_col = next((c for c in rows[0].keys() if c.lower() in ("true_label", "ground_truth", "actual", "y_true")), None)
 
             if protected_col and outcome_col:
                 priv_fav = 0
@@ -202,7 +102,7 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
                 is_spd_compliant = abs(spd_val) <= 0.10
 
                 return {
-                    "engine": "Custom Fairness Metrics Engine (DIR/SPD from dataset)",
+                    "engine": "Custom Fairness Metrics Engine (DIR/SPD from predictions)",
                     "evaluated": True,
                     "sample_count": len(rows),
                     "protected_attribute": protected_col,
@@ -216,12 +116,6 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
                         "spd_threshold": "[-0.10, +0.10]",
                         "equal_opportunity_difference": eod_val,
                         "status": "COMPLIANT" if (is_dir_compliant and is_spd_compliant) else "BIAS DETECTED",
-                    },
-                    "reference_benchmark_example": {
-                        "dataset_name": baseline["dataset_name"],
-                        "empirical_dir": baseline["empirical_dir"],
-                        "empirical_spd": baseline["empirical_spd"],
-                        "note": "UCI German Credit reference dataset provided solely as an illustrative example.",
                     },
                     "regulatory_alignment": {
                         "eu_ai_act": "Article 10(2)(f) - Examination of possible biases in training datasets",
@@ -237,17 +131,6 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
         "message": "No model prediction dataset provided for empirical fairness evaluation. Supply a predictions CSV containing protected attributes and outcome labels to compute DIR and SPD.",
         "pre_mitigation": None,
         "post_mitigation_reweighed": None,
-        "reference_benchmark_example": {
-            "dataset_name": baseline.get("dataset_name", "UCI Statlog (German Credit Fairness Data)"),
-            "sample_count": baseline.get("sample_count", 1000),
-            "protected_attribute": baseline.get("protected_attribute", "gender (female=unprivileged, male=privileged)"),
-            "empirical_dir": baseline.get("empirical_dir", 0.897),
-            "empirical_spd": baseline.get("empirical_spd", -0.075),
-            "note": "UCI German Credit reference dataset provided solely as an illustrative reference benchmark, NOT target model metrics.",
-        } if baseline.get("loaded") else {
-            "loaded": False,
-            "error": baseline.get("error", "dataset file not found")
-        },
         "regulatory_alignment": {
             "eu_ai_act": "Article 10(2)(f) - Examination of possible biases in training datasets",
             "nist_ai_rmf": "MEASURE 2.11 - Fairness and bias are evaluated and documented",
@@ -256,66 +139,7 @@ def compute_fairness_metrics(answers: Optional[Dict[str, Any]] = None,
 
 
 # =====================================================================
-# 2. RULE-BASED RISK COHORT ANALYSIS ENGINE
-# Uses Clinical Patient Safety & Dosage Cohort
-# =====================================================================
-
-def load_clinical_safety_benchmark() -> Dict[str, Any]:
-    """
-    Loads empirical clinical safety benchmark to evaluate guardrail efficacy.
-    Computes rejection rates and clamping rates directly from dataset rows.
-    """
-    if not os.path.exists(CLINICAL_SAFETY_PATH):
-        return {"loaded": False, "error": "dataset file not found"}
-
-    total = 0
-    corrupted_count = 0
-    corrupted_rejected_count = 0
-    clamped_count = 0
-    physician_approved_count = 0
-    high_risk_count = 0
-
-    with open(CLINICAL_SAFETY_PATH, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            total += 1
-            is_corrupted = str(row.get("input_corrupted", "")).lower() == "true"
-            is_clamped = str(row.get("output_clamped", "")).lower() == "true"
-            is_approved = str(row.get("physician_approved", "")).lower() == "true"
-
-            if is_corrupted:
-                corrupted_count += 1
-                if not is_approved or is_clamped:
-                    corrupted_rejected_count += 1
-            if is_clamped:
-                clamped_count += 1
-            if is_approved:
-                physician_approved_count += 1
-            if str(row.get("adverse_event_risk", "")).lower() == "high":
-                high_risk_count += 1
-
-    corrupted_rejection_rate = round((corrupted_rejected_count / corrupted_count) * 100, 1) if corrupted_count else None
-
-    return {
-        "loaded": True,
-        "dataset_name": "Clinical Patient Safety & Dosage Benchmark Cohort",
-        "dataset_file": "clinical_patient_safety.csv",
-        "sample_count": total,
-        "metrics": {
-            "corrupted_input_rejection_rate": corrupted_rejection_rate,
-            "output_clamping_rate_pct": round((clamped_count / max(total, 1)) * 100, 1),
-            "physician_hitl_approval_rate_pct": round((physician_approved_count / max(total, 1)) * 100, 1),
-            "high_risk_adverse_cohort_pct": round((high_risk_count / max(total, 1)) * 100, 1)
-        }
-    }
-
-
-
-
-
-# =====================================================================
-# 3. REMEDIATION PRIORITY RANKER
-# Ranks findings strictly by severity for actionable remediation
+# 2. REMEDIATION PRIORITY RANKER
 # =====================================================================
 
 def solve_remediation_priority(current_aas: Optional[float],
@@ -739,139 +563,10 @@ def map_owasp_and_atlas(findings: List[Dict[str, Any]], dimensions: Dict[str, Op
 # Evaluates Compound Risk on real AI/ML libraries
 # =====================================================================
 
-def scan_ai_vulnerabilities(domain: str = "General Purpose AI",
-                            asset_criticality: str = "Mission-Critical",
-                            target_dependencies: Optional[List[str]] = None) -> Dict[str, Any]:
-    """
-    Scans `ai_cve_epss_registry.csv` and computes Compound Vulnerability Risk:
-    Risk = CVSS (0-10) * EPSS (0-1) * Criticality Multiplier
-    Filters to target_dependencies if supplied.
-    """
-    criticality_multipliers = {
-        "Mission-Critical": 1.5,
-        "Business-Critical": 1.2,
-        "Operational / Advisory": 1.0,
-        "Low / Non-Production": 0.7
-    }
-    mult = criticality_multipliers.get(asset_criticality, 1.2)
-
-    if not os.path.exists(AI_CVE_REGISTRY_PATH):
-        return {
-            "engine": "AI Supply Chain Scanner (Static CVE/EPSS Registry Snapshot)",
-            "dataset_file": "ai_cve_epss_registry",
-            "data_disclaimer": "Static AI CVE registry snapshot.",
-            "total_cves_indexed": 48,
-            "critical_vulnerabilities": 8,
-            "high_vulnerabilities": 14,
-            "asset_criticality": asset_criticality,
-            "criticality_multiplier": mult,
-            "top_vulnerabilities": [
-                {
-                    "cve_id": "CVE-2024-34359",
-                    "package": "llama-index",
-                    "package_type": "AI Agent / RAG",
-                    "vulnerability_type": "RCE via Deserialization",
-                    "cvss_score": 9.8,
-                    "epss_probability": 0.85,
-                    "compound_risk_score": round(9.8 * 0.85 * mult, 2),
-                    "severity": "CRITICAL",
-                    "description": "Critical RCE via unsafe YAML deserialization in LlamaIndex exec...",
-                    "remediation": "Upgrade llama-index >= 0.10.37"
-                },
-                {
-                    "cve_id": "CVE-2023-43654",
-                    "package": "torchserve",
-                    "package_type": "Model Serving",
-                    "vulnerability_type": "SSRF / Unauth Code Exec",
-                    "cvss_score": 9.8,
-                    "epss_probability": 0.72,
-                    "compound_risk_score": round(9.8 * 0.72 * mult, 2),
-                    "severity": "CRITICAL",
-                    "description": "Default management API binding allows remote code execution...",
-                    "remediation": "Upgrade torchserve >= 0.8.2 and bind to localhost"
-                },
-                {
-                    "cve_id": "CVE-2024-21513",
-                    "package": "langchain",
-                    "package_type": "AI Framework",
-                    "vulnerability_type": "Prompt Injection / SSRF",
-                    "cvss_score": 8.6,
-                    "epss_probability": 0.45,
-                    "compound_risk_score": round(8.6 * 0.45 * mult, 2),
-                    "severity": "HIGH",
-                    "description": "Improper input validation in chain executors allows SSRF...",
-                    "remediation": "Upgrade langchain >= 0.1.14"
-                }
-            ]
-        }
-
-    criticality_multipliers = {
-        "Mission-Critical": 1.5,
-        "Business-Critical": 1.2,
-        "Operational / Advisory": 1.0,
-        "Low / Non-Production": 0.7
-    }
-    mult = criticality_multipliers.get(asset_criticality, 1.2)
-
-    vulnerabilities = []
-    critical_count = 0
-    high_count = 0
-
-    target_pkgs = set(p.lower() for p in target_dependencies) if target_dependencies else None
-
-    with open(AI_CVE_REGISTRY_PATH, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            pkg = row.get("affected_package", "unknown").lower()
-            if target_pkgs and pkg not in target_pkgs:
-                continue
-
-            try:
-                cvss = float(row.get("cvss_score", 5.0))
-                epss = float(row.get("epss_probability", 0.1))
-            except ValueError:
-                cvss, epss = 5.0, 0.1
-
-            compound_risk = round(cvss * epss * mult, 2)
-            cve_id = row.get("cve_id", "CVE-UNKNOWN")
-            vtype = row.get("vulnerability_type", "Unknown")
-
-            severity = "CRITICAL" if compound_risk >= 6.0 else ("HIGH" if compound_risk >= 3.5 else "MEDIUM")
-            if severity == "CRITICAL":
-                critical_count += 1
-            elif severity == "HIGH":
-                high_count += 1
-
-            vulnerabilities.append({
-                "cve_id": cve_id,
-                "package": pkg,
-                "package_type": row.get("package_type", "AI Runtime"),
-                "vulnerability_type": vtype,
-                "cvss_score": cvss,
-                "epss_probability": epss,
-                "compound_risk_score": compound_risk,
-                "severity": severity,
-                "description": (row.get("description", "")[:120] + "..."),
-                "remediation": row.get("remediation_patch", "Upgrade to latest patched release")
-            })
-
-    vulnerabilities.sort(key=lambda x: x["compound_risk_score"], reverse=True)
-
-    return {
-        "engine": "AI Supply Chain Scanner (Static CVE/EPSS Registry — snapshot, not live)",
-        "dataset_file": "ai_cve_epss_registry.csv",
-        "data_disclaimer": "This scan uses a static local CVE registry. For production use, integrate the NIST NVD and FIRST EPSS live APIs.",
-        "total_cves_indexed": len(vulnerabilities),
-        "critical_vulnerabilities": critical_count,
-        "high_vulnerabilities": high_count,
-        "asset_criticality": asset_criticality,
-        "criticality_multiplier": mult,
-        "top_vulnerabilities": vulnerabilities[:8]
-    }
 
 
 # =====================================================================
-# 8. GOOGLE MODEL CARD GENERATOR (Mitchell et al., 2019)
+# 7. GOOGLE MODEL CARD GENERATOR
 # =====================================================================
 
 def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -949,68 +644,3 @@ def generate_google_model_card(audit_payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def get_dataset_preview(filepath: str, max_rows: int = 6) -> List[Dict[str, str]]:
-    """Helper to return top N records from a CSV dataset for live UI preview."""
-    rows = []
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, mode="r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                for i, row in enumerate(reader):
-                    if i >= max_rows:
-                        break
-                    rows.append(dict(row))
-        except Exception:
-            pass
-    return rows
-
-
-def get_dataset_catalog() -> List[Dict[str, Any]]:
-    """
-    Returns full metadata for the empirical benchmark datasets used in AI-GRID.
-    """
-    german = load_german_credit_baseline()
-    clinical = load_clinical_safety_benchmark()
-
-    c_metrics = clinical.get("metrics", {}) if clinical.get("loaded") else {}
-    rej_val = c_metrics.get("corrupted_input_rejection_rate")
-    rej_str = f"{rej_val}%" if rej_val is not None else "not computable (0 corrupted rows)"
-
-    return [
-        {
-            "id": "german_credit",
-            "name": "UCI Statlog (German Credit Fairness Data)",
-            "file": "german_credit_fairness.csv",
-            "records": german.get("sample_count", 1000) if german.get("loaded") else 1000,
-            "features": 10,
-            "domain": "Finance / Credit Risk",
-            "license": "CC BY 4.0 / Open Data",
-            "primary_metric": f"Empirical DIR = {german.get('empirical_dir', 0.897)} | SPD = {german.get('empirical_spd', -0.075)}",
-            "relevance": "Used as an illustrative reference benchmark for demographic parity and Disparate Impact Ratio.",
-            "preview_rows": get_dataset_preview(GERMAN_CREDIT_PATH, max_rows=5)
-        },
-        {
-            "id": "clinical_safety",
-            "name": "Clinical Patient Safety & Dosage Cohort",
-            "file": "clinical_patient_safety.csv",
-            "records": clinical.get("sample_count", 297) if clinical.get("loaded") else 297,
-            "features": 13,
-            "domain": "Healthcare / Patient Safety",
-            "license": "Curated Open Healthcare Benchmark",
-            "primary_metric": f"Clamping Rate = {c_metrics.get('output_clamping_rate_pct', 6.1)}% | Physician Approval = {c_metrics.get('physician_hitl_approval_rate_pct', 100.0)}% | Rejection = {rej_str}",
-            "relevance": "Evaluates safety boundary guardrails and output clamping on clinical patient edge cases.",
-            "preview_rows": get_dataset_preview(CLINICAL_SAFETY_PATH, max_rows=5)
-        },
-        {
-            "id": "ai_cve_registry",
-            "name": "AI Software Supply Chain CVE & EPSS Registry",
-            "file": "ai_cve_epss_registry.csv",
-            "records": 46,
-            "features": 11,
-            "domain": "Cybersecurity / AI Supply Chain",
-            "license": "Derived from NIST NVD & FIRST EPSS (Open Data)",
-            "primary_metric": "Compound Risk = CVSS × EPSS × Criticality Multiplier",
-            "relevance": "Maps vulnerabilities across AI runtimes, agent frameworks, and math libraries.",
-            "preview_rows": get_dataset_preview(AI_CVE_REGISTRY_PATH, max_rows=5)
-        }
-    ]

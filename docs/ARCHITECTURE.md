@@ -23,7 +23,7 @@ graph TD
     CompEngines --> EUAIAct[EU AI Act Annex III & Art. 9-15]
     CompEngines --> NIST[NIST AI 100-1 Crosswalk]
     CompEngines --> ModelCard[ISO 42001 / Annex IV Dossier]
-    Auditor --> SQLite[(SQLite AuditStore)]
+    Auditor --> SQLite[(SQLite AuditStore instance/aigrid_audits.db)]
     Auditor --> Response([Evaluated Dossier & Attestation Gap])
     Response --> UI[Web Control Plane UI]
 ```
@@ -87,7 +87,7 @@ AI-GRID provides 5 empirical verification endpoints (`POST /api/verify/<module>`
 | Module | Target Endpoint | Checked Item | Input Formats | Scoring Thresholds |
 |:---|:---|:---|:---|:---|
 | **Fairness** | `/api/verify/fairness` | `q10_fairness_audit` (Fairness) | CSV (`protected_attribute`, `y_true`, `y_pred`) | **1.0**: $\text{DIR} \ge 0.80$ and $|\text{SPD}| \le 0.10$<br>**0.5**: $\text{DIR} \ge 0.70$ and $|\text{SPD}| \le 0.15$<br>**0.0**: otherwise |
-| **Dependencies** | `/api/verify/dependencies` | `q3_aibom_inventory` (Security) | CycloneDX JSON SBOM or `requirements.txt` | **1.0**: CycloneDX with no CVSS $\ge 7.0$ match in CVE database<br>**0.5**: Valid CycloneDX with high CVE or `requirements.txt` only<br>**0.0**: Failed parse or critical vulnerability |
+| **Dependencies** | `/api/verify/dependencies` | `q3_aibom_inventory` (Security) | CycloneDX JSON SBOM or `requirements.txt` | **1.0**: CycloneDX with no CVSS $\ge 7.0$ match via OSV API<br>**0.5**: Valid CycloneDX with high match or `requirements.txt` only<br>**Preserved claimed score**: If OSV API offline / unreachable |
 | **TLS** | `/api/verify/tls` | `q17_encryption_transit` (Privacy) | JSON payload (`host`, `port`) | **1.0**: TLS 1.3 + valid non-expired certificate<br>**0.6**: TLS 1.2 + valid certificate<br>**0.0**: Older protocol, expired cert, or unreachable |
 | **Log Integrity** | `/api/verify/log-integrity` | `q27_tamper_evident_logs` (Accountability) | JSONL (`prev_hash`, `data`, `hash`) | **1.0**: Valid SHA-256 chain from genesis (`GENESIS` or 64 zeros)<br>**0.0**: Broken hash chain, altered entry, or missing link |
 | **Robustness** | `/api/verify/robustness` | `q1_adversarial_testing` (Security) | CSV with clean & perturbed predictions | **1.0**: Accuracy degradation $\Delta \text{Acc} \le 0.05$ (&le; 5%)<br>**0.5**: Accuracy degradation $\Delta \text{Acc} \le 0.15$ (&le; 15%)<br>**0.0**: Accuracy drop > 15% |
@@ -95,7 +95,7 @@ AI-GRID provides 5 empirical verification endpoints (`POST /api/verify/<module>`
 ### Security Safeguards in Verifiers:
 - **SSRF Protection**: `verify_tls` strictly restricts ports to 443 and 8443, enforces a 5-second timeout, and validates resolved IP addresses to block private (RFC 1918), loopback (`127.0.0.0/8`), link-local (`169.254.0.0/16`), cloud metadata (`169.254.169.254`), multicast, and unspecified (`0.0.0.0`) destinations.
 - **TLS Probing Rate Limit**: Strict rate limiting of 5 requests per minute per IP on `/api/verify/tls`.
-- **Zero Arbitrary Execution**: Strict reliance on Python standard library (`csv`, `json`, `ssl`, `hashlib`, `ipaddress`). Model weights, pickle loading, `eval()`, and `exec()` are forbidden.
+- **Zero Arbitrary Execution**: Strict reliance on Python standard library (`csv`, `json`, `ssl`, `hashlib`, `ipaddress`, `urllib`). Model weights, pickle loading, `eval()`, and `exec()` are forbidden.
 
 ---
 
@@ -119,7 +119,7 @@ AI-GRID provides 5 empirical verification endpoints (`POST /api/verify/<module>`
 ## 6. Persistence & Deployment Security
 
 1. **Persistence Layer (`audit_store.py`)**:
-   - Stored in SQLite database (`data/aigrid_audits.db`).
+   - Stored in SQLite database (`instance/aigrid_audits.db`).
    - Tables: `audits` (metadata, AAS, dossier), `audit_evidence` (verified and self-reported evidence items with tier, metric details, and verification timestamps), and `audit_findings` (prioritized remediation findings).
 2. **Unauthenticated Local/Demo Deployment**:
    - AI-GRID operates without API keys or session cookies. It is engineered for local development, research benchmarking, and demonstration environments.

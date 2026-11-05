@@ -25,3 +25,5 @@ Thumbs.db
 # Temporary / Scratch
 scratch/
 archive/
+
+instance/

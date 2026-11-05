@@ -15,13 +15,11 @@ import ssl
 import time
 import ipaddress
 import hashlib
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
-
-# File paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-AI_CVE_REGISTRY_PATH = os.path.join(BASE_DIR, "data", "ai_cve_epss_registry.csv")
 
 # Rate limiting for TLS verifier (max 5 requests per minute per IP)
 _tls_rate_limits: Dict[str, List[float]] = {}
@@ -204,47 +202,35 @@ def verify_fairness(
 # =========================================================================
 # 2. DEPENDENCIES VERIFIER (Item: q3_sbom_tracking, Dimension: Security)
 # =========================================================================
-def _load_cve_registry() -> Dict[str, List[Dict[str, Any]]]:
-    """Loads ai_cve_epss_registry.csv mapping lowercase package name to CVE details."""
-    cve_map: Dict[str, List[Dict[str, Any]]] = {}
-    if not os.path.exists(AI_CVE_REGISTRY_PATH):
-        return cve_map
-
-    try:
-        with open(AI_CVE_REGISTRY_PATH, mode="r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                pkg = str(row.get("affected_package", "")).strip().lower().replace("-", "_")
-                if not pkg:
-                    continue
-                try:
-                    cvss = float(row.get("cvss_score", 0.0))
-                except ValueError:
-                    cvss = 0.0
-
-                item = {
-                    "cve_id": row.get("cve_id", "Unknown"),
-                    "affected_package": pkg,
-                    "cvss_score": cvss,
-                    "epss_probability": row.get("epss_probability", "0.0"),
-                    "description": row.get("description", "")
-                }
-                cve_map.setdefault(pkg, []).append(item)
-    except Exception:
-        pass
-    return cve_map
-
-
 def verify_dependencies(
     content: str,
     claimed_value: Any = None
 ) -> Dict[str, Any]:
     """
-    Verifies supply chain security from requirements.txt or CycloneDX JSON SBOM.
+    Verifies supply chain dependencies by querying the public OSV API.
+    POST https://api.osv.dev/v1/querybatch (PyPI ecosystem, urllib only).
+    Timeout: 5 seconds. Package limit: at most 200 packages.
     Score: valid CycloneDX with no CVSS>=7 match -> 1.0; requirements-only or any high match -> 0.5.
+    If lookup fails or is offline: returns 'vulnerability lookup unavailable' and preserves claimed score.
     """
     item_id = "q3_sbom_tracking"
     dimension = "Security & Robustness"
+
+    # Compute claimed_score to preserve on offline/network failure
+    if isinstance(claimed_value, (int, float)):
+        claimed_score = float(claimed_value)
+    elif isinstance(claimed_value, str):
+        val = claimed_value.strip().lower()
+        if val in ("formal_sbom", "cyclonedx", "1.0", "1"):
+            claimed_score = 1.0
+        elif val in ("internal_inventory", "requirements_only", "0.5"):
+            claimed_score = 0.5
+        elif val in ("none", "untracked", "0.0", "0"):
+            claimed_score = 0.0
+        else:
+            claimed_score = 0.5
+    else:
+        claimed_score = 0.5
 
     if not content or not content.strip():
         return {
@@ -258,10 +244,8 @@ def verify_dependencies(
             "details": "Error: Empty dependency payload provided."
         }
 
-    cve_db = _load_cve_registry()
-
     is_cyclonedx = False
-    packages: List[str] = []
+    packages: List[Dict[str, Optional[str]]] = []
 
     # Attempt CycloneDX JSON parse
     trimmed = content.strip()
@@ -275,7 +259,9 @@ def verify_dependencies(
                     is_cyclonedx = True
                     for c in components:
                         if isinstance(c, dict) and "name" in c:
-                            packages.append(str(c["name"]).strip().lower().replace("-", "_"))
+                            pkg_name = str(c["name"]).strip().lower().replace("-", "_")
+                            pkg_ver = str(c["version"]).strip() if "version" in c else None
+                            packages.append({"name": pkg_name, "version": pkg_ver})
         except Exception:
             pass
 
@@ -285,11 +271,11 @@ def verify_dependencies(
             line = line.strip()
             if not line or line.startswith(("#", "-", "@")):
                 continue
-            # Extract package name up to comparison operator or semicolon
-            match = re.match(r"^([a-zA-Z0-9_\-\.]+)", line)
+            match = re.match(r"^([a-zA-Z0-9_\-\.]+)(?:==([a-zA-Z0-9_\-\.]+))?", line)
             if match:
                 pkg_name = match.group(1).lower().replace("-", "_")
-                packages.append(pkg_name)
+                pkg_ver = match.group(2) if match.group(2) else None
+                packages.append({"name": pkg_name, "version": pkg_ver})
 
     if not packages:
         return {
@@ -303,52 +289,128 @@ def verify_dependencies(
             "details": "Error: Could not parse any package names from submitted manifest."
         }
 
-    matched_cves: List[Dict[str, Any]] = []
-    high_critical_matches: List[Dict[str, Any]] = []
+    # At most 200 packages
+    packages = packages[:200]
 
-    for pkg in packages:
-        if pkg in cve_db:
-            for cve in cve_db[pkg]:
-                matched_cves.append(cve)
-                if cve["cvss_score"] >= 7.0:
-                    high_critical_matches.append(cve)
+    # Prepare queries for OSV querybatch
+    queries = []
+    for p in packages:
+        q_item: Dict[str, Any] = {
+            "package": {
+                "name": p["name"],
+                "ecosystem": "PyPI"
+            }
+        }
+        if p.get("version"):
+            q_item["version"] = p["version"]
+        queries.append(q_item)
 
-    has_high = len(high_critical_matches) > 0
+    req_body = json.dumps({"queries": queries}).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.osv.dev/v1/querybatch",
+        data=req_body,
+        headers={"Content-Type": "application/json", "User-Agent": "AI-GRID-Verifier/5.0"}
+    )
 
-    if is_cyclonedx and not has_high:
-        score = 1.0
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            resp_data = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, Exception) as err:
+        return {
+            "module": "dependencies",
+            "item_id": item_id,
+            "dimension": dimension,
+            "claimed_value": claimed_value,
+            "verified_score": claimed_score,
+            "claim_supported": True,
+            "status": "vulnerability lookup unavailable",
+            "details": "vulnerability lookup unavailable",
+            "metrics": {
+                "format": "CycloneDX" if is_cyclonedx else "requirements.txt",
+                "packages_checked": len(packages),
+                "offline": True,
+                "error": str(err)
+            }
+        }
+
+    results = resp_data.get("results", [])
+    highest_severity = 0.0
+    high_vulns = []
+    total_vulns = 0
+
+    def _parse_vuln_severity(vuln_obj: Dict[str, Any]) -> float:
+        max_s = 0.0
+        for s in vuln_obj.get("severity", []):
+            score_val = s.get("score")
+            if isinstance(score_val, (int, float)):
+                max_s = max(max_s, float(score_val))
+            elif isinstance(score_val, str):
+                try:
+                    max_s = max(max_s, float(score_val))
+                except ValueError:
+                    if "/C:H" in score_val and "/I:H" in score_val:
+                        max_s = max(max_s, 8.5)
+                    elif "/C:H" in score_val or "/I:H" in score_val or "/A:H" in score_val:
+                        max_s = max(max_s, 7.5)
+        db_spec = vuln_obj.get("database_specific", {})
+        if isinstance(db_spec, dict):
+            sev_text = str(db_spec.get("severity", "")).upper()
+            if sev_text == "CRITICAL":
+                max_s = max(max_s, 9.5)
+            elif sev_text == "HIGH":
+                max_s = max(max_s, 7.5)
+            elif sev_text in ("MODERATE", "MEDIUM"):
+                max_s = max(max_s, 5.0)
+            elif sev_text == "LOW":
+                max_s = max(max_s, 2.5)
+            if "cvss" in db_spec:
+                try:
+                    max_s = max(max_s, float(db_spec["cvss"].get("score", 0.0)))
+                except Exception:
+                    pass
+        return max_s
+
+    for res in results:
+        vulns = res.get("vulns", [])
+        total_vulns += len(vulns)
+        for v in vulns:
+            sev = _parse_vuln_severity(v)
+            highest_severity = max(highest_severity, sev)
+            if sev >= 7.0:
+                high_vulns.append(v.get("id", "UNKNOWN"))
+
+    has_high_match = (highest_severity >= 7.0)
+
+    if is_cyclonedx and not has_high_match:
+        verified_score = 1.0
         claim_supported = True
-        details = f"Valid CycloneDX SBOM parsed: {len(packages)} components verified, 0 high-severity CVE matches."
-    elif is_cyclonedx and has_high:
-        score = 0.5
+        details = f"Valid CycloneDX SBOM parsed: {len(packages)} packages queried against OSV, 0 CVSS>=7 vulnerabilities found (max severity: {highest_severity:.1f})."
+    elif is_cyclonedx and has_high_match:
+        verified_score = 0.5
         claim_supported = False
-        details = f"CycloneDX SBOM contains {len(high_critical_matches)} high-severity (CVSS>=7.0) CVE matches."
+        details = f"CycloneDX SBOM contains high-severity vulnerabilities via OSV query (max severity: {highest_severity:.1f}, {len(high_vulns)} CVSS>=7 issues)."
     else:
-        # requirements.txt only
-        score = 0.5
-        claim_supported = False
-        details = (
-            f"Parsed plain requirements.txt ({len(packages)} packages). "
-            f"Needs formal CycloneDX SBOM for 1.0 score. High-severity matches: {len(high_critical_matches)}."
-        )
+        verified_score = 0.5
+        claim_supported = (claimed_score <= 0.5)
+        details = f"Parsed plain requirements.txt ({len(packages)} packages). Requirements-only manifest is capped at 0.5 (needs CycloneDX for 1.0; OSV max severity: {highest_severity:.1f})."
 
     return {
         "module": "dependencies",
         "item_id": item_id,
         "dimension": dimension,
         "claimed_value": claimed_value,
-        "verified_score": score,
+        "verified_score": verified_score,
         "claim_supported": claim_supported,
         "metrics": {
             "format": "CycloneDX" if is_cyclonedx else "requirements.txt",
             "package_count": len(packages),
-            "matched_vulnerabilities_count": len(matched_cves),
-            "high_severity_vulnerabilities_count": len(high_critical_matches),
-            "cve_matches": [c["cve_id"] for c in high_critical_matches[:10]]
+            "total_vulnerabilities_count": total_vulns,
+            "high_severity_count": len(high_vulns),
+            "highest_severity": highest_severity,
+            "high_vulnerabilities": high_vulns[:10]
         },
         "details": details
     }
-
 
 # =========================================================================
 # 3. TLS VERIFIER (Item: q17_encryption_transit, Dimension: Privacy)

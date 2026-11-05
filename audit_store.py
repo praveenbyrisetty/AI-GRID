@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
     DEFAULT_DB_PATH = "/tmp/aigrid_audits.db"
 else:
-    DEFAULT_DB_PATH = os.path.join(BASE_DIR, "aigrid_audits.db")
+    DEFAULT_DB_PATH = os.path.join(BASE_DIR, "instance", "aigrid_audits.db")
 
 DB_PATH = os.environ.get("AIGRID_DB_PATH", DEFAULT_DB_PATH)
 

@@ -7,18 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [5.0.0] - 2026-11-04
+## [5.0.0] - 2026-11-05
 
 ### Empirical Evidence Verification & Attestation Gap Engine (Phase 6)
 - **Empirical Verifiers Module (`verifiers.py`)**: Added 5 dedicated verification modules with REST endpoints (`POST /api/verify/<module>`):
   - **Fairness (`/api/verify/fairness`)**: Computes Disparate Impact Ratio (DIR), Statistical Parity Difference (SPD), and Equal Opportunity Difference (EOD) on uploaded predictions CSVs to verify `q10_fairness_audit`.
-  - **Dependencies (`/api/verify/dependencies`)**: Cross-references CycloneDX JSON SBOMs or `requirements.txt` against the offline enterprise CVE registry (`data/ai_cve_epss_registry.csv`) to verify `q3_aibom_inventory`.
+  - **Dependencies (`/api/verify/dependencies`)**: Queries the public OSV API (`api.osv.dev`, PyPI ecosystem, `urllib` only) with a 5-second timeout and up to 200 packages to verify `q3_aibom_inventory`. Gracefully handles offline states by preserving claimed scores.
   - **TLS Prober (`/api/verify/tls`)**: Probes host and port (443/8443) for TLS 1.3/1.2 negotiation and certificate validity with 5-second socket timeout and strict SSRF defenses to verify `q17_encryption_transit`.
   - **Log Integrity (`/api/verify/log-integrity`)**: Cryptographically validates SHA-256 hash chains from genesis in uploaded JSONL logs to verify `q27_tamper_evident_logs`.
   - **Adversarial Robustness (`/api/verify/robustness`)**: Measures accuracy drop between baseline and perturbed prediction CSVs to verify `q1_adversarial_testing`.
 - **Multi-Tier Evidence Weighting**: Upgraded dimension score computation in `ai_profile_engine.py` to weight Tier T1 verified artifacts at $w=1.0$ and Tier T3 self-attested items at $w=0.6$.
 - **Attestation Gap Analysis**: Computed dimension-level ($\Delta_d = S_{d,\text{claimed}} - S_{d,\text{verified}}$) and composite AAS gaps ($\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified}}$) to expose and prevent governance over-claiming.
 - **Verification UI**: Added dedicated "Evidence Verification (T1)" page (`#page-verify`) with card uploaders, real-time result inspector, active badge count, and integrated audit compiler.
+
+### Complete Elimination of Datasets & Static Registries (Phases 1-3 Override)
+- **Removed All Bundled Datasets**: Deleted `data/` folder from repository.
+- **Removed Static Lookups**: Deleted all mock loaders, baseline functions, and path constants from `compliance_engines.py` and `server.py`.
+- **Isolated SQLite Storage**: Migrated SQLite database location to `instance/aigrid_audits.db`.
 
 ### Regulatory Crosswalk Wiring Fixes (Phase 5)
 - **EU AI Act Accountability Wiring**: Connected Article 12 (record-keeping/logging) directly to the Accountability & Governance score; wired Article 11 (technical documentation) to $\text{mean}(S_{\text{Transparency}}, S_{\text{Accountability}})$.
@@ -36,14 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Unified AAS Implementation**: Standardized composite scoring on `ai_profile_engine.compute_aas_and_bottleneck`, eliminating duplicate logic in `evidence.py`.
 - **Scrubbed Unverified Citations**: Replaced speculative or unverified references across question bank with verified sources (Mitchell et al. 2019, NIST AI 100-1, ISO/IEC 42001, EU AI Act).
 
-### Elimination of Fabricated Data & Metric Verification (Phase 2)
-- **Removed Hardcoded Fallback Dictionaries**: Removed synthetic fallback dicts in `load_german_credit_baseline()` and `load_clinical_safety_benchmark()`.
-- **Verified Benchmark Statistics**: Grounded all metrics in empirical dataset files (German Credit: 1,000 rows, DIR 0.897, SPD -0.075; Clinical: 297 rows, clamping 6.1%, physician approval 100%, high-risk cohort 16.2%, corrupted input rejection rate null; CVE registry: 46 rows).
-
-### Repository Restoration (Phase 1)
-- **Restored Test Suite & Datasets**: Restored `tests/`, `data/*.csv`, and `.github/workflows/ci.yml`.
-- **Cleaned Ignore Rules**: Configured `.gitignore` to track test and data assets while safely ignoring databases, virtual environments, and caches.
-
 ---
 
 ## [4.0.0] - 2026-10-23
@@ -54,8 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Deprecated Endpoints**: Updated `/api/audit/mcp` and `/api/audit/compare` to return `410 Gone` with clear deprecation notices.
 
 ### Elimination of Synthetic Data & Invented Claims
-- **Removed Fake Financial Liabilities**: Removed arbitrary USD liability calculations (`$5,000 * scale_users`) from the simulation engine.
-- **Eliminated Offset Measurements**: Replaced attestation discrepancy calculations ($\Delta = S_{\text{self}} - S_{\text{probe}}$) with true bottleneck constraint tracking ($\min_{d} S_d$).
+- **Removed Fake Financial Liabilities**: Removed arbitrary USD liability calculations from the simulation engine.
+- **Eliminated Offset Measurements**: Replaced attestation discrepancy calculations with true bottleneck constraint tracking ($\min_{d} S_d$).
 - **Grounded Regulatory Claims**: Aligned EU AI Act classifications strictly with verified statutory criteria (confirming Article 6(1)/Annex I and Annex III §5 applicable routes).
 - **Removed Unverified Citations**: Cleaned all unverified legal and standards claims across documentation and codebase.
 
@@ -68,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security & Reliability
 - **Preserved XSS Sanitization**: Retained strict HTML escaping on all dynamic findings, logs, and telemetry.
-- **Retained Rate Limiting & Authentication**: POST endpoints require `X-API-Key` authentication and are rate-limited per client identifier.
+- **Retained Rate Limiting & Authentication**: POST endpoints require client-level rate limiting.
 - **Test Suite**: 34 unit and integration tests passing cleanly across compliance engines, scoring algorithms, API contracts, and security boundaries.
 
 ---
