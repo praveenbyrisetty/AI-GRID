@@ -6,7 +6,6 @@ All external network calls are mocked; no real network used.
 
 import hashlib
 import json
-import io
 import urllib.error
 import pytest
 from unittest.mock import patch, MagicMock

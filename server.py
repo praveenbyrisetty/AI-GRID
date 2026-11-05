@@ -242,7 +242,7 @@ def get_question_list():
                 "scored_questions": sum(1 for q in questions if not q.get("is_identity")),
             },
         })
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to retrieve questions")
         return jsonify({"success": False, "error": "Internal error loading questions"}), 500
 
@@ -275,7 +275,7 @@ def run_questionnaire_audit():
 
         last_audit_data = results
         return jsonify({"success": True, "data": results, "audit_id": audit_id})
-    except Exception as e:
+    except Exception:
         logger.exception("Error executing questionnaire audit")
         return jsonify({"success": False, "error": "Failed to process questionnaire audit"}), 500
 
@@ -400,7 +400,7 @@ def get_audit_history():
                 "bottleneck_score": r.get("bottleneck_score"),
             })
         return jsonify({"success": True, "count": len(history_summaries), "data": history_summaries})
-    except Exception as e:
+    except Exception:
         logger.exception("Error listing audit history")
         return jsonify({"success": False, "error": "Failed to load audit history"}), 500
 
@@ -415,7 +415,7 @@ def get_audit_by_id(audit_id: str):
         if "answers" in audit:
             del audit["answers"]
         return jsonify({"success": True, "data": audit})
-    except Exception as e:
+    except Exception:
         logger.exception(f"Error fetching audit {audit_id}")
         return jsonify({"success": False, "error": "Failed to retrieve audit"}), 500
 
@@ -445,7 +445,6 @@ def reset_audit_state():
 # ================================================================
 @app.route("/api/model-card", methods=["GET", "POST"])
 def get_model_card():
-    global last_audit_data
     audit_data = None
     if request.is_json:
         body, _ = validate_json_body()
@@ -464,7 +463,7 @@ def get_model_card():
     try:
         card = audit_data.get("model_card") or generate_google_model_card(audit_data)
         return jsonify({"success": True, "data": card})
-    except Exception as e:
+    except Exception:
         logger.exception("Error generating Model Card")
         return jsonify({"success": False, "error": "Failed to generate Model Card"}), 500
 
@@ -474,7 +473,6 @@ def get_model_card():
 # ================================================================
 @app.route("/api/rai/counterfactual", methods=["POST"])
 def get_counterfactual():
-    global last_audit_data
     body = {}
     if request.is_json:
         parsed, _ = validate_json_body()
@@ -499,7 +497,7 @@ def get_counterfactual():
 
         cf_res = solve_remediation_priority(current_aas, dimensions, findings, target_score)
         return jsonify({"success": True, "data": cf_res})
-    except Exception as e:
+    except Exception:
         logger.exception("Error solving remediation priority")
         return jsonify({"success": False, "error": "Failed to calculate remediation priorities"}), 500
 
@@ -512,7 +510,6 @@ def get_counterfactual():
 # ================================================================
 @app.route("/api/analysis/sensitivity", methods=["POST"])
 def get_sensitivity_analysis():
-    global last_audit_data
     body = {}
     if request.is_json:
         parsed, _ = validate_json_body()
@@ -529,7 +526,7 @@ def get_sensitivity_analysis():
 
         res = compute_aas_and_bottleneck(dimensions, alpha=0.6)
         return jsonify({"success": True, "data": res.get("sensitivity_curve", [])})
-    except Exception as e:
+    except Exception:
         logger.exception("Error computing sensitivity curve")
         return jsonify({"success": False, "error": "Failed to compute sensitivity curve"}), 500
 
