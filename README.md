@@ -1,12 +1,13 @@
 # AI-GRID (v5.0.0)
 
-### Empirical AI Governance, Risk &amp; Compliance Operating System
+### AI governance risk assessment framework with verified evidence
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Framework](https://img.shields.io/badge/Framework-Flask%20%7C%20REST%20API-orange.svg)](https://flask.palletsprojects.com/)
 [![Standards](https://img.shields.io/badge/Standards-EU%20AI%20Act%20(Art.%209--15)%20%7C%20NIST%20AI%20100--1-emerald.svg)](https://artificialintelligenceact.eu/)
 [![Taxonomy](https://img.shields.io/badge/Taxonomy-QB4AIRA%20(IEEE%202024)-purple.svg)](https://doi.org/10.1109/MS.2024.3512577)
 [![Evidence Tiers](https://img.shields.io/badge/Evidence%20Tiers-T1%20Verified%20%7C%20T3%20Attested-blueviolet.svg)](#empirical-verification-modules-tier-t1)
+[![Tests](https://img.shields.io/badge/Tests-55%20passed-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -32,15 +33,15 @@ AI-GRID incorporates:
 
 AI-GRID evaluates AI trustworthiness across seven consolidated dimensions aligned with international standards:
 
-| # | Trust Dimension | Scope &amp; Focus | Regulatory &amp; Industry Standards |
+| # | Trust Dimension | Scope & Focus | Regulatory & Industry Standards |
 |:---:|:---|:---|:---|
-| **1** | **Security &amp; Robustness** | Adversarial robustness, concept drift monitoring, AI software bill of materials (AI-BOM), independent red teaming, and API rate limiting. | EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP LLM Top 10 &bull; MITRE ATLAS |
-| **2** | **Safety &amp; Reliability** | Corrupted input rejection, input/output validation, active guardrails (&ge; 3 active), deterministic output bounds clamping, and formal failure mode testing. | EU AI Act Art. 9 &amp; 15(1) &bull; NIST MANAGE 2.2 |
-| **3** | **Fairness &amp; Non-Discrimination** | Demographic representation, class balance, coverage gaps, dataset volume adequacy, and disparate impact metrics (DIR &ge; 0.80, SPD &le; 0.10). | EU AI Act Art. 10(2)(f) &bull; NIST MEASURE 2.11 &bull; EEOC 80% Rule &bull; Kamiran &amp; Calders (2012) |
-| **4** | **Transparency &amp; Explainability** | Local feature attributions (TreeSHAP/LIME), prediction-level reasoning summaries, Model Cards, and calibrated uncertainty bounds. | EU AI Act Art. 13 &bull; NIST MAP 1.5 &bull; Mitchell et al. (2019) |
-| **5** | **Privacy &amp; Data Governance** | AES-256 encryption at rest, TLS 1.3 in transit, strict retention and automated purging (&le; 90 days), automated PII redaction, and formal data governance policies. | EU AI Act Art. 10(5) &bull; GDPR Art. 25/32 &bull; NIST GOVERN 1.2 |
-| **6** | **Human Oversight &amp; Agency** | Mandatory Human-in-the-Loop (HITL) gates, autonomy level constraints, operator training, emergency kill-switches, and override capabilities. | EU AI Act Art. 14 &bull; NIST GOVERN 1.4 |
-| **7** | **Accountability &amp; Governance** | Incident escalation SLAs, append-only tamper-evident signed logs, technical dossier documentation, post-market monitoring, and formal governance charters. | EU AI Act Art. 9, 11, 12, 17, 72 &bull; NIST GOVERN 2.1 |
+| **1** | **Security & Robustness** | Adversarial robustness, concept drift monitoring, AI software bill of materials (AI-BOM), independent red teaming, and API rate limiting. | EU AI Act Art. 15(4) &bull; NIST MEASURE 2.7 &bull; OWASP LLM Top 10 &bull; MITRE ATLAS |
+| **2** | **Safety & Reliability** | Corrupted input rejection, input/output validation, active guardrails (>= 3 active), deterministic output bounds clamping, and formal failure mode testing. | EU AI Act Art. 9 & 15(1) &bull; NIST MANAGE 2.2 |
+| **3** | **Fairness & Non-Discrimination** | Demographic representation, class balance, coverage gaps, dataset volume adequacy, and disparate impact metrics (DIR >= 0.80, SPD <= 0.10). | EU AI Act Art. 10(2)(f) &bull; NIST MEASURE 2.11 &bull; EEOC 80% Rule &bull; Kamiran & Calders (2012) |
+| **4** | **Transparency & Explainability** | Local feature attributions (TreeSHAP/LIME), prediction-level reasoning summaries, Model Cards, and calibrated uncertainty bounds. | EU AI Act Art. 13 &bull; NIST MAP 1.5 &bull; Mitchell et al. (2019) |
+| **5** | **Privacy & Data Governance** | AES-256 encryption at rest, TLS 1.3 in transit, strict retention and automated purging (<= 90 days), automated PII redaction, and formal data governance policies. | EU AI Act Art. 10(5) &bull; GDPR Art. 25/32 &bull; NIST GOVERN 1.2 |
+| **6** | **Human Oversight & Agency** | Mandatory Human-in-the-Loop (HITL) gates, autonomy level constraints, operator training, emergency kill-switches, and override capabilities. | EU AI Act Art. 14 &bull; NIST GOVERN 1.4 |
+| **7** | **Accountability & Governance** | Incident escalation SLAs, append-only tamper-evident signed logs, technical dossier documentation, post-market monitoring, and formal governance charters. | EU AI Act Art. 9, 11, 12, 17, 72 &bull; NIST GOVERN 2.1 |
 
 ---
 
@@ -61,7 +62,7 @@ female,0,0
 - **Thresholds**: DIR $\ge 0.80$ and $|\text{SPD}| \le 0.10 \to 1.0$; DIR $\ge 0.70$ and $|\text{SPD}| \le 0.15 \to 0.5$; else $0.0$.
 - Replaces self-attested answer for `q10_fairness_audit`.
 
-### 2. Dependencies &amp; AI-BOM Verification (`/api/verify/dependencies`)
+### 2. Dependencies & AI-BOM Verification (`/api/verify/dependencies`)
 Upload a CycloneDX JSON SBOM or plain `requirements.txt`:
 ```text
 requests==2.31.0
@@ -73,7 +74,7 @@ pydantic==2.5.0
 - **Offline / Failure Resilience**: If the OSV lookup is offline or unreachable, returns `"vulnerability lookup unavailable"` and preserves the claimed score without penalizing for network failure.
 - Replaces self-attested answer for `q3_aibom_inventory`.
 
-### 3. TLS Encryption &amp; Certificate Prober (`/api/verify/tls`)
+### 3. TLS Encryption & Certificate Prober (`/api/verify/tls`)
 Submit target host and port via JSON payload:
 ```json
 {
@@ -104,12 +105,12 @@ clean_prediction,perturbed_prediction,ground_truth
 1,0,1
 ```
 - **Method**: Measures accuracy degradation: $\Delta \text{Acc} = \text{Acc}_{\text{clean}} - \text{Acc}_{\text{perturbed}}$.
-- **Thresholds**: Degradation $\Delta \text{Acc} \le 0.05$ (&le; 5%) $\to 1.0$; $\Delta \text{Acc} \le 0.15$ (&le; 15%) $\to 0.5$; drop $> 15\% \to 0.0$.
+- **Thresholds**: Degradation $\Delta \text{Acc} \le 0.05$ (<= 5%) $\to 1.0$; $\Delta \text{Acc} \le 0.15$ (<= 15%) $\to 0.5$; drop $> 15\% \to 0.0$.
 - Replaces self-attested answer for `q1_adversarial_testing`.
 
 ---
 
-## Mathematical Formulation: Bottleneck AAS &amp; Attestation Gap
+## Mathematical Formulation: Bottleneck AAS & Attestation Gap
 
 AI-GRID calculates composite assurance using a bottleneck-penalised aggregate:
 
@@ -130,7 +131,7 @@ $$\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified
 
 ---
 
-## Regulatory Compliance &amp; Threat Engines
+## Regulatory Compliance & Threat Engines
 
 * **EU AI Act (Regulation (EU) 2024/1689)**:
   - **Intended Purpose Classification**: Categorized strictly by intended domain (Annex III High-Risk vs Article 5 Prohibited vs Article 50 Limited vs Minimal). The legal risk tier is NEVER derived from audit/AAS scores.
@@ -138,14 +139,14 @@ $$\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified
   - *Statutory Notice*: Pre-audit indicators do NOT constitute legal advice or formal CE-mark certification by a Notified Body.
 * **NIST AI RMF 1.0 (NIST AI 100-1)**:
   - Crosswalked across **GOVERN, MAP, MEASURE, MANAGE** lifecycle functions. GOVERN 2.1, MEASURE 2.5, and MANAGE 4.1 are directly wired to the Accountability dimension.
-* **OWASP &amp; MITRE ATLAS Threat Crosswalk**:
+* **OWASP & MITRE ATLAS Threat Crosswalk**:
   - Maps identified vulnerabilities to OWASP Top 10 for LLMs and MITRE ATLAS matrix technique IDs.
 * **Model Cards for Model Reporting (Mitchell et al., 2019)**:
   - Exports standardized AI Governance Passports in Markdown, JSON, EU AI Act Annex IV, and Executive Board formats.
 
 ---
 
-## Technical Implementation Disclosures &amp; Architecture Integrity
+## Technical Implementation Disclosures & Architecture Integrity
 
 | Capability | Engineering Implementation | Verification Status |
 |:---|:---|:---|
@@ -164,14 +165,14 @@ $$\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified
 
 ### Prerequisites
 - Python 3.10+
-- Flask &amp; Flask-CORS
+- Flask & Flask-CORS
 
 ### Installation
 ```bash
 pip install -r requirements.txt
 ```
 
-### Running the Server &amp; Control Dashboard
+### Running the Server & Control Dashboard
 ```bash
 python server.py
 ```
@@ -193,5 +194,5 @@ AI-GRID includes pre-configured reference profiles matching high-risk and standa
 1. **National Institute of Standards and Technology (NIST) (2023).** *Artificial Intelligence Risk Management Framework (AI RMF 1.0).* NIST AI 100-1. DOI: [10.6028/NIST.AI.100-1](https://doi.org/10.6028/NIST.AI.100-1).
 2. **Lee, M. S., et al. (2024).** *QB4AIRA: A Question Bank for Responsible AI Risk Assessment.* IEEE Software, 42(3). DOI: [10.1109/MS.2024.3512577](https://doi.org/10.1109/MS.2024.3512577).
 3. **Mitchell, M., et al. (2019).** *Model Cards for Model Reporting.* ACM Conference on Fairness, Accountability, and Transparency (FAccT), pp. 220–229.
-4. **Kamiran, F., &amp; Calders, T. (2012).** *Data preprocessing techniques for classification without discrimination.* Knowledge and Information Systems, 33(1), 1–33.
+4. **Kamiran, F., & Calders, T. (2012).** *Data preprocessing techniques for classification without discrimination.* Knowledge and Information Systems, 33(1), 1–33.
 5. **International Organization for Standardization (2023).** *ISO/IEC 42001: Information technology — Artificial intelligence — Management system.* ISO.
