@@ -201,3 +201,28 @@ def test_accountability_wiring_eu_and_nist():
     # MANAGE 4.1 must use Accountability (50.0)
     man_subcats = {s["id"]: s for s in funcs["MANAGE"]["subcategories"]}
     assert man_subcats["MANAGE 4.1"]["score"] == 50.0
+
+
+def test_nist_govern_score_sensitive_to_accountability_score():
+    """Verify that changing only the Accountability & Governance score changes the NIST GOVERN score."""
+    base_dims = {
+        "Security & Robustness": 80.0,
+        "Fairness & Non-Discrimination": 75.0,
+        "Transparency & Explainability": 85.0,
+        "Privacy & Data Governance": 90.0,
+        "Human Oversight & Agency": 90.0,
+        "Accountability & Governance": 60.0,
+        "Safety & Reliability": 80.0,
+    }
+    res1 = evaluate_nist_ai_rmf(base_dims)
+    gov1 = res1["functions"]["GOVERN"]["score"]
+
+    modified_dims = dict(base_dims)
+    modified_dims["Accountability & Governance"] = 90.0
+    res2 = evaluate_nist_ai_rmf(modified_dims)
+    gov2 = res2["functions"]["GOVERN"]["score"]
+
+    assert gov1 != gov2
+    assert gov2 > gov1
+    assert gov1 == 80.0
+    assert gov2 == 90.0
