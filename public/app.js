@@ -338,8 +338,9 @@ function showPage(pageId, clickedEl) {
     });
   }
 
-  const titleEl = document.getElementById("pageTitle");
-  if (titleEl && pageTitles[pageId]) titleEl.textContent = pageTitles[pageId];
+  if (pageTitles[pageId]) {
+    document.title = `${pageTitles[pageId]} | AI-GRID`;
+  }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
   closeSidebarOnMobile();

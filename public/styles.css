@@ -548,6 +548,17 @@ body {
   gap: 14px;
 }
 
+.topbar-main-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-500);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin: 0;
+  line-height: 1.2;
+}
+
 .breadcrumb-strip {
   display: flex;
   flex-direction: column;
