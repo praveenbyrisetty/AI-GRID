@@ -211,52 +211,49 @@ def evaluate_eu_ai_act_compliance(domain: str,
        NOTE: Produces evidence-based technical indicators, NOT legal or statutory certification.
     """
     high_risk_domains = {
-        "healthcare": "High-risk (confirm applicable EU AI Act route: Article 6(1)/Annex I or Annex III §5)",
-        "finance": "Annex III §5(b) - Credit Scoring & Essential Financial Services",
-        "autonomous_vehicles": "Annex III §2 - Critical Infrastructure & Safety Components of Transport",
-        "criminal_justice": "Annex III §6 - Law Enforcement & Judicial Decision Support",
-        "education": "Annex III §3 - Education & Vocational Training Admissions",
-        "cybersecurity": "Annex III §2 - Critical Digital Infrastructure Security",
-        "biometrics": "Annex III §1 - Remote Biometric Identification"
+        "healthcare": "Clinical Healthcare & Diagnostics (AI decisions directly impact patient health and medical treatment)",
+        "finance": "Credit Scoring & Financial Services (Evaluates personal creditworthiness and access to essential loans)",
+        "autonomous_vehicles": "Critical Transport & Autonomous Systems (Operates safety-critical transport components)",
+        "criminal_justice": "Law Enforcement & Judicial Decision Support (Significant impact on individual civil rights)",
+        "education": "Education & Admissions (Decisions determine educational access, grading, and career opportunities)",
+        "cybersecurity": "Critical Digital Infrastructure & Cybersecurity (Defends essential digital network operations)",
+        "biometrics": "Biometric Identification (Processing human biometric identity and personal privacy)"
     }
 
     prohibited_domains = {
-        "social_scoring": "Article 5(1)(c) - Social Scoring by Public Authorities",
-        "subliminal_manipulation": "Article 5(1)(a) - Subliminal or Deceptive Manipulation causing Harm",
-        "realtime_biometric_mass_surveillance": "Article 5(1)(d) - Real-Time Public Biometric Surveillance"
+        "social_scoring": "Social Scoring by Public Authorities (Classifying citizens based on social behavior is prohibited)",
+        "subliminal_manipulation": "Harmful Deceptive Manipulation (Subliminal techniques causing harm are prohibited)",
+        "realtime_biometric_mass_surveillance": "Real-Time Public Biometric Surveillance (Public facial recognition surveillance is prohibited)"
     }
 
     domain_clean = domain.lower().replace(" / ", "_").replace(" ", "_").strip()
 
     if domain_clean in prohibited_domains:
-        regulatory_tier = "PROHIBITED (Article 5)"
+        regulatory_tier = "PROHIBITED"
         regulatory_color = "rose"
         tier_legal_basis = prohibited_domains[domain_clean]
         market_placement_permitted = False
     elif any(k in domain_clean for k in high_risk_domains):
         matched_k = next(k for k in high_risk_domains if k in domain_clean)
-        if matched_k == "healthcare":
-            regulatory_tier = "HIGH RISK (Art. 6(1)/Annex I or Annex III §5)"
-        else:
-            regulatory_tier = "HIGH RISK (Annex III)"
+        regulatory_tier = "HIGH RISK"
         regulatory_color = "red"
         tier_legal_basis = high_risk_domains[matched_k]
         market_placement_permitted = True
     elif any(k in domain_clean for k in ("ecommerce", "entertainment", "general")):
-        regulatory_tier = "LIMITED RISK (Article 50)"
+        regulatory_tier = "LIMITED RISK"
         regulatory_color = "amber"
-        tier_legal_basis = "Article 50 - Transparency obligations for generative / interactive AI"
+        tier_legal_basis = "Generative & Interactive AI (Clear disclosure required to inform users they are interacting with AI)"
         market_placement_permitted = True
     elif any(k in domain_clean for k in ("agri", "environ")):
-        regulatory_tier = "MINIMAL RISK (Unregulated)"
+        regulatory_tier = "MINIMAL RISK"
         regulatory_color = "emerald"
-        tier_legal_basis = "Article 6 / Recital 58 - Agricultural and environmental AI outside Annex III"
+        tier_legal_basis = "Agriculture & Environmental AI (Low-risk domain subject to standard software guidelines)"
         market_placement_permitted = True
     else:
         # Unknown or unclassified domain is UNCLASSIFIED, never default to Minimal Risk
         regulatory_tier = "UNCLASSIFIED"
         regulatory_color = "gray"
-        tier_legal_basis = "Intended purpose domain unspecified or unclassified under Regulation (EU) 2024/1689 (Requires bespoke legal review)"
+        tier_legal_basis = "General AI System (Review needed to confirm domain-specific industry rules)"
         market_placement_permitted = None
 
     # STAGE 2: ARTICLE-BY-ARTICLE TECHNICAL ASSESSMENT (Articles 9 to 15)

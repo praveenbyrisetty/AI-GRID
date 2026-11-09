@@ -206,7 +206,7 @@
               <div class="kpi-value-row">
                 <span class="kpi-num" style="font-size:22px; color:var(--text-secondary);" id="kpiEuTier">UNASSESSED</span>
               </div>
-              <div class="kpi-footer-note" id="kpiEuStatus">Awaiting statutory article evaluation</div>
+              <div class="kpi-footer-note" id="kpiEuStatus">Awaiting EU AI Act evaluation</div>
             </div>
           </section>
 
@@ -314,12 +314,12 @@
             </div>
           </div>
 
-          <!-- 7-Pillar Statutory Compliance Crosswalk (EU AI Act Articles 9–15 & NIST AI RMF) -->
+          <!-- 7-Pillar Compliance Crosswalk (EU AI Act Articles 9–15 & NIST AI RMF) -->
           <section class="card" id="dimensionsCardSection">
             <div class="card-header">
               <div>
-                <h3 class="card-title">7 Statutory Trust Dimensions &amp; Technical Controls</h3>
-                <p class="card-subtitle">Comprehensive regulatory crosswalk mapping empirical controls to EU AI Act Articles 9–15 and NIST AI RMF 1.0</p>
+                <h3 class="card-title">7 Core Trust Dimensions &amp; Technical Controls</h3>
+                <p class="card-subtitle">Comprehensive crosswalk mapping technical engineering controls to EU AI Act Articles 9–15 and NIST AI RMF 1.0</p>
               </div>
               <span class="badge info">7 TRUST PILLARS</span>
             </div>
@@ -441,11 +441,11 @@
                 <p style="font-size:12px; color:var(--text-secondary); margin:0;">Load pre-configured research attestations or manually complete the questionnaire below:</p>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk; confirm route Article 6(1)/Annex I or Annex III §5)" style="display:inline-flex; align-items:center; gap:5px;">
+                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk medical category)" style="display:inline-flex; align-items:center; gap:5px;">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                   Healthcare Diagnostic <span class="badge critical" style="margin-left:4px; font-size:9px;">HIGH RISK</span>
                 </button>
-                <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk under Annex III)" style="display:inline-flex; align-items:center; gap:5px;">
+                <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk financial category)" style="display:inline-flex; align-items:center; gap:5px;">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   Credit Risk Model <span class="badge critical" style="margin-left:4px; font-size:9px;">HIGH RISK</span>
                 </button>
@@ -753,7 +753,7 @@
           <div class="page-header-row">
             <div>
               <h2 class="page-header-title">EU AI Act Regulatory Compliance</h2>
-              <p class="page-header-subtitle">Statutory classification and Article-by-Article conformity checklist (Regulation (EU) 2024/1689)</p>
+              <p class="page-header-subtitle">Official risk classification and requirements checklist under the EU AI Act (Regulation (EU) 2024/1689)</p>
             </div>
           </div>
 
@@ -761,27 +761,27 @@
           <section class="card">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Statutory Classification (EU AI Act Assessment)</h3>
-                <p class="card-subtitle">Risk tier determined by operational domain and autonomy boundaries</p>
+                <h3 class="card-title">EU AI Act Risk Classification</h3>
+                <p class="card-subtitle">Official risk category and deployment rules based on how your AI is used</p>
               </div>
               <span class="badge info" id="euBadge">STANDBY</span>
             </div>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">STATUTORY CATEGORY</div>
-                <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:2px;" id="euTierName">Awaiting Assessment</div>
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated);">
+                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Official Risk Level</div>
+                <div style="font-size:14px; font-weight:700; color:var(--text-primary); margin-top:4px;" id="euTierName">Awaiting Assessment</div>
               </div>
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">LEGAL BASIS</div>
-                <div style="font-size:14px; font-weight:600; color:var(--text-primary); margin-top:2px;" id="euLegalBasis">—</div>
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated);">
+                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Why This Risk Level</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-top:4px; line-height:1.4;" id="euLegalBasis">—</div>
               </div>
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">MARKET PLACEMENT</div>
-                <div style="font-size:14px; font-weight:700; color:var(--text-secondary); margin-top:2px;" id="euMarketPermitted">—</div>
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated);">
+                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Can You Deploy It?</div>
+                <div style="font-size:14px; font-weight:700; color:var(--text-secondary); margin-top:4px;" id="euMarketPermitted">—</div>
               </div>
-              <div class="card" style="padding:12px; background:var(--bg-surface-elevated);">
-                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">ASSESSMENT PROTOCOL</div>
-                <div style="font-size:14px; font-weight:600; color:var(--text-primary); margin-top:2px;" id="euConformityReq">—</div>
+              <div class="card" style="padding:14px; background:var(--bg-surface-elevated);">
+                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Required Safety Checks</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-top:4px; line-height:1.4;" id="euConformityReq">—</div>
               </div>
             </div>
           </section>
@@ -790,20 +790,20 @@
           <section class="card">
             <div class="card-header">
               <div>
-                <h3 class="card-title">Technical Conformity Matrix (Articles 9 to 15)</h3>
-                <p class="card-subtitle">Click any article to inspect detailed criteria, evidence, and remediation guidance</p>
+                <h3 class="card-title">EU Safety Requirements Checklist (Articles 9 to 15)</h3>
+                <p class="card-subtitle">Click any requirement to inspect detailed checks, evidence, and remediation guidance</p>
               </div>
-              <span class="badge info" id="euConformantCount">0 / 7 Articles Conformant</span>
+              <span class="badge info" id="euConformantCount">0 / 7 Requirements Met</span>
             </div>
             <div class="table-container">
               <table class="data-table" id="euArticlesTable">
                 <thead>
                   <tr>
                     <th>Article</th>
-                    <th>Mandatory Requirement</th>
+                    <th>Safety Requirement</th>
                     <th>Score</th>
                     <th>Status</th>
-                    <th>Mandatory Engineering Controls</th>
+                    <th>Required Technical Controls</th>
                   </tr>
                 </thead>
                 <tbody id="euArticlesTbody">
@@ -1015,7 +1015,7 @@
                     <th>Dimension</th>
                     <th>Identified Vulnerability</th>
                     <th>Required Engineering Action</th>
-                    <th>Statutory Ref</th>
+                    <th>EU AI Act Ref</th>
                   </tr>
                 </thead>
                 <tbody id="remediationBody">
@@ -1037,12 +1037,12 @@
           <div class="page-header-row">
             <div>
               <h2 class="page-header-title">AI Governance Passport &amp; Technical Dossier</h2>
-              <p class="page-header-subtitle">Standardized technical passport &amp; compliance dossier (ISO/IEC 42001 &bull; EU AI Act Annex IV &bull; IEEE P8000.1)</p>
+              <p class="page-header-subtitle">Standardized technical passport &amp; compliance dossier (ISO/IEC 42001 &bull; EU AI Act &bull; IEEE P8000.1)</p>
             </div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <select id="modelCardFormatSelect" class="form-select sm" onchange="changeModelCardFormat(this.value)" style="width:auto; padding:5px 10px; font-size:12px;" title="Select Reporting Standard Format">
                 <option value="standard" selected>Standard AI Passport (ISO 42001 / IEEE P8000.1)</option>
-                <option value="eu_ai_act">EU AI Act Technical Documentation (Annex IV)</option>
+                <option value="eu_ai_act">EU AI Act Technical Documentation</option>
                 <option value="executive">Executive Board Summary (GRC Briefing)</option>
               </select>
               <button class="btn-secondary sm" onclick="copyModelCardMarkdown()">Copy Markdown</button>
@@ -1097,8 +1097,8 @@
     <div class="modal-window">
       <div class="modal-header">
         <div>
-          <h3 style="font-size:16px; font-weight:700;">Technical Conformity Dossier</h3>
-          <p style="font-size:12px; color:var(--text-secondary);">Regulation (EU) 2024/1689 Annex IV &bull; ISO/IEC 42001 AI Governance Passport</p>
+          <h3 style="font-size:16px; font-weight:700;">Technical Compliance Dossier</h3>
+          <p style="font-size:12px; color:var(--text-secondary);">EU AI Act Compliance Standards &bull; ISO/IEC 42001 AI Governance Passport</p>
         </div>
         <button class="drawer-close-btn" onclick="closeDossierModal()">&times;</button>
       </div>

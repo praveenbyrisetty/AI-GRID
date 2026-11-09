@@ -30,12 +30,12 @@ Recommended Value to Try: "2.4.0"
 Prompt: What operational domain does this AI belong to?
 Trust Dimension: System Identity
 Options Available:
-  • healthcare: "Healthcare / Medical Diagnostics (High-Risk Annex III)" (Score: N/A)
-  • finance: "Finance / Credit Scoring (High-Risk Annex III)" (Score: N/A)
+  • healthcare: "Healthcare / Medical Diagnostics (High Risk - Healthcare)" (Score: N/A)
+  • finance: "Finance / Credit Scoring (High Risk - Financial Services)" (Score: N/A)
   • agriculture: "Agriculture / Environmental Resource Management" (Score: N/A)
-  • education: "Education / Admissions Assessment (High-Risk Annex III)" (Score: N/A)
-  • autonomous_vehicles: "Autonomous Vehicles / Robotics (High-Risk Annex III)" (Score: N/A)
-  • criminal_justice: "Law Enforcement / Judicial Decision Support (High-Risk Annex III)" (Score: N/A)
+  • education: "Education / Admissions Assessment (High Risk - Education)" (Score: N/A)
+  • autonomous_vehicles: "Autonomous Vehicles / Robotics (High Risk - Transport & Robotics)" (Score: N/A)
+  • criminal_justice: "Law Enforcement / Judicial Decision Support (High Risk - Justice)" (Score: N/A)
   • cybersecurity: "Cybersecurity / Critical Digital Infrastructure" (Score: N/A)
   • ecommerce: "E-Commerce / Commercial Retail" (Score: N/A)
   • manufacturing: "Manufacturing / Industrial Automation" (Score: N/A)

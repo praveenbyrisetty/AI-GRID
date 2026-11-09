@@ -383,7 +383,7 @@ function clearAuditUI() {
   }
 
   const euStatus = document.getElementById("kpiEuStatus");
-  if (euStatus) euStatus.textContent = "Awaiting statutory article evaluation";
+  if (euStatus) euStatus.textContent = "Awaiting EU AI Act evaluation";
 
   const euBadge = document.getElementById("kpiEuBadge");
   if (euBadge) {
@@ -748,31 +748,42 @@ function applyAuditDataToUI(data, tierText) {
 
   const euTierEl = document.getElementById("kpiEuTier");
   if (euTierEl) {
-    euTierEl.textContent = eu.tier || "HIGH RISK";
-    if (isHighRisk) {
+    if (eu.tier && eu.tier.includes("PROHIBITED")) {
+      euTierEl.textContent = "Prohibited System";
       euTierEl.style.color = "var(--critical)";
+    } else if (isHighRisk) {
+      euTierEl.textContent = "High-Risk System";
+      euTierEl.style.color = "var(--critical)";
+    } else if (eu.tier && eu.tier.includes("LIMITED")) {
+      euTierEl.textContent = "Limited-Risk System";
+      euTierEl.style.color = "var(--warning)";
     } else if (isMinimalRisk) {
+      euTierEl.textContent = "Minimal-Risk System";
       euTierEl.style.color = "var(--success)";
     } else {
+      euTierEl.textContent = "Unclassified";
       euTierEl.style.color = "var(--text-primary)";
     }
   }
 
   const euStatusEl = document.getElementById("kpiEuStatus");
   if (euStatusEl) {
-    euStatusEl.textContent = `${eu.conformant_articles || '6/7'} Articles Technical Conformity`;
+    euStatusEl.textContent = `${eu.conformant_articles || '6/7'} Requirements Met`;
   }
 
   const euBadgeEl = document.getElementById("kpiEuBadge");
   if (euBadgeEl) {
-    if (isHighRisk) {
-      euBadgeEl.textContent = eu.tier && eu.tier.includes("PROHIBITED") ? "PROHIBITED" : (eu.tier && eu.tier.includes("Annex III") ? "ANNEX III • HIGH RISK" : "HIGH RISK");
+    if (eu.tier && eu.tier.includes("PROHIBITED")) {
+      euBadgeEl.textContent = "PROHIBITED";
+      euBadgeEl.className = "badge critical";
+    } else if (isHighRisk) {
+      euBadgeEl.textContent = "HIGH RISK";
       euBadgeEl.className = "badge critical";
     } else if (isMinimalRisk) {
       euBadgeEl.textContent = "MINIMAL RISK";
       euBadgeEl.className = "badge success";
     } else if (eu.tier && eu.tier.includes("LIMITED")) {
-      euBadgeEl.textContent = "LIMITED RISK (ART. 50)";
+      euBadgeEl.textContent = "LIMITED RISK";
       euBadgeEl.className = "badge warning";
     } else {
       euBadgeEl.textContent = "STANDBY";
@@ -866,61 +877,134 @@ function applyAuditDataToUI(data, tierText) {
 
   // 7. EU AI Act Table & Classification Cards
   renderEuArticlesTable(eu.articles || []);
+function formatFriendlyTier(tier) {
+  if (!tier) return "Unclassified";
+  const t = tier.toUpperCase();
+  if (t.includes("PROHIBITED")) return "Prohibited System (Banned in the EU)";
+  if (t.includes("HIGH")) return "High-Risk System (Strict Controls Required)";
+  if (t.includes("LIMITED")) return "Limited-Risk System (Transparency Required)";
+  if (t.includes("MINIMAL") || t.includes("LOW") || t.includes("UNREGULATED")) return "Minimal-Risk System (General Use Allowed)";
+  return tier;
+}
+
+function simplifyLegalBasis(rawBasis) {
+  if (!rawBasis) return "General AI System (Review needed to confirm domain-specific rules)";
+  const b = rawBasis.toLowerCase();
+  if (b.includes("credit scoring") || b.includes("finance") || b.includes("credit")) {
+    return "Credit Scoring & Financial Services (Evaluates personal creditworthiness and access to essential loans)";
+  }
+  if (b.includes("healthcare") || b.includes("medical") || b.includes("clinical")) {
+    return "Clinical Healthcare & Diagnostics (AI decisions directly impact patient health and medical treatment)";
+  }
+  if (b.includes("autonomous_vehicles") || b.includes("transport") || b.includes("robotics")) {
+    return "Critical Transport & Autonomous Systems (Operates safety-critical transport components)";
+  }
+  if (b.includes("education") || b.includes("admissions")) {
+    return "Education & Admissions (Decisions determine educational access, grading, and career opportunities)";
+  }
+  if (b.includes("law enforcement") || b.includes("judicial") || b.includes("justice")) {
+    return "Law Enforcement & Justice Support (Significant impact on individual civil rights)";
+  }
+  if (b.includes("cybersecurity") || b.includes("digital infrastructure")) {
+    return "Critical Digital Infrastructure & Cybersecurity (Defends essential digital network operations)";
+  }
+  if (b.includes("biometric")) {
+    return "Biometric Identification (Processing human biometric identity and personal privacy)";
+  }
+  if (b.includes("social scoring")) {
+    return "Social Scoring by Public Authorities (Classifying citizens based on social behavior is prohibited)";
+  }
+  if (b.includes("manipulation")) {
+    return "Harmful Deceptive Manipulation (Subliminal techniques causing harm are prohibited)";
+  }
+  if (b.includes("surveillance")) {
+    return "Real-Time Public Biometric Surveillance (Public facial recognition surveillance is prohibited)";
+  }
+  if (b.includes("transparency") || b.includes("article 50") || b.includes("generative") || b.includes("interactive")) {
+    return "Generative & Interactive AI (Clear disclosure required to inform users they are interacting with AI)";
+  }
+  if (b.includes("agricultural") || b.includes("environmental") || b.includes("agri")) {
+    return "Agriculture & Environmental AI (Low-risk operational domain subject to standard software guidelines)";
+  }
+  return rawBasis.replace(/Annex\s+[IVXLCDM]+\s*(§\s*\d+(\([a-z0-9]+\))?)?\s*[-–—:]*\s*/gi, '')
+                 .replace(/Article\s+\d+(\(\d+\))?(\([a-z]\))?\s*[-–—:]*\s*/gi, '')
+                 .trim() || rawBasis;
+}
+
   const euBadge = document.getElementById("euBadge");
   if (euBadge) {
-    euBadge.textContent = eu.tier ? `${eu.tier}` : "UNCLASSIFIED";
-    if (isHighRisk) {
+    if (eu.tier && eu.tier.includes("PROHIBITED")) {
+      euBadge.textContent = "PROHIBITED";
+      euBadge.className = "badge critical";
+    } else if (isHighRisk) {
+      euBadge.textContent = "HIGH RISK";
       euBadge.className = "badge critical";
     } else if (isMinimalRisk) {
+      euBadge.textContent = "MINIMAL RISK";
       euBadge.className = "badge success";
     } else if (eu.tier && eu.tier.includes("LIMITED")) {
+      euBadge.textContent = "LIMITED RISK";
       euBadge.className = "badge warning";
     } else {
+      euBadge.textContent = "STANDBY";
       euBadge.className = "badge info";
     }
   }
   const euTierName = document.getElementById("euTierName");
   if (euTierName) {
-    euTierName.textContent = eu.tier || "UNCLASSIFIED";
-    if (isHighRisk) {
+    if (eu.tier && eu.tier.includes("PROHIBITED")) {
+      euTierName.textContent = "Prohibited System (Banned in the EU)";
       euTierName.style.color = "var(--critical)";
+    } else if (isHighRisk) {
+      euTierName.textContent = "High-Risk System (Strict Controls Required)";
+      euTierName.style.color = "var(--critical)";
+    } else if (eu.tier && eu.tier.includes("LIMITED")) {
+      euTierName.textContent = "Limited-Risk System (Transparency Required)";
+      euTierName.style.color = "var(--warning)";
     } else if (isMinimalRisk) {
+      euTierName.textContent = "Minimal-Risk System (General Use Allowed)";
       euTierName.style.color = "var(--success)";
     } else {
+      euTierName.textContent = "Awaiting Assessment";
       euTierName.style.color = "var(--text-primary)";
     }
   }
   const euLegalBasis = document.getElementById("euLegalBasis");
-  if (euLegalBasis) euLegalBasis.textContent = eu.legal_basis || "General AI System (Requires Domain Classification)";
+  if (euLegalBasis) euLegalBasis.textContent = simplifyLegalBasis(eu.legal_basis);
   const euMarket = document.getElementById("euMarketPermitted");
   if (euMarket) {
     if (eu.market_placement_permitted === true) {
-      euMarket.textContent = (eu.tier && eu.tier.includes("HIGH")) ? "PERMITTED (Conformity Required)" : "PERMITTED";
-      euMarket.style.color = "var(--success)";
+      if (isHighRisk) {
+        euMarket.textContent = "Allowed (Must Pass Safety Requirements First)";
+        euMarket.style.color = "var(--warning)";
+      } else {
+        euMarket.textContent = "Allowed (Free to Deploy)";
+        euMarket.style.color = "var(--success)";
+      }
     } else if (eu.market_placement_permitted === false) {
-      euMarket.textContent = "PROHIBITED (Article 5)";
+      euMarket.textContent = "Banned (Cannot be Deployed in the EU)";
       euMarket.style.color = "var(--critical)";
     } else {
-      euMarket.textContent = "PENDING CLASSIFICATION";
-      euMarket.style.color = "var(--warning)";
+      euMarket.textContent = "Pending Evaluation";
+      euMarket.style.color = "var(--text-muted)";
     }
   }
   const euConfReq = document.getElementById("euConformityReq");
   if (euConfReq) {
     if (eu.tier && eu.tier.includes("PROHIBITED")) {
-      euConfReq.textContent = "Prohibited from Placement on EU Market";
-    } else if (eu.tier && eu.tier.includes("HIGH")) {
-      euConfReq.textContent = eu.assessment_protocol || "Annex VI / VII Conformity Assessment";
+      euConfReq.textContent = "None (System is Banned Under EU Law)";
+    } else if (isHighRisk) {
+      euConfReq.textContent = "Full Safety & Risk Audit (Technical checks & continuous monitoring)";
     } else if (eu.tier && eu.tier.includes("LIMITED")) {
-      euConfReq.textContent = "Article 50 Transparency Disclosures";
-    } else if (eu.tier && eu.tier.includes("MINIMAL")) {
-      euConfReq.textContent = "Voluntary Codes of Conduct";
+      euConfReq.textContent = "User Transparency (Clear notice that users are interacting with AI)";
+    } else if (isMinimalRisk) {
+      euConfReq.textContent = "Standard Best Practices (No special EU regulatory filing needed)";
     } else {
-      euConfReq.textContent = "Assessment Route Undetermined";
+      euConfReq.textContent = "Review Needed to Determine Audit Requirements";
     }
   }
   const euConfCount = document.getElementById("euConformantCount");
-  if (euConfCount) euConfCount.textContent = `${eu.conformant_articles || '0/7'} Articles Conformant`;
+  if (euConfCount) euConfCount.textContent = `${eu.conformant_articles || '0/7'} Requirements Met`;
 
   // 8. NIST AI RMF 1.0 Crosswalk & Subcategories Table
   renderNistSection(data.compliance?.nist_rmf || data.compliance?.nist_ai_rmf);
@@ -1075,7 +1159,7 @@ function openArticleDrawer(artNum) {
   const item = articles.find(a => a.article.includes(artNum)) || {
     article: `Article ${artNum}`,
     title: "EU AI Act Requirement",
-    requirement: "Statutory engineering obligation under Regulation (EU) 2024/1689.",
+    requirement: "Engineering requirement under the EU AI Act (Regulation (EU) 2024/1689).",
     score: "—",
     status: "STANDBY",
     mandatory_controls: ["Technical documentation", "Verification testing"]
@@ -1083,12 +1167,12 @@ function openArticleDrawer(artNum) {
 
   const html = `
     <div class="drawer-section">
-      <div class="drawer-section-title">Statutory Requirement</div>
+      <div class="drawer-section-title">EU AI Act Requirement</div>
       <div class="drawer-section-content"><strong>${item.title}</strong></div>
       <div class="drawer-section-content" style="margin-top:6px;">${item.requirement}</div>
     </div>
     <div class="drawer-section">
-      <div class="drawer-section-title">Conformity Status &amp; Score</div>
+      <div class="drawer-section-title">Compliance Status &amp; Score</div>
       <div style="display:flex; align-items:center; gap:8px;">
         <span class="badge ${item.status === 'CONFORMANT' ? 'success' : (item.status === 'STANDBY' ? 'info' : 'warning')}">${item.status}</span>
         <span style="font-family:var(--font-mono); font-weight:700;">${item.score === '—' ? '—' : item.score + '/100'}</span>
@@ -1764,17 +1848,17 @@ function generateFormattedModelCardMarkdown(format, data) {
   const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
 
   if (format === "eu_ai_act") {
-    return `# EU AI Act Technical Documentation Dossier (Annex IV)
+    return `# EU AI Act Technical Documentation Dossier
 **System Identifier:** ${modelName} (v${version})
-**Statutory Intended Purpose:** ${domain}
-**Conformity Classification:** ${eu.tier || 'HIGH RISK (Annex III §5)'}
-**Legal Basis:** ${eu.legal_basis || 'Automated Decision Support'}
+**Intended Operational Domain:** ${domain}
+**Risk Classification:** ${formatFriendlyTier(eu.tier)}
+**Classification Reason:** ${simplifyLegalBasis(eu.legal_basis)}
 **Assessment Timestamp:** ${timestamp}
 **Assurance Adequacy Score (AAS):** ${scoring.aas_score ?? '—'}/100 (Grade: ${scoring.trust_grade || '—'})
 
 ---
 
-### 1. General System Description (Annex IV §1)
+### 1. General System Description
 - **Model Architecture:** ${arch}
 - **Deployment Topology:** ${meta.deployment_type || 'Dedicated Cloud / On-Premises'}
 - **Hardware & Software Dependencies:** Tracked via CycloneDX AI-BOM
@@ -1802,8 +1886,8 @@ function generateFormattedModelCardMarkdown(format, data) {
 - **Human Oversight Score:** ${dims['Human Oversight & Agency'] ?? '—'}/100
 - **Emergency Stop / Kill-Switch:** Verified active
 
-### 6. Conformity Verdict & Statutory Sign-Off
-- **Market Placement Eligibility:** ${eu.market_placement_permitted !== false ? 'ELIGIBLE PENDING CONFORMITY ASSESSMENT' : 'PROHIBITED'}
+### 6. Compliance Verdict & Formal Sign-Off
+- **Market Deployment Eligibility:** ${eu.market_placement_permitted !== false ? 'ALLOWED (Must complete safety requirements prior to release)' : 'BANNED UNDER EU AI ACT'}
 - **Declaration:** Technical pre-audit indicators verified against Regulation (EU) 2024/1689.`;
   }
 
@@ -2151,7 +2235,7 @@ function computeGrcVerdict(v) {
         level: "good",
         badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "EU AI Act Art. 10(2)(f) • NIST AI RMF MEASURE 2.11 • EEOC 4/5ths Rule",
-        message: `Disparate Impact Ratio (${dir !== null ? dir.toFixed(3) : '≥0.80'}) complies with the statutory 80% rule without adverse demographic disparity across protected groups.`
+        message: `Disparate Impact Ratio (${dir !== null ? dir.toFixed(3) : '≥0.80'}) complies with the standard 80% four-fifths rule without adverse demographic disparity across protected groups.`
       };
     } else if (dir !== null && dir >= 0.70) {
       return {
@@ -2256,7 +2340,7 @@ function computeGrcVerdict(v) {
         level: "good",
         badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "EU AI Act Art. 15(4) • NIST AI RMF MEASURE 2.7 • MITRE ATLAS",
-        message: `Empirical accuracy drop under adversarial perturbation (${drop !== null ? drop.toFixed(1) + '%' : '≤5%'}) is within the statutory 5% bound. High resilience against adversarial inputs.`
+        message: `Empirical accuracy drop under adversarial perturbation (${drop !== null ? drop.toFixed(1) + '%' : '≤5%'}) is within the acceptable 5% bound. High resilience against adversarial inputs.`
       };
     } else if (drop !== null && drop <= 10.0) {
       return {
