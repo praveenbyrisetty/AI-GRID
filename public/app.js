@@ -1641,17 +1641,21 @@ function renderOverviewRemediationList() {
     let badgeClass = 'info';
     let cardClass = 'medium';
     let prioLabel = item.priority;
+    let iconSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
 
     if (item.priority === 'CRITICAL') {
       badgeClass = 'critical';
       cardClass = 'critical';
+      iconSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
     } else if (item.priority === 'HIGH') {
       badgeClass = 'warning';
       cardClass = 'high';
+      iconSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
     } else if (item.priority === 'SAFE') {
       badgeClass = 'success';
       cardClass = 'safe';
       prioLabel = 'SAFE / PASS';
+      iconSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px; margin-right:3px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`;
     }
 
     const clickAction = item.originalIdx >= 0 ? `onclick="openFindingDrawer(${item.originalIdx})"` : `onclick="showToast('${escapeHtml(item.dimension)} is conformant!')"`;
@@ -1660,7 +1664,7 @@ function renderOverviewRemediationList() {
       <div class="rem-item-card ${cardClass}" ${clickAction} title="Click to view finding details">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <span class="badge ${badgeClass}" style="font-size:10px;">${escapeHtml(prioLabel)}</span>
+            <span class="badge ${badgeClass}" style="font-size:10px; display:inline-flex; align-items:center;">${iconSvg}${escapeHtml(prioLabel)}</span>
             <strong style="font-size:12px; color:var(--text-primary);">${escapeHtml(item.dimension)}</strong>
           </div>
           <span style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref)}</span>
@@ -2064,23 +2068,57 @@ function updateVerifiedEvidenceBadgeCount() {
   }
 }
 
+function makeGrcBadge(level, text) {
+  if (level === 'good') {
+    return `<span class="badge success" style="font-size:11px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>${escapeHtml(text)}</span>`;
+  } else if (level === 'acceptable') {
+    return `<span class="badge warning" style="font-size:11px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${escapeHtml(text)}</span>`;
+  } else {
+    return `<span class="badge critical" style="font-size:11px; padding:3px 8px; display:inline-flex; align-items:center; gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>${escapeHtml(text)}</span>`;
+  }
+}
+
 function resetVerifierBoxToStandby(moduleName, box) {
   if (!box) return;
   const labels = {
-    fairness: { icon: "⚖️", title: "Demographic Fairness GRC Standby", desc: "Verifies Disparate Impact Ratio (DIR ≥ 0.80) & SPD per EU AI Act Art. 10(2)(f) and EEOC Four-Fifths Rule." },
-    dependencies: { icon: "📦", title: "Supply Chain SBOM GRC Standby", desc: "Queries OSV vulnerability database for package CVEs per NIST SP 800-218 and OWASP LLM03." },
-    tls: { icon: "🔒", title: "In-Transit TLS 1.3 Probe Standby", desc: "Probes public inference endpoint for TLS 1.3 cryptographic handshake per NIST SP 800-52r2 & SC-8." },
-    log_integrity: { icon: "⛓️", title: "Audit Trail Hash-Chain Standby", desc: "Verifies cryptographic SHA-256 chain and GENESIS block immutability per EU AI Act Art. 12 & ISO 42001." },
-    robustness: { icon: "🛡️", title: "Adversarial Robustness GRC Standby", desc: "Measures empirical accuracy degradation drop (≤5%) under perturbation per EU AI Act Art. 15(4)." }
+    fairness: {
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>`,
+      title: "Demographic Fairness GRC Standby",
+      desc: "Verifies Disparate Impact Ratio (DIR ≥ 0.80) & SPD per EU AI Act Art. 10(2)(f) and EEOC Four-Fifths Rule."
+    },
+    dependencies: {
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+      title: "Supply Chain SBOM GRC Standby",
+      desc: "Queries OSV vulnerability database for package CVEs per NIST SP 800-218 and OWASP LLM03."
+    },
+    tls: {
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+      title: "In-Transit TLS 1.3 Probe Standby",
+      desc: "Probes public inference endpoint for TLS 1.3 cryptographic handshake per NIST SP 800-52r2 & SC-8."
+    },
+    log_integrity: {
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+      title: "Audit Trail Hash-Chain Standby",
+      desc: "Verifies cryptographic SHA-256 chain and GENESIS block immutability per EU AI Act Art. 12 & ISO 42001."
+    },
+    robustness: {
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+      title: "Adversarial Robustness GRC Standby",
+      desc: "Measures empirical accuracy degradation drop (≤5%) under perturbation per EU AI Act Art. 15(4)."
+    }
   };
-  const info = labels[moduleName] || { icon: "🔍", title: "Standby", desc: "Awaiting empirical evidence verification." };
+  const info = labels[moduleName] || {
+    svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    title: "Standby",
+    desc: "Awaiting empirical evidence verification."
+  };
   box.style.display = "block";
   box.innerHTML = `
     <div style="padding:16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
-      <div style="font-size:18px; margin-bottom:4px;">${info.icon}</div>
+      <div class="standby-icon-well">${info.svg}</div>
       <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">${info.title}</div>
       <div style="max-width:440px; margin:0 auto; line-height:1.4;">${info.desc}</div>
-      <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+      <div style="margin-top:6px; font-size:11px; color:var(--primary-400); font-weight:600;">Click "Run Sample Verification" or select a file</div>
     </div>
   `;
 }
@@ -2111,21 +2149,21 @@ function computeGrcVerdict(v) {
     if (isGood) {
       return {
         level: "good",
-        badge: "🟢 GRC CONFORMANT (GOOD)",
+        badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "EU AI Act Art. 10(2)(f) • NIST AI RMF MEASURE 2.11 • EEOC 4/5ths Rule",
         message: `Disparate Impact Ratio (${dir !== null ? dir.toFixed(3) : '≥0.80'}) complies with the statutory 80% rule without adverse demographic disparity across protected groups.`
       };
     } else if (dir !== null && dir >= 0.70) {
       return {
         level: "acceptable",
-        badge: "🟡 GRC MARGINAL CONFORMANCE (ADVISORY)",
+        badge: makeGrcBadge("acceptable", "GRC MARGINAL CONFORMANCE (ADVISORY)"),
         framework: "EU AI Act Art. 10(2)(f) • EEOC Four-Fifths Rule",
         message: `DIR (${dir.toFixed(3)}) is slightly below 0.80 threshold. Pre-processing reweighing or equalized odds calibration advised before production deployment.`
       };
     } else {
       return {
         level: "risk",
-        badge: "🔴 GRC NON-CONFORMANT (BIAS DEFICIT)",
+        badge: makeGrcBadge("risk", "GRC NON-CONFORMANT (BIAS DEFICIT)"),
         framework: "EU AI Act Art. 10(2)(f) • NIST MEASURE 2.11",
         message: `Disparate Impact Ratio (${dir !== null ? dir.toFixed(3) : 'below 0.80'}) violates the EEOC Four-Fifths Rule. Systemic disparity poses regulatory liability under EU AI Act.`
       };
@@ -2139,21 +2177,21 @@ function computeGrcVerdict(v) {
     if (score >= 1.0 && critCves === 0) {
       return {
         level: "good",
-        badge: "🟢 GRC CONFORMANT (GOOD)",
+        badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "NIST SP 800-218 (SSDF) • OWASP LLM03 • EU AI Act Art. 15",
         message: `Formal CycloneDX SBOM validated with 0 critical vulnerabilities. Runtime software supply chain satisfies rigorous SSDF procurement controls.`
       };
     } else if (score >= 0.5 && critCves === 0) {
       return {
         level: "acceptable",
-        badge: "🟡 GRC PARTIAL (ACCEPTABLE • UPGRADE RECOMMENDED)",
+        badge: makeGrcBadge("acceptable", "GRC PARTIAL (ACCEPTABLE • UPGRADE RECOMMENDED)"),
         framework: "NIST SP 800-218 (SSDF) • OWASP LLM03",
         message: `0 known vulnerabilities detected across 5 runtime dependencies. Plain requirements manifest is acceptable, but upgrade to CycloneDX JSON SBOM with package hashes is recommended for full Tier T1 compliance.`
       };
     } else {
       return {
         level: "risk",
-        badge: "🔴 GRC HIGH RISK (SUPPLY CHAIN DEFICIT)",
+        badge: makeGrcBadge("risk", "GRC HIGH RISK (SUPPLY CHAIN DEFICIT)"),
         framework: "OWASP LLM03 • NIST SP 800-218",
         message: `Critical vulnerabilities (CVSS ≥ 7.0) detected or manifest unparsable. High exploitation hazard under OWASP LLM03 software supply chain criteria.`
       };
@@ -2167,21 +2205,21 @@ function computeGrcVerdict(v) {
     if (score >= 1.0 && (proto.includes("1.3") || proto.includes("TLSv1.3"))) {
       return {
         level: "good",
-        badge: "🟢 GRC CONFORMANT (GOOD)",
+        badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "RFC 8446 (TLS 1.3) • NIST SP 800-52r2 • SC-8 (In-Transit)",
         message: `Strict TLS 1.3 negotiated with valid certificate (${days > 0 ? days + ' days valid' : 'active'}). Fully protects model serving endpoint against interception and MITM tampering.`
       };
     } else if (proto.includes("1.2") || proto.includes("TLSv1.2")) {
       return {
         level: "acceptable",
-        badge: "🟡 GRC LEGACY PROTOCOL (ACCEPTABLE)",
+        badge: makeGrcBadge("acceptable", "GRC LEGACY PROTOCOL (ACCEPTABLE)"),
         framework: "NIST SP 800-52r2 • RFC 8446",
         message: `TLS 1.2 negotiated. Permitted for interoperability, but TLS 1.3 migration is recommended under NIST SP 800-52r2 guidance.`
       };
     } else {
       return {
         level: "risk",
-        badge: "🔴 GRC CRITICAL DEFICIT (INSECURE / UNREACHABLE)",
+        badge: makeGrcBadge("risk", "GRC CRITICAL DEFICIT (INSECURE / UNREACHABLE)"),
         framework: "NIST SC-8 • EU AI Act Art. 15(1)",
         message: `Endpoint probe failed, certificate invalid, or host unreachable. Unencrypted or unverified transit transport breaches mandatory cybersecurity controls.`
       };
@@ -2196,14 +2234,14 @@ function computeGrcVerdict(v) {
     if (score >= 1.0 && isGenesis && isTamper) {
       return {
         level: "good",
-        badge: "🟢 GRC CONFORMANT (GOOD)",
+        badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "EU AI Act Art. 12 • ISO/IEC 42001 §A.8 • NIST GOVERN 2.1",
         message: `Cryptographic SHA-256 hash-chain verified with unbroken GENESIS anchor across ${count} entries. Provides legally admissible immutable evidence of decision traceability.`
       };
     } else {
       return {
         level: "risk",
-        badge: "🔴 GRC AUDIT FAILURE (CHAIN TAMPERED)",
+        badge: makeGrcBadge("risk", "GRC AUDIT FAILURE (CHAIN TAMPERED)"),
         framework: "EU AI Act Art. 12 • ISO/IEC 42001 §A.8",
         message: `Broken cryptographic hash chain or invalid genesis anchor detected. Telemetry fails tamper-resistance test and cannot be legally relied upon.`
       };
@@ -2216,21 +2254,21 @@ function computeGrcVerdict(v) {
     if (score >= 1.0 && (drop === null || drop <= 5.0)) {
       return {
         level: "good",
-        badge: "🟢 GRC CONFORMANT (GOOD)",
+        badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
         framework: "EU AI Act Art. 15(4) • NIST AI RMF MEASURE 2.7 • MITRE ATLAS",
         message: `Empirical accuracy drop under adversarial perturbation (${drop !== null ? drop.toFixed(1) + '%' : '≤5%'}) is within the statutory 5% bound. High resilience against adversarial inputs.`
       };
     } else if (drop !== null && drop <= 10.0) {
       return {
         level: "acceptable",
-        badge: "🟡 GRC MODERATE DEGRADATION (ADVISORY)",
+        badge: makeGrcBadge("acceptable", "GRC MODERATE DEGRADATION (ADVISORY)"),
         framework: "NIST MEASURE 2.7 • EU AI Act Art. 15(4)",
         message: `Performance degradation (${drop.toFixed(1)}%) exceeds standard 5% boundary but remains under 10%. Adversarial retraining (FGSM/PGD) recommended.`
       };
     } else {
       return {
         level: "risk",
-        badge: "🔴 GRC RESILIENCE DEFICIT (HIGH RISK)",
+        badge: makeGrcBadge("risk", "GRC RESILIENCE DEFICIT (HIGH RISK)"),
         framework: "EU AI Act Art. 15(4) • MITRE ATLAS",
         message: `Severe degradation drop (${drop !== null ? drop.toFixed(1) + '%' : '>10%'}) under adversarial attack. Fails EU AI Act Art. 15(4) requirement for cyber-robustness.`
       };
@@ -2239,7 +2277,7 @@ function computeGrcVerdict(v) {
 
   return {
     level: v.claim_supported ? "good" : "risk",
-    badge: v.claim_supported ? "🟢 GRC CONFORMANT" : "🔴 GRC DEFICIT",
+    badge: v.claim_supported ? makeGrcBadge("good", "GRC CONFORMANT") : makeGrcBadge("risk", "GRC DEFICIT"),
     framework: "International AI Governance & Risk Frameworks",
     message: escapeHtml(v.details || "Empirical verification evaluation complete.")
   };
@@ -2414,7 +2452,7 @@ async function verifyAllSamples() {
 
   if (btn) {
     btn.disabled = false;
-    btn.innerHTML = `<span>⚡ Verify All 5 Samples</span>`;
+    btn.innerHTML = `<svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg> <span>Verify All 5 Modules</span>`;
   }
   showToast("All 5 empirical verifications completed!");
 }
@@ -2448,7 +2486,7 @@ async function executeVerifier(moduleName) {
 
       const fileInput = document.getElementById(fileInputId);
       if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        alert("Please select a file to upload or click '⚡ Load Sample & Verify' to use reference test data.");
+        alert("Please select a file to upload or click 'Run Sample Verification' to use reference test data.");
         if (box) box.style.display = "none";
         return;
       }

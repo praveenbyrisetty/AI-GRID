@@ -155,7 +155,7 @@
             <div class="page-header-actions">
               <!-- <button class="btn-primary sm" onclick="runQuickDemoAudit()" title="Run quick audit with high-risk clinical AI preset">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>⚡ Run Quick Audit</span>
+                <span>Run Quick Audit</span>
               </button> -->
               <button class="btn-secondary sm" onclick="showPage('page-setup')">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -242,16 +242,26 @@
               <!-- Severity Breakdown Filter Bar (Critical, High, Medium, Safe) -->
               <div class="rem-filter-pills" id="remFilterPills">
                 <button type="button" class="rem-filter-pill active" id="remPill_ALL" onclick="filterOverviewRemediation('ALL')">All (<span id="remCountAll">0</span>)</button>
-                <button type="button" class="rem-filter-pill critical" id="remPill_CRITICAL" onclick="filterOverviewRemediation('CRITICAL')">🚨 Critical (<span id="remCountCritical">0</span>)</button>
-                <button type="button" class="rem-filter-pill high" id="remPill_HIGH" onclick="filterOverviewRemediation('HIGH')">⚠️ High (<span id="remCountHigh">0</span>)</button>
-                <button type="button" class="rem-filter-pill medium" id="remPill_MEDIUM" onclick="filterOverviewRemediation('MEDIUM')">⚡ Medium (<span id="remCountMedium">0</span>)</button>
-                <button type="button" class="rem-filter-pill safe" id="remPill_SAFE" onclick="filterOverviewRemediation('SAFE')">✅ Safe (<span id="remCountSafe">0</span>)</button>
+                <button type="button" class="rem-filter-pill critical" id="remPill_CRITICAL" onclick="filterOverviewRemediation('CRITICAL')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Critical (<span id="remCountCritical">0</span>)</span>
+                </button>
+                <button type="button" class="rem-filter-pill high" id="remPill_HIGH" onclick="filterOverviewRemediation('HIGH')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>High (<span id="remCountHigh">0</span>)</span>
+                </button>
+                <button type="button" class="rem-filter-pill medium" id="remPill_MEDIUM" onclick="filterOverviewRemediation('MEDIUM')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Medium (<span id="remCountMedium">0</span>)</span>
+                </button>
+                <button type="button" class="rem-filter-pill safe" id="remPill_SAFE" onclick="filterOverviewRemediation('SAFE')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Safe (<span id="remCountSafe">0</span>)</span>
+                </button>
               </div>
 
               <!-- Priority Remediation Action Items Container -->
               <div class="rem-items-container" id="overviewRemediationContainer" style="flex:1; max-height:280px; overflow-y:auto; padding-right:4px;">
                 <div id="overviewRemediationEmpty" style="text-align:center; padding:32px 16px; color:var(--text-muted);">
-                  <div style="font-size:24px; margin-bottom:8px;">📋</div>
+                  <div class="empty-icon-well">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  </div>
                   <div style="font-weight:600; font-size:13px; color:var(--text-secondary); margin-bottom:4px;">Awaiting Audit Execution</div>
                   <div style="font-size:11px; max-width:300px; margin:0 auto 12px auto; line-height:1.4;">Load a reference profile or execute an audit to compute prioritized remediation actions across Critical, High, Medium, and Safe tiers.</div>
                 </div>
@@ -265,9 +275,15 @@
                 <div class="summary-presets-group">
                   <span class="summary-presets-label" style="font-size:11px; color:var(--text-muted); font-weight:600;">Reference Profile:</span>
                   <div class="summary-presets-btns">
-                    <button class="btn-preset-pill" onclick="loadPresetProfile('healthcare')">🏥 Clinical AI</button>
-                    <button class="btn-preset-pill" onclick="loadPresetProfile('finance')">💳 Credit Scoring</button>
-                    <button class="btn-preset-pill" onclick="loadPresetProfile('assistant')">🤖 Assistant</button>
+                    <button class="btn-preset-pill" onclick="loadPresetProfile('healthcare')">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Healthcare Diagnostic
+                    </button>
+                    <button class="btn-preset-pill" onclick="loadPresetProfile('finance')">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Credit Risk Model
+                    </button>
+                    <button class="btn-preset-pill" onclick="loadPresetProfile('assistant')">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>Enterprise LLM Agent
+                    </button>
                   </div>
                 </div>
                 <button class="btn-terminal-toggle" onclick="toggleAuditTrailDrawer()" id="btnToggleTrail" title="Toggle audit execution event trail">
@@ -324,7 +340,7 @@
                 <tbody>
                   <!-- Security & Robustness -->
                   <tr id="pillarCard_security">
-                    <td><strong>🔒 Security &amp; Robustness</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Security &amp; Robustness</strong></td>
                     <td><span class="badge success">Art. 15(4)</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MEASURE 2.7</small></td>
                     <td>Adversarial FGSM/AutoAttack stress testing &bull; SBOM dependency tracking &bull; mTLS API ratelimiting</td>
@@ -334,7 +350,7 @@
                   </tr>
                   <!-- Safety & Reliability -->
                   <tr id="pillarCard_safety">
-                    <td><strong>🛡️ Safety &amp; Reliability</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><strong>Safety &amp; Reliability</strong></td>
                     <td><span class="badge success">Art. 9 &bull; Art. 15</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MANAGE 2.2</small></td>
                     <td>Deterministic output clamping &bull; Input sanitization &bull; Failure-mode simulation bounds</td>
@@ -344,7 +360,7 @@
                   </tr>
                   <!-- Fairness & Non-Discrimination -->
                   <tr id="pillarCard_fairness">
-                    <td><strong>⚖️ Fairness &amp; Non-Discrimination</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg><strong>Fairness &amp; Non-Discrimination</strong></td>
                     <td><span class="badge success">Art. 10(2)</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MAP 1.6</small></td>
                     <td>Disparate impact ratio (&ge;0.80) &bull; Demographic parity audit &bull; Pre-processing reweighing</td>
@@ -354,7 +370,7 @@
                   </tr>
                   <!-- Transparency & Explainability -->
                   <tr id="pillarCard_transparency">
-                    <td><strong>🔍 Transparency &amp; Explainability</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><strong>Transparency &amp; Explainability</strong></td>
                     <td><span class="badge success">Art. 13</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MAP 1.5</small></td>
                     <td>TreeSHAP local feature attribution &bull; Calibrated prediction intervals &bull; Machine-readable Model Cards</td>
@@ -364,7 +380,7 @@
                   </tr>
                   <!-- Privacy & Data Governance -->
                   <tr id="pillarCard_privacy">
-                    <td><strong>🔐 Privacy &amp; Data Governance</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L10 10l-1.5-1.5L6 11l-4 4 3 3 4-4 2.5 2.5 2.5-2.5 1.5 1.5 2.5-2.5-1.5-1.5 3.5-3.5 2-2z"/></svg><strong>Privacy &amp; Data Governance</strong></td>
                     <td><span class="badge success">Art. 10(5)</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 1.2</small></td>
                     <td>AES-256 envelope KMS encryption &bull; TLS 1.3 in-transit strict &bull; Automated PII redaction pipeline</td>
@@ -374,7 +390,7 @@
                   </tr>
                   <!-- Human Oversight & Agency -->
                   <tr id="pillarCard_oversight">
-                    <td><strong>👁️ Human Oversight &amp; Agency</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><strong>Human Oversight &amp; Agency</strong></td>
                     <td><span class="badge success">Art. 14</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 1.4</small></td>
                     <td>Mandatory human-in-the-loop (HITL) gate &bull; Hardware kill-switch interrupt &bull; Operator override protocol</td>
@@ -384,7 +400,7 @@
                   </tr>
                   <!-- Accountability & Governance -->
                   <tr id="pillarCard_accountability">
-                    <td><strong>🏛️ Accountability &amp; Governance</strong></td>
+                    <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/><line x1="8" y1="14" x2="8" y2="17"/><line x1="12" y1="14" x2="12" y2="17"/><line x1="16" y1="14" x2="16" y2="17"/></svg><strong>Accountability &amp; Governance</strong></td>
                     <td><span class="badge success">Art. 9 &bull; Art. 17</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 2.1</small></td>
                     <td>WORM cryptographic append-only telemetry &bull; Formal QA risk management &bull; Post-market monitoring</td>
@@ -418,21 +434,28 @@
           <div class="card" style="margin-bottom:16px; background:var(--bg-surface-elevated); padding:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
               <div>
-                <h4 style="font-size:14px; font-weight:700; margin:0 0 4px 0;">⚡ Quick-Start Reference Presets</h4>
+                <h4 style="font-size:14px; font-weight:700; margin:0 0 4px 0; display:flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary-400);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Quick-Start Reference Presets
+                </h4>
                 <p style="font-size:12px; color:var(--text-secondary); margin:0;">Load pre-configured research attestations or manually complete the questionnaire below:</p>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk; confirm route Article 6(1)/Annex I or Annex III §5)">
-                  🏥 Clinical Diagnostic AI <span class="badge critical" style="margin-left:6px; font-size:9px;">HIGH RISK</span>
+                <button class="btn-secondary sm" onclick="loadPresetProfile('healthcare')" title="Load Healthcare Clinical Diagnostic AI (High-Risk; confirm route Article 6(1)/Annex I or Annex III §5)" style="display:inline-flex; align-items:center; gap:5px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  Healthcare Diagnostic <span class="badge critical" style="margin-left:4px; font-size:9px;">HIGH RISK</span>
                 </button>
-                <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk under Annex III)">
-                  💳 Credit Scoring AI <span class="badge critical" style="margin-left:6px; font-size:9px;">HIGH RISK</span>
+                <button class="btn-secondary sm" onclick="loadPresetProfile('finance')" title="Load Financial Credit Scoring AI (High-Risk under Annex III)" style="display:inline-flex; align-items:center; gap:5px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  Credit Risk Model <span class="badge critical" style="margin-left:4px; font-size:9px;">HIGH RISK</span>
                 </button>
-                <button class="btn-secondary sm" onclick="loadPresetProfile('assistant')" title="Load General Purpose AI Assistant (Minimal Risk)">
-                  🤖 General Assistant <span class="badge success" style="margin-left:6px; font-size:9px;">MINIMAL RISK</span>
+                <button class="btn-secondary sm" onclick="loadPresetProfile('assistant')" title="Load General Purpose AI Assistant (Minimal Risk)" style="display:inline-flex; align-items:center; gap:5px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                  Enterprise LLM Agent <span class="badge success" style="margin-left:4px; font-size:9px;">MINIMAL RISK</span>
                 </button>
-                <button class="btn-secondary sm" onclick="clearWizardAnswers()" title="Clear form answers">
-                  🧹 Clear Answers
+                <button class="btn-secondary sm" onclick="clearWizardAnswers()" title="Clear form answers" style="display:inline-flex; align-items:center; gap:5px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                  Reset Inputs
                 </button>
               </div>
             </div>
@@ -488,8 +511,8 @@
             </div>
             <div class="page-header-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
               <button class="btn-secondary sm" id="btnVerifyAllSamples" onclick="verifyAllSamples()" style="display:inline-flex; align-items:center; gap:6px;">
-                <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>⚡ Verify All 5 Samples</span>
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
+                <span>Verify All 5 Modules</span>
               </button>
               <button class="btn-primary sm" onclick="applyVerifiedEvidenceToActiveAudit()" style="display:inline-flex; align-items:center; gap:6px;">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -544,17 +567,19 @@
                       <input type="file" id="fairnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('fairness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('fairness')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
                       <button type="button" class="btn-primary sm" onclick="executeVerifier('fairness')" style="flex:1;">Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
                 <div id="fairnessResultBox">
                   <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
-                    <div style="font-size:18px; margin-bottom:4px;">⚖️</div>
+                    <div class="standby-icon-well">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                    </div>
                     <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Demographic Fairness GRC Standby</div>
-                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Verifies Disparate Impact Ratio (DIR ≥ 0.80) &amp; SPD per EU AI Act Art. 10(2)(f) and EEOC Four-Fifths Rule.</div>
-                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Verifies Disparate Impact Ratio (DIR &ge; 0.80) &amp; SPD per EU AI Act Art. 10(2)(f) and EEOC Four-Fifths Rule.</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-400); font-weight:600;">Click "Run Sample Verification" or select a file</div>
                   </div>
                 </div>
               </div>
@@ -580,17 +605,19 @@
                       <input type="file" id="dependenciesFileInput" accept=".txt,.json" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('dependencies')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('dependencies')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
                       <button type="button" class="btn-primary sm" onclick="executeVerifier('dependencies')" style="flex:1;">Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
                 <div id="dependenciesResultBox">
                   <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
-                    <div style="font-size:18px; margin-bottom:4px;">📦</div>
+                    <div class="standby-icon-well">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
                     <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Supply Chain SBOM GRC Standby</div>
                     <div style="max-width:440px; margin:0 auto; line-height:1.4;">Queries OSV vulnerability database for package CVEs per NIST SP 800-218 and OWASP LLM03.</div>
-                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-400); font-weight:600;">Click "Run Sample Verification" or select a file</div>
                   </div>
                 </div>
               </div>
@@ -620,17 +647,19 @@
                       <input type="number" id="tlsPortInput" value="443" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('tls')" style="flex:1;">⚡ Default Probe (GitHub)</button>
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('tls')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Probe GitHub Endpoint</button>
                       <button type="button" class="btn-primary sm" onclick="executeVerifier('tls')" style="flex:1;">Probe Custom Host</button>
                     </div>
                   </div>
                 </div>
                 <div id="tlsResultBox">
                   <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
-                    <div style="font-size:18px; margin-bottom:4px;">🔒</div>
+                    <div class="standby-icon-well">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
                     <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">In-Transit TLS 1.3 Probe Standby</div>
                     <div style="max-width:440px; margin:0 auto; line-height:1.4;">Probes public inference endpoint for TLS 1.3 cryptographic handshake per NIST SP 800-52r2 &amp; SC-8.</div>
-                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Default Probe (GitHub)" or specify host</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-400); font-weight:600;">Click "Probe GitHub Endpoint" or specify host</div>
                   </div>
                 </div>
               </div>
@@ -656,17 +685,19 @@
                       <input type="file" id="logIntegrityFileInput" accept=".jsonl,.json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('log_integrity')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('log_integrity')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
                       <button type="button" class="btn-primary sm" onclick="executeVerifier('log_integrity')" style="flex:1;">Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
                 <div id="logIntegrityResultBox">
                   <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
-                    <div style="font-size:18px; margin-bottom:4px;">⛓️</div>
+                    <div class="standby-icon-well">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </div>
                     <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Audit Trail Hash-Chain Standby</div>
                     <div style="max-width:440px; margin:0 auto; line-height:1.4;">Verifies cryptographic SHA-256 chain and GENESIS block immutability per EU AI Act Art. 12 &amp; ISO 42001.</div>
-                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-400); font-weight:600;">Click "Run Sample Verification" or select a file</div>
                   </div>
                 </div>
               </div>
@@ -692,17 +723,19 @@
                       <input type="file" id="robustnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('robustness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('robustness')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
                       <button type="button" class="btn-primary sm" onclick="executeVerifier('robustness')" style="flex:1;">Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
                 <div id="robustnessResultBox">
                   <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
-                    <div style="font-size:18px; margin-bottom:4px;">🛡️</div>
+                    <div class="standby-icon-well">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
                     <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Adversarial Robustness GRC Standby</div>
-                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Measures empirical accuracy degradation drop (≤5%) under perturbation per EU AI Act Art. 15(4).</div>
-                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Measures empirical accuracy degradation drop (&le;5%) under perturbation per EU AI Act Art. 15(4).</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-400); font-weight:600;">Click "Run Sample Verification" or select a file</div>
                   </div>
                 </div>
               </div>
