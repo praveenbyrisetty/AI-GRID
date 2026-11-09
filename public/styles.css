@@ -1077,12 +1077,88 @@ body {
 }
 
 /* ==========================================================================
-   EXECUTIVE GOVERNANCE PROFILE & POSTURE SUMMARY CARD
+   PRIORITY REMEDIATION ACTION ITEMS COMPONENT
    ========================================================================== */
-#summaryCardSection {
+#remediationOverviewCard, #summaryCardSection {
   display: flex;
   flex-direction: column;
 }
+
+.rem-filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.rem-filter-pill {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-mono);
+}
+
+.rem-filter-pill:hover {
+  border-color: var(--border-card-hover);
+  color: var(--text-primary);
+}
+
+.rem-filter-pill.active {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  color: #fff;
+  font-weight: 600;
+}
+
+.rem-filter-pill.critical.active {
+  background: var(--critical-bg);
+  border-color: var(--critical-border);
+  color: var(--critical-text);
+}
+
+.rem-filter-pill.high.active {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.rem-filter-pill.medium.active {
+  background: var(--info-bg);
+  border-color: var(--info-border);
+  color: var(--info-text);
+}
+
+.rem-filter-pill.safe.active {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+
+.rem-item-card {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated, var(--bg-card));
+  border: 1px solid var(--border-card);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.rem-item-card:hover {
+  transform: translateX(2px);
+  border-color: var(--border-card-hover);
+}
+
+.rem-item-card.critical { border-left: 3px solid var(--critical); }
+.rem-item-card.high { border-left: 3px solid var(--warning); }
+.rem-item-card.medium { border-left: 3px solid var(--info); }
+.rem-item-card.safe { border-left: 3px solid var(--success); }
 
 .summary-target-strip {
   display: flex;

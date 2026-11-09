@@ -479,7 +479,8 @@ function clearAuditUI() {
   const termStatus = document.getElementById("terminalStatus");
   if (termStatus) termStatus.textContent = "IDLE / STANDBY";
 
-  // Overview Remediation Table
+  // Overview Remediation Component
+  renderOverviewRemediationList();
   const remTbody = document.getElementById("overviewRemediationTbody");
   if (remTbody) {
     remTbody.innerHTML = `
@@ -845,7 +846,8 @@ function applyAuditDataToUI(data, tierText) {
   // 5. Terminal Logs
   renderTerminalLogs(data.audit_logs || []);
 
-  // 6. Overview Priority Remediation Preview Table
+  // 6. Overview Priority Remediation Component
+  renderOverviewRemediationList();
   const overviewRemTbody = document.getElementById("overviewRemediationTbody");
   if (overviewRemTbody && data.remediation_plan) {
     const topPlans = data.remediation_plan.slice(0, 3);
@@ -1511,6 +1513,165 @@ function renderEuArticlesTable(articles) {
         <td><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td><small style="color:var(--text-secondary);">${(a.mandatory_controls || []).map(c => escapeHtml(c)).join(" &bull; ")}</small></td>
       </tr>
+    `;
+  }).join("");
+}
+
+let currentRemediationFilter = 'ALL';
+
+function filterOverviewRemediation(filter) {
+  currentRemediationFilter = filter;
+  const pills = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'SAFE'];
+  pills.forEach(p => {
+    const el = document.getElementById(`remPill_${p}`);
+    if (el) {
+      if (p === filter) el.classList.add('active');
+      else el.classList.remove('active');
+    }
+  });
+  renderOverviewRemediationList();
+}
+
+function renderOverviewRemediationList() {
+  const emptyEl = document.getElementById("overviewRemediationEmpty");
+  const listEl = document.getElementById("overviewRemediationList");
+  const badgeEl = document.getElementById("remHeaderBadge");
+  if (!listEl) return;
+
+  if (!currentAuditData) {
+    if (emptyEl) emptyEl.style.display = "block";
+    listEl.innerHTML = "";
+    if (badgeEl) {
+      badgeEl.className = "badge info";
+      badgeEl.textContent = "AWAITING AUDIT";
+    }
+    ['All', 'Critical', 'High', 'Medium', 'Safe'].forEach(k => {
+      const cEl = document.getElementById(`remCount${k}`);
+      if (cEl) cEl.textContent = "0";
+    });
+    return;
+  }
+
+  const rawPlan = currentAuditData.remediation_plan || [];
+  const dims = currentAuditData.dimensions || {};
+
+  // Build structured items
+  let items = rawPlan.map((p, idx) => ({
+    originalIdx: idx,
+    priority: (p.priority || 'MEDIUM').toUpperCase(),
+    dimension: p.dimension || 'Governance Control',
+    finding: p.finding || 'Unspecified compliance finding',
+    action: p.action || 'Remediate control according to AI governance requirements',
+    eu_ai_act_ref: p.eu_ai_act_ref || 'Art. 9',
+    isDeficit: true
+  }));
+
+  // Identify safe / conformant pillars where score >= 70 and no critical finding exists
+  const critOrHighDims = new Set(items.filter(i => i.priority === 'CRITICAL' || i.priority === 'HIGH').map(i => i.dimension));
+  Object.keys(dims).forEach(dimName => {
+    const score = Number(dims[dimName] || 0);
+    if (score >= 70 && !critOrHighDims.has(dimName)) {
+      items.push({
+        originalIdx: -1,
+        priority: 'SAFE',
+        dimension: dimName,
+        finding: `Pillar posture verified conformant (Score: ${score.toFixed(1)}/100). Baseline engineering controls satisfied.`,
+        action: 'Maintain continuous post-market monitoring and evidence verification.',
+        eu_ai_act_ref: 'Conformant',
+        isDeficit: false
+      });
+    }
+  });
+
+  // Sort items: CRITICAL -> HIGH -> MEDIUM -> LOW -> SAFE
+  const prioRank = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3, 'SAFE': 4 };
+  items.sort((a, b) => (prioRank[a.priority] ?? 9) - (prioRank[b.priority] ?? 9));
+
+  // Update counts
+  const countCrit = items.filter(i => i.priority === 'CRITICAL').length;
+  const countHigh = items.filter(i => i.priority === 'HIGH').length;
+  const countMed = items.filter(i => i.priority === 'MEDIUM' || i.priority === 'LOW').length;
+  const countSafe = items.filter(i => i.priority === 'SAFE').length;
+
+  const cAllEl = document.getElementById("remCountAll");
+  const cCritEl = document.getElementById("remCountCritical");
+  const cHighEl = document.getElementById("remCountHigh");
+  const cMedEl = document.getElementById("remCountMedium");
+  const cSafeEl = document.getElementById("remCountSafe");
+
+  if (cAllEl) cAllEl.textContent = items.length;
+  if (cCritEl) cCritEl.textContent = countCrit;
+  if (cHighEl) cHighEl.textContent = countHigh;
+  if (cMedEl) cMedEl.textContent = countMed;
+  if (cSafeEl) cSafeEl.textContent = countSafe;
+
+  if (badgeEl) {
+    if (countCrit > 0) {
+      badgeEl.className = "badge critical";
+      badgeEl.textContent = `${countCrit} CRITICAL FINDING${countCrit > 1 ? 'S' : ''}`;
+    } else if (countHigh > 0) {
+      badgeEl.className = "badge warning";
+      badgeEl.textContent = `${countHigh} HIGH FINDING${countHigh > 1 ? 'S' : ''}`;
+    } else {
+      badgeEl.className = "badge success";
+      badgeEl.textContent = "CONTROLS SAFE / CONFORMANT";
+    }
+  }
+
+  // Filter items
+  let filtered = items;
+  if (currentRemediationFilter === 'CRITICAL') {
+    filtered = items.filter(i => i.priority === 'CRITICAL');
+  } else if (currentRemediationFilter === 'HIGH') {
+    filtered = items.filter(i => i.priority === 'HIGH');
+  } else if (currentRemediationFilter === 'MEDIUM') {
+    filtered = items.filter(i => i.priority === 'MEDIUM' || i.priority === 'LOW');
+  } else if (currentRemediationFilter === 'SAFE') {
+    filtered = items.filter(i => i.priority === 'SAFE');
+  }
+
+  if (emptyEl) emptyEl.style.display = "none";
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center; padding:24px 12px; color:var(--text-muted); font-size:12px;">No remediation items in '${currentRemediationFilter}' severity category.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(item => {
+    let badgeClass = 'info';
+    let cardClass = 'medium';
+    let prioLabel = item.priority;
+
+    if (item.priority === 'CRITICAL') {
+      badgeClass = 'critical';
+      cardClass = 'critical';
+    } else if (item.priority === 'HIGH') {
+      badgeClass = 'warning';
+      cardClass = 'high';
+    } else if (item.priority === 'SAFE') {
+      badgeClass = 'success';
+      cardClass = 'safe';
+      prioLabel = 'SAFE / PASS';
+    }
+
+    const clickAction = item.originalIdx >= 0 ? `onclick="openFindingDrawer(${item.originalIdx})"` : `onclick="showToast('${escapeHtml(item.dimension)} is conformant!')"`;
+
+    return `
+      <div class="rem-item-card ${cardClass}" ${clickAction} title="Click to view finding details">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="badge ${badgeClass}" style="font-size:10px;">${escapeHtml(prioLabel)}</span>
+            <strong style="font-size:12px; color:var(--text-primary);">${escapeHtml(item.dimension)}</strong>
+          </div>
+          <span style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref)}</span>
+        </div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:5px; line-height:1.4;">
+          ${escapeHtml(item.finding)}
+        </div>
+        <div style="font-size:11px; color:${item.priority === 'SAFE' ? 'var(--success)' : 'var(--primary-500)'}; font-weight:600; display:flex; align-items:flex-start; gap:4px;">
+          <span style="flex-shrink:0;">&rarr; Action:</span> <span>${escapeHtml(item.action)}</span>
+        </div>
+      </div>
     `;
   }).join("");
 }

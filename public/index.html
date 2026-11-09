@@ -226,107 +226,44 @@
               </div>
             </div>
 
-            <!-- Right: Governance Profile & Posture Section -->
-            <div class="card" id="summaryCardSection">
-              <div class="card-header">
+            <!-- Right: Priority Remediation Action Items Section -->
+            <div class="card" id="summaryCardSection" style="display:flex; flex-direction:column;">
+              <div class="card-header" style="margin-bottom:12px;">
                 <div>
-                  <h3 class="card-title">Governance Profile &amp; Posture</h3>
-                  <p class="card-subtitle">Active system target, statutory tier &amp; dimension conformity</p>
+                  <h3 class="card-title">Priority Remediation Action Items</h3>
+                  <p class="card-subtitle">Algorithmic deficits &amp; compliance fixes ranked by severity</p>
                 </div>
-                <span class="badge info" id="overviewStatusBadge">AWAITING AUDIT</span>
-              </div>
-
-              <!-- Active Target Strip -->
-              <div class="summary-target-strip">
-                <div class="summary-target-icon">
-                  <svg class="svg-icon md" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-                </div>
-                <div class="summary-target-info">
-                  <div class="summary-target-name" id="summaryTargetName">Awaiting Assessment Target</div>
-                  <div class="summary-target-sub" id="summaryTargetSub">Select a reference preset or complete the questionnaire</div>
-                </div>
-                <div class="summary-target-tier">
-                  <span class="badge info" id="summaryTierBadge">ANNEX III §5</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="badge info" id="remHeaderBadge">AWAITING AUDIT</span>
+                  <a href="javascript:void(0)" onclick="showPage('page-remediation')" class="badge info" style="text-decoration:none; cursor:pointer;" title="View comprehensive remediation roadmap">FULL ROADMAP &rarr;</a>
                 </div>
               </div>
 
-              <!-- 7 Mini Pillar Rows with Score & Mini Progress Fill -->
-              <div class="summary-pillars-list" id="summaryPillarsList">
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('security')" title="Click to inspect Security &amp; Robustness">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">🔒 Security &amp; Robustness</span>
-                    <span class="summary-pillar-score" id="smini_security">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_security" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('safety')" title="Click to inspect Safety &amp; Reliability">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">🛡️ Safety &amp; Reliability</span>
-                    <span class="summary-pillar-score" id="smini_safety">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_safety" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('fairness')" title="Click to inspect Fairness &amp; Bias Mitigation">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">⚖️ Fairness &amp; Non-Discrimination</span>
-                    <span class="summary-pillar-score" id="smini_fairness">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_fairness" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('transparency')" title="Click to inspect Transparency &amp; Explainability">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">🔍 Transparency &amp; Explainability</span>
-                    <span class="summary-pillar-score" id="smini_transparency">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_transparency" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('privacy')" title="Click to inspect Privacy &amp; Data Governance">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">🔐 Privacy &amp; Data Governance</span>
-                    <span class="summary-pillar-score" id="smini_privacy">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_privacy" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('oversight')" title="Click to inspect Human Oversight &amp; Agency">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">👁️ Human Oversight &amp; Agency</span>
-                    <span class="summary-pillar-score" id="smini_oversight">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_oversight" style="width: 0%;"></div>
-                  </div>
-                </div>
-
-                <div class="summary-pillar-row" onclick="openDimensionDrawer('accountability')" title="Click to inspect Accountability &amp; Governance">
-                  <div class="summary-pillar-meta">
-                    <span class="summary-pillar-name">🏛️ Accountability &amp; Governance</span>
-                    <span class="summary-pillar-score" id="smini_accountability">— / 100</span>
-                  </div>
-                  <div class="summary-pillar-track">
-                    <div class="summary-pillar-fill" id="sminiFill_accountability" style="width: 0%;"></div>
-                  </div>
-                </div>
+              <!-- Severity Breakdown Filter Bar (Critical, High, Medium, Safe) -->
+              <div class="rem-filter-pills" id="remFilterPills">
+                <button type="button" class="rem-filter-pill active" id="remPill_ALL" onclick="filterOverviewRemediation('ALL')">All (<span id="remCountAll">0</span>)</button>
+                <button type="button" class="rem-filter-pill critical" id="remPill_CRITICAL" onclick="filterOverviewRemediation('CRITICAL')">🚨 Critical (<span id="remCountCritical">0</span>)</button>
+                <button type="button" class="rem-filter-pill high" id="remPill_HIGH" onclick="filterOverviewRemediation('HIGH')">⚠️ High (<span id="remCountHigh">0</span>)</button>
+                <button type="button" class="rem-filter-pill medium" id="remPill_MEDIUM" onclick="filterOverviewRemediation('MEDIUM')">⚡ Medium (<span id="remCountMedium">0</span>)</button>
+                <button type="button" class="rem-filter-pill safe" id="remPill_SAFE" onclick="filterOverviewRemediation('SAFE')">✅ Safe (<span id="remCountSafe">0</span>)</button>
               </div>
 
-              <!-- Footer with Presets and Optional Audit Trail Drawer Toggle -->
-              <div class="summary-card-footer">
+              <!-- Priority Remediation Action Items Container -->
+              <div class="rem-items-container" id="overviewRemediationContainer" style="flex:1; max-height:280px; overflow-y:auto; padding-right:4px;">
+                <div id="overviewRemediationEmpty" style="text-align:center; padding:32px 16px; color:var(--text-muted);">
+                  <div style="font-size:24px; margin-bottom:8px;">📋</div>
+                  <div style="font-weight:600; font-size:13px; color:var(--text-secondary); margin-bottom:4px;">Awaiting Audit Execution</div>
+                  <div style="font-size:11px; max-width:300px; margin:0 auto 12px auto; line-height:1.4;">Load a reference profile or execute an audit to compute prioritized remediation actions across Critical, High, Medium, and Safe tiers.</div>
+                </div>
+                <div id="overviewRemediationList"></div>
+                <!-- Hidden fallback tbody for backwards compatibility -->
+                <table style="display:none;"><tbody id="overviewRemediationTbody"></tbody></table>
+              </div>
+
+              <!-- Footer with Presets and Audit Trail Drawer Toggle -->
+              <div class="summary-card-footer" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-card);">
                 <div class="summary-presets-group">
-                  <span class="summary-presets-label">Reference Profiles:</span>
+                  <span class="summary-presets-label" style="font-size:11px; color:var(--text-muted); font-weight:600;">Reference Profile:</span>
                   <div class="summary-presets-btns">
                     <button class="btn-preset-pill" onclick="loadPresetProfile('healthcare')">🏥 Clinical AI</button>
                     <button class="btn-preset-pill" onclick="loadPresetProfile('finance')">💳 Credit Scoring</button>
@@ -340,7 +277,7 @@
               </div>
 
               <!-- Collapsible Telemetry / Audit Trail Container (Maintains terminalLog for full event compatibility) -->
-              <div class="summary-audit-trail" id="auditTrailDrawer" style="display:none;">
+              <div class="summary-audit-trail" id="auditTrailDrawer" style="display:none; margin-top:10px;">
                 <div class="terminal-bar">
                   <div class="terminal-dots">
                     <span class="terminal-dot r"></span>
@@ -360,35 +297,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Priority Remediation Action Items (No Duplicate Metrics) -->
-          <section class="card" style="margin-bottom: 24px;">
-            <div class="card-header">
-              <div>
-                <h3 class="card-title">Priority Remediation Action Items</h3>
-                <p class="card-subtitle">Highest-impact algorithmic deficits and compliance findings requiring engineering intervention</p>
-              </div>
-              <a href="javascript:void(0)" onclick="showPage('page-remediation')" class="badge info" style="text-decoration:none; cursor:pointer;">VIEW FULL ROADMAP &rarr;</a>
-            </div>
-            <div class="table-container">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th style="width:110px;">Priority</th>
-                    <th>Deficit Finding</th>
-                    <th>Trust Dimension</th>
-                    <th>Recommended Engineering Action</th>
-                    <th style="width:110px;">Statutory Ref</th>
-                  </tr>
-                </thead>
-                <tbody id="overviewRemediationTbody">
-                  <tr>
-                    <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No active findings. Execute an audit or load a reference profile to dynamically evaluate assurance.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
 
           <!-- 7-Pillar Statutory Compliance Crosswalk (EU AI Act Articles 9–15 & NIST AI RMF) -->
           <section class="card" id="dimensionsCardSection">
