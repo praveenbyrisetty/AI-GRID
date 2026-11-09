@@ -54,7 +54,19 @@ def verify_fairness(
         }
 
     try:
-        reader = csv.DictReader(io.StringIO(csv_content.strip()))
+        raw_lines = [ln for ln in csv_content.splitlines() if ln.strip() and not ln.strip().startswith("#")]
+        if not raw_lines:
+            return {
+                "module": "fairness",
+                "item_id": item_id,
+                "dimension": dimension,
+                "claimed_value": claimed_value,
+                "verified_score": 0.0,
+                "claim_supported": False,
+                "metrics": {},
+                "details": "Error: Empty CSV content provided."
+            }
+        reader = csv.DictReader(io.StringIO("\n".join(raw_lines)))
         if not reader.fieldnames:
             return {
                 "module": "fairness",
@@ -663,7 +675,7 @@ def verify_log_integrity(
             "details": "Error: Empty log file provided."
         }
 
-    lines = [ln.strip() for ln in log_content.strip().splitlines() if ln.strip()]
+    lines = [ln.strip() for ln in log_content.strip().splitlines() if ln.strip() and not ln.strip().startswith("#")]
     if not lines:
         return {
             "module": "log_integrity",
@@ -815,7 +827,19 @@ def verify_robustness(
         }
 
     try:
-        reader = csv.DictReader(io.StringIO(csv_content.strip()))
+        raw_lines = [ln for ln in csv_content.splitlines() if ln.strip() and not ln.strip().startswith("#")]
+        if not raw_lines:
+            return {
+                "module": "robustness",
+                "item_id": item_id,
+                "dimension": dimension,
+                "claimed_value": claimed_value,
+                "verified_score": 0.0,
+                "claim_supported": False,
+                "metrics": {},
+                "details": "Error: Empty CSV content provided."
+            }
+        reader = csv.DictReader(io.StringIO("\n".join(raw_lines)))
         if not reader.fieldnames:
             return {
                 "module": "robustness",

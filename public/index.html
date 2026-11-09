@@ -578,9 +578,13 @@
               <h2 class="page-header-title">Empirical Evidence Verification (Tier T1)</h2>
               <p class="page-header-subtitle">Deterministic runtime verification across 5 governance pillars. Replaces self-attestation with checked empirical evidence and computes Attestation Gap.</p>
             </div>
-            <div class="page-header-actions">
-              <button class="btn-primary sm" onclick="applyVerifiedEvidenceToActiveAudit()">
+            <div class="page-header-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn-secondary sm" id="btnVerifyAllSamples" onclick="verifyAllSamples()" style="display:inline-flex; align-items:center; gap:6px;">
                 <svg class="svg-icon sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>⚡ Verify All 5 Samples</span>
+              </button>
+              <button class="btn-primary sm" onclick="applyVerifiedEvidenceToActiveAudit()" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                 <span>Compile Audit With Verified Evidence</span>
               </button>
             </div>
@@ -590,9 +594,12 @@
           <div class="card" style="margin-bottom:20px; border-left:4px solid var(--primary-500); background:linear-gradient(135deg, rgba(0, 123, 167, 0.08), rgba(0, 123, 167, 0.02));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
-                <h4 style="margin:0 0 6px 0; font-size:16px; font-weight:700;">Verified Evidence Dossier</h4>
-                <p style="margin:0; font-size:13px; color:var(--text-secondary);">
-                  Active verified modules: <strong id="verifiedModulesCount" style="color:var(--primary-500);">0 of 5 verified</strong>. Verified items are awarded Tier T1 weight (1.0) and override questionnaire responses.
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                  <h4 style="margin:0; font-size:16px; font-weight:700;">Verified Evidence Dossier</h4>
+                  <span class="badge info" id="dossierStatusBadge">READY</span>
+                </div>
+                <p style="margin:0; font-size:13px; color:var(--text-secondary); max-width:680px; line-height:1.5;">
+                  Active verified modules: <strong id="verifiedModulesCount" style="color:var(--primary-500);">0 of 5 verified</strong>. Verified items are awarded Tier T1 weight (1.0) and override questionnaire responses with empirical cryptographic &amp; statistical proof.
                 </p>
               </div>
               <div style="display:flex; gap:10px;">
@@ -614,7 +621,7 @@
                 <span class="badge" id="badge-fairness-status" style="display:none;">UNVERIFIED</span>
               </div>
               <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
-                Upload predictions CSV with columns <code>protected_attribute</code>, <code>y_true</code>, <code>y_pred</code>. Computes Disparate Impact Ratio, Statistical Parity Difference, and Equal Opportunity Difference.
+                Upload predictions CSV or test with pre-packaged reference data. Computes Disparate Impact Ratio (DIR &ge; 0.80), Statistical Parity Difference (SPD &le; 0.10), and Equal Opportunity Difference.
               </p>
               <div style="display:flex; flex-direction:column; gap:10px;">
                 <div>
@@ -623,10 +630,13 @@
                 </div>
                 <div>
                   <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Predictions CSV File:</label>
-                  <input type="file" id="fairnessFileInput" accept=".csv" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                  <input type="file" id="fairnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                 </div>
-                <button class="btn-secondary sm" onclick="executeVerifier('fairness')">Verify Demographic Fairness</button>
-                <div id="fairnessResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('fairness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                  <button type="button" class="btn-primary sm" onclick="executeVerifier('fairness')" style="flex:1;">Upload &amp; Verify</button>
+                </div>
+                <div id="fairnessResultBox" style="display:none;"></div>
               </div>
             </div>
 
@@ -645,10 +655,13 @@
               <div style="display:flex; flex-direction:column; gap:10px;">
                 <div>
                   <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">SBOM / Requirements File:</label>
-                  <input type="file" id="dependenciesFileInput" accept=".json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                  <input type="file" id="dependenciesFileInput" accept=".txt,.json" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                 </div>
-                <button class="btn-secondary sm" onclick="executeVerifier('dependencies')">Verify Supply Chain SBOM</button>
-                <div id="dependenciesResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('dependencies')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                  <button type="button" class="btn-primary sm" onclick="executeVerifier('dependencies')" style="flex:1;">Upload &amp; Verify</button>
+                </div>
+                <div id="dependenciesResultBox" style="display:none;"></div>
               </div>
             </div>
 
@@ -667,14 +680,17 @@
               <div style="display:flex; flex-direction:column; gap:10px;">
                 <div>
                   <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Endpoint Hostname:</label>
-                  <input type="text" id="tlsHostInput" placeholder="e.g., api.anthropic.com or huggingface.co" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                  <input type="text" id="tlsHostInput" value="api.github.com" placeholder="e.g., api.github.com or huggingface.co" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
                 </div>
                 <div>
                   <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Port (443 or 8443):</label>
                   <input type="number" id="tlsPortInput" value="443" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
                 </div>
-                <button class="btn-secondary sm" onclick="executeVerifier('tls')">Probe TLS &amp; Certificate</button>
-                <div id="tlsResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('tls')" style="flex:1;">⚡ Default Probe (GitHub)</button>
+                  <button type="button" class="btn-primary sm" onclick="executeVerifier('tls')" style="flex:1;">Probe Custom Host</button>
+                </div>
+                <div id="tlsResultBox" style="display:none;"></div>
               </div>
             </div>
 
@@ -695,8 +711,11 @@
                   <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">JSONL Hash-Chain Log File:</label>
                   <input type="file" id="logIntegrityFileInput" accept=".jsonl,.json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                 </div>
-                <button class="btn-secondary sm" onclick="executeVerifier('log_integrity')">Verify Cryptographic Hash Chain</button>
-                <div id="logIntegrityResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('log_integrity')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                  <button type="button" class="btn-primary sm" onclick="executeVerifier('log_integrity')" style="flex:1;">Upload &amp; Verify</button>
+                </div>
+                <div id="logIntegrityResultBox" style="display:none;"></div>
               </div>
             </div>
 
@@ -715,10 +734,13 @@
               <div style="display:flex; flex-direction:column; gap:10px;">
                 <div>
                   <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Robustness Evaluation CSV:</label>
-                  <input type="file" id="robustnessFileInput" accept=".csv" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                  <input type="file" id="robustnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                 </div>
-                <button class="btn-secondary sm" onclick="executeVerifier('robustness')">Measure Degradation Drop</button>
-                <div id="robustnessResultBox" style="font-size:12px; font-family:var(--font-mono); padding:10px; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-card); display:none;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('robustness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                  <button type="button" class="btn-primary sm" onclick="executeVerifier('robustness')" style="flex:1;">Upload &amp; Verify</button>
+                </div>
+                <div id="robustnessResultBox" style="display:none;"></div>
               </div>
             </div>
 

@@ -1,0 +1,28 @@
+# =====================================================================
+# AI-GRID Empirical Verifier: Fairness & Demographic Parity
+# Target Endpoint: POST /api/verify/fairness
+# Replaces: Q10 (q10_fairness_audit)
+# Required Columns: protected_attribute, y_true, y_pred
+# Expected Outcome: DIR = 0.80 (>= 0.80), SPD = -0.10 (<= 0.10) -> Score: 1.0 (PASS)
+# =====================================================================
+protected_attribute,y_true,y_pred
+male,1,1
+male,1,1
+male,1,0
+male,0,0
+male,0,0
+male,1,1
+male,0,0
+male,1,1
+male,0,0
+male,1,1
+female,1,1
+female,1,1
+female,1,0
+female,0,0
+female,0,0
+female,1,1
+female,0,0
+female,1,1
+female,0,0
+female,0,0

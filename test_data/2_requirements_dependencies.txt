@@ -1,0 +1,12 @@
+# =====================================================================
+# AI-GRID Empirical Verifier: Dependencies & AI-BOM Inventory
+# Target Endpoint: POST /api/verify/dependencies
+# Replaces: Q3 (q3_sbom_tracking)
+# Method: Matches packages against public Google OSV API (api.osv.dev)
+# Expected Outcome: 0 Critical CVSS >= 7.0 matches -> Score: 1.0 (CLEAN)
+# =====================================================================
+requests==2.31.0
+click==8.1.7
+pydantic==2.5.0
+flask==3.0.3
+cryptography==42.0.0

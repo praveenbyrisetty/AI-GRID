@@ -1,0 +1,11 @@
+# =====================================================================
+# AI-GRID Empirical Verifier: TLS Transit Security & Certificate Prober
+# Target Endpoint: POST /api/verify/tls
+# Replaces: Q17 (q17_encryption_transit)
+# Method: Live Python SSL socket handshake (ports 443/8443, anti-SSRF)
+# Expected Outcome: TLS 1.3 negotiated, valid cert > 180d -> Score: 1.0 (PASS)
+# =====================================================================
+{
+  "host": "api.github.com",
+  "port": 443
+}

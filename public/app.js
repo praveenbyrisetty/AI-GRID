@@ -7,8 +7,12 @@
  */
 
 // =========================================================================
-// GLOBAL APPLICATION STATE
+// GLOBAL APPLICATION STATE & API ROUTING
 // =========================================================================
+const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
+  ? 'http://127.0.0.1:8000'
+  : '';
+
 let radarChartInstance = null;
 let currentAuditData = null;
 let wizardStep = 1;
@@ -315,7 +319,7 @@ function updateThemeButtonUI(theme) {
 // =========================================================================
 async function checkCurrentAuditStatus() {
   try {
-    const res = await fetch("/api/audit/current");
+    const res = await fetch(`${API_BASE}/api/audit/current`);
     const json = await res.json();
     if (json.success && json.active && json.data) {
       currentAuditData = json.data;
@@ -567,7 +571,7 @@ function clearAuditUI() {
 
 async function resetAuditState() {
   try {
-    const res = await fetch("/api/audit/reset", {
+    const res = await fetch(`${API_BASE}/api/audit/reset`, {
       method: "POST",
       headers: getAuthHeaders()
     });
@@ -1241,7 +1245,7 @@ function openNistSubcategoryDrawer(subId) {
 // =========================================================================
 async function loadQuestions() {
   try {
-    const res = await fetch("/api/questions");
+    const res = await fetch(`${API_BASE}/api/questions`);
     const json = await res.json();
     if (json.success && json.data) {
       questionsData = json.data;
@@ -1416,7 +1420,7 @@ function wizardPrev() {
 async function submitQuestionnaire() {
   try {
     showToast("Compiling governance questionnaire & computing assurance scores...");
-    const res = await fetch("/api/audit/questionnaire", {
+    const res = await fetch(`${API_BASE}/api/audit/questionnaire`, {
       method: "POST",
       headers: getAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ answers: wizardAnswers, verified_evidence: verifiedEvidenceStore })
@@ -1451,7 +1455,7 @@ async function loadPresetProfile(presetKey) {
 
   try {
     showToast(`Loading preset: ${preset.model_name}...`);
-    const res = await fetch("/api/audit/questionnaire", {
+    const res = await fetch(`${API_BASE}/api/audit/questionnaire`, {
       method: "POST",
       headers: getAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ answers: wizardAnswers })
@@ -1702,7 +1706,7 @@ async function loadAuditHistory() {
   const tbody = document.getElementById("auditHistoryTbody");
   if (!tbody) return;
   try {
-    const res = await fetch("/api/audit/history?limit=50");
+    const res = await fetch(`${API_BASE}/api/audit/history?limit=50`);
     const json = await res.json();
     if (json.success && json.data && json.data.length > 0) {
       tbody.innerHTML = json.data.map(item => `
@@ -1733,7 +1737,7 @@ async function loadAuditHistory() {
 async function inspectAuditRecord(auditId) {
   try {
     showToast(`Loading audit record ${auditId.substring(0, 8)}...`);
-    const res = await fetch(`/api/audit/${encodeURIComponent(auditId)}`);
+    const res = await fetch(`${API_BASE}/api/audit/${encodeURIComponent(auditId)}`);
     const json = await res.json();
     if (json.success && json.data) {
       currentAuditData = json.data;
@@ -1816,10 +1820,86 @@ function showToast(msg) {
 // =========================================================================
 let verifiedEvidenceStore = [];
 
+const VERIFIER_SAMPLES = {
+  fairness: `protected_attribute,y_true,y_pred
+male,1,1
+male,1,1
+male,1,0
+male,0,0
+male,0,0
+male,1,1
+male,0,0
+male,1,1
+male,0,0
+male,1,1
+female,1,1
+female,1,1
+female,1,0
+female,0,0
+female,0,0
+female,1,1
+female,0,0
+female,1,1
+female,0,0
+female,0,0`,
+
+  dependencies: `requests==2.31.0
+click==8.1.7
+pydantic==2.5.0
+flask==3.0.3
+cryptography==42.0.0`,
+
+  tls: {
+    host: "api.github.com",
+    port: 443
+  },
+
+  log_integrity: `{"prev_hash": "GENESIS", "data": {"event": "system_boot", "model": "CardioNet", "version": "2.4.0"}, "hash": "5bb149e8da3b38220cfdcbf0293935f42f2ab7d965277ee8d9b3f8ad6394778e"}
+{"prev_hash": "5bb149e8da3b38220cfdcbf0293935f42f2ab7d965277ee8d9b3f8ad6394778e", "data": {"event": "inference_request", "patient_id": "anon-9481", "confidence": 0.94}, "hash": "88b9a0de64d31b6022e2f9eeb5dabeb08c439c68f9f3ce7cdd1bb8cf0c61c993"}
+{"prev_hash": "88b9a0de64d31b6022e2f9eeb5dabeb08c439c68f9f3ce7cdd1bb8cf0c61c993", "data": {"event": "human_oversight_gate", "physician_id": "MD-402", "status": "APPROVED"}, "hash": "bdc8fdbef13ecc745da08d362e41ecf56ee72523317fa860720c67e9621f97cd"}
+{"prev_hash": "bdc8fdbef13ecc745da08d362e41ecf56ee72523317fa860720c67e9621f97cd", "data": {"event": "output_clamp_verified", "clamped_value": 0.82, "limit": 0.95}, "hash": "0afd1ea9492c4c54e9206d1fa4c854e5355d310150837d2e99f6b030c3dab7b6"}
+{"prev_hash": "0afd1ea9492c4c54e9206d1fa4c854e5355d310150837d2e99f6b030c3dab7b6", "data": {"event": "post_market_telemetry", "metric": "latency_ms", "value": 42.1}, "hash": "87b617c258290e6af113a32fa176aa48b52d2a45ea3bd72e8c0d307a95fb2508"}`,
+
+  robustness: `clean_prediction,perturbed_prediction,ground_truth
+1,1,1
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,0,1
+0,0,0
+1,1,1
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0`
+};
+
 function updateVerifiedEvidenceBadgeCount() {
   const countEl = document.getElementById("verifiedModulesCount");
   if (countEl) {
     countEl.textContent = `${verifiedEvidenceStore.length} of 5 verified`;
+  }
+  const dossierBadge = document.getElementById("dossierStatusBadge");
+  if (dossierBadge) {
+    if (verifiedEvidenceStore.length === 5) {
+      dossierBadge.className = "badge success";
+      dossierBadge.textContent = "FULL TIER T1 COMPLETE (5/5)";
+    } else if (verifiedEvidenceStore.length > 0) {
+      dossierBadge.className = "badge warning";
+      dossierBadge.textContent = `PARTIAL EVIDENCE (${verifiedEvidenceStore.length}/5)`;
+    } else {
+      dossierBadge.className = "badge info";
+      dossierBadge.textContent = "READY";
+    }
   }
 }
 
@@ -1831,28 +1911,194 @@ function clearVerifiedEvidence() {
     if (badge) badge.style.display = "none";
     const box = document.getElementById(`${mod}ResultBox`);
     if (box) { box.style.display = "none"; box.innerHTML = ""; }
+    const fileInput = document.getElementById(`${mod === 'log_integrity' ? 'logIntegrity' : mod}FileInput`);
+    if (fileInput) fileInput.value = "";
   });
   showToast("All verified evidence items cleared.");
+}
+
+function formatVerifierResultHTML(v) {
+  const isPass = !!v.claim_supported;
+  const score = Number(v.verified_score || 0).toFixed(2);
+  const statusBadge = isPass
+    ? `<span class="badge success" style="font-size:11px;">CLAIM SUPPORTED</span>`
+    : `<span class="badge warning" style="font-size:11px;">DEFICIT / PARTIAL</span>`;
+
+  let chips = [];
+  if (v.metrics) {
+    if (v.module === "fairness") {
+      if (v.metrics.disparate_impact_ratio !== undefined) chips.push(`DIR: <strong>${Number(v.metrics.disparate_impact_ratio).toFixed(3)}</strong>`);
+      if (v.metrics.statistical_parity_difference !== undefined) chips.push(`SPD: <strong>${Number(v.metrics.statistical_parity_difference).toFixed(3)}</strong>`);
+      if (v.metrics.equal_opportunity_difference !== undefined) chips.push(`EOD: <strong>${Number(v.metrics.equal_opportunity_difference).toFixed(3)}</strong>`);
+      if (v.metrics.total_samples !== undefined) chips.push(`Records: <strong>${v.metrics.total_samples}</strong>`);
+    } else if (v.module === "dependencies") {
+      if (v.metrics.total_packages !== undefined) chips.push(`Packages: <strong>${v.metrics.total_packages}</strong>`);
+      if (v.metrics.critical_cves !== undefined) chips.push(`Critical CVEs: <strong>${v.metrics.critical_cves}</strong>`);
+      if (v.metrics.manifest_format !== undefined) chips.push(`Format: <strong>${escapeHtml(v.metrics.manifest_format)}</strong>`);
+    } else if (v.module === "tls") {
+      if (v.metrics.protocol_version !== undefined) chips.push(`Protocol: <strong>${escapeHtml(v.metrics.protocol_version)}</strong>`);
+      if (v.metrics.cipher_suite !== undefined) chips.push(`Cipher: <strong>${escapeHtml(v.metrics.cipher_suite)}</strong>`);
+      if (v.metrics.days_until_expiry !== undefined) chips.push(`Days Valid: <strong>${v.metrics.days_until_expiry}</strong>`);
+    } else if (v.module === "log_integrity") {
+      if (v.metrics.total_entries !== undefined) chips.push(`Entries: <strong>${v.metrics.total_entries}</strong>`);
+      if (v.metrics.genesis_valid !== undefined) chips.push(`Genesis: <strong>${v.metrics.genesis_valid ? 'Valid' : 'Invalid'}</strong>`);
+      if (v.metrics.chain_tamper_resistant !== undefined) chips.push(`Tamper Proof: <strong>${v.metrics.chain_tamper_resistant ? 'Yes' : 'No'}</strong>`);
+    } else if (v.module === "robustness") {
+      if (v.metrics.accuracy_clean !== undefined) chips.push(`Clean Acc: <strong>${(v.metrics.accuracy_clean * 100).toFixed(1)}%</strong>`);
+      if (v.metrics.accuracy_perturbed !== undefined) chips.push(`Perturbed Acc: <strong>${(v.metrics.accuracy_perturbed * 100).toFixed(1)}%</strong>`);
+      if (v.metrics.accuracy_degradation !== undefined) chips.push(`Degradation: <strong>${(v.metrics.accuracy_degradation * 100).toFixed(1)}%</strong>`);
+    }
+  }
+
+  const chipsHTML = chips.length > 0
+    ? `<div style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0;">
+        ${chips.map(c => `<span style="font-size:11px; padding:3px 8px; border-radius:4px; background:rgba(255,255,255,0.06); border:1px solid var(--border-card); font-family:var(--font-mono); color:var(--text-primary);">${c}</span>`).join('')}
+       </div>`
+    : '';
+
+  return `
+    <div style="margin-top:10px; padding:12px; border-radius:8px; background:var(--bg-card); border:1px solid ${isPass ? 'var(--success-border)' : 'var(--warning-border)'};">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          ${statusBadge}
+          <strong style="font-size:12px; color:var(--text-primary);">Verified Score: ${score} / 1.00</strong>
+        </div>
+        <span style="font-size:10px; font-family:var(--font-mono); color:var(--text-muted); text-transform:uppercase;">Tier T1 Metric</span>
+      </div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:4px; line-height:1.4;">
+        ${escapeHtml(v.details || 'Verification routine finished.')}
+      </div>
+      ${chipsHTML}
+      <details style="font-size:11px; margin-top:6px; cursor:pointer;">
+        <summary style="color:var(--text-muted); font-size:11px; user-select:none;">Inspect Raw Payload</summary>
+        <pre style="margin:6px 0 0 0; padding:8px; background:rgba(0,0,0,0.25); border-radius:4px; font-size:10px; overflow-x:auto; max-height:130px; font-family:var(--font-mono); color:var(--text-secondary); white-space:pre-wrap;">${escapeHtml(JSON.stringify(v.metrics || {}, null, 2))}</pre>
+      </details>
+    </div>
+  `;
+}
+
+function handleVerifierResponse(moduleName, json, box, badge) {
+  if (json.success && json.data) {
+    const v = json.data;
+    verifiedEvidenceStore = verifiedEvidenceStore.filter(e => e.module !== moduleName);
+    verifiedEvidenceStore.push(v);
+    updateVerifiedEvidenceBadgeCount();
+
+    if (badge) {
+      badge.style.display = "inline-block";
+      if (v.verified_score >= 1.0) {
+        badge.className = "badge success";
+        badge.textContent = "VERIFIED (1.0)";
+      } else if (v.verified_score >= 0.5) {
+        badge.className = "badge warning";
+        badge.textContent = `PARTIAL (${v.verified_score.toFixed(1)})`;
+      } else {
+        badge.className = "badge danger";
+        badge.textContent = "DEFICIT (0.0)";
+      }
+    }
+
+    if (box) {
+      box.style.display = "block";
+      box.innerHTML = formatVerifierResultHTML(v);
+    }
+    showToast(`${moduleName} evidence verified successfully!`);
+  } else {
+    if (box) {
+      box.style.display = "block";
+      box.innerHTML = `<div style="padding:10px; border-radius:6px; background:var(--critical-bg); border:1px solid var(--critical-border); color:var(--critical-text); font-size:12px;"><strong>Verification Failed:</strong> ${escapeHtml(json.error || 'Unknown error')}</div>`;
+    }
+  }
+}
+
+function handleVerifierError(moduleName, err, box) {
+  console.error(`Verification error [${moduleName}]:`, err);
+  if (box) {
+    box.style.display = "block";
+    const isNetworkErr = err.message && (err.message.includes("fetch") || err.message.includes("Network"));
+    box.innerHTML = `
+      <div style="padding:10px; border-radius:6px; background:var(--critical-bg); border:1px solid var(--critical-border); color:var(--critical-text); font-size:12px; line-height:1.5;">
+        <strong>${isNetworkErr ? 'Network Connection Error' : 'Execution Error'}:</strong> ${escapeHtml(err.message)}
+        ${isNetworkErr ? `<div style="margin-top:6px; font-size:11px; color:var(--text-secondary);">Ensure the AI-GRID backend is running at <code>http://127.0.0.1:8000</code> by running <code>python server.py</code>.</div>` : ''}
+      </div>
+    `;
+  }
+}
+
+async function loadSampleAndVerify(moduleName) {
+  const box = document.getElementById(`${moduleName}ResultBox`);
+  const badge = document.getElementById(`badge-${moduleName}-status`);
+  if (box) {
+    box.style.display = "block";
+    box.innerHTML = `<div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary);"><span class="badge info">RUNNING</span> <span>Verifying ${moduleName} using reference dataset...</span></div>`;
+  }
+
+  try {
+    let payload = {};
+    if (moduleName === "tls") {
+      const sample = VERIFIER_SAMPLES.tls;
+      const hostInput = document.getElementById("tlsHostInput");
+      const portInput = document.getElementById("tlsPortInput");
+      if (hostInput) hostInput.value = sample.host;
+      if (portInput) portInput.value = sample.port;
+      payload = { host: sample.host, port: sample.port };
+    } else if (moduleName === "fairness") {
+      const privInput = document.getElementById("fairnessPrivilegedVal");
+      const privVal = privInput ? privInput.value.trim() || "male" : "male";
+      payload = { content: VERIFIER_SAMPLES.fairness, privileged_value: privVal };
+    } else {
+      payload = { content: VERIFIER_SAMPLES[moduleName] };
+    }
+
+    const res = await fetch(`${API_BASE}/api/verify/${encodeURIComponent(moduleName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const json = await res.json();
+    handleVerifierResponse(moduleName, json, box, badge);
+  } catch (err) {
+    handleVerifierError(moduleName, err, box);
+  }
+}
+
+async function verifyAllSamples() {
+  const btn = document.getElementById("btnVerifyAllSamples");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="badge info">RUNNING...</span> <span>Verifying All Modules...</span>`;
+  }
+  showToast("Running empirical verification across all 5 governance pillars...");
+
+  const modules = ["fairness", "dependencies", "tls", "log_integrity", "robustness"];
+  for (const mod of modules) {
+    await loadSampleAndVerify(mod);
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<span>⚡ Verify All 5 Samples</span>`;
+  }
+  showToast("All 5 empirical verifications completed!");
 }
 
 async function executeVerifier(moduleName) {
   const box = document.getElementById(`${moduleName}ResultBox`);
   const badge = document.getElementById(`badge-${moduleName}-status`);
-  if (box) {
-    box.style.display = "block";
-    box.innerHTML = `<span style="color:var(--text-muted);">Executing empirical ${moduleName} verification...</span>`;
-  }
 
   try {
     let res;
     if (moduleName === "tls") {
-      const host = (document.getElementById("tlsHostInput")?.value || "").trim();
+      const host = (document.getElementById("tlsHostInput")?.value || "").trim() || "api.github.com";
       const port = parseInt(document.getElementById("tlsPortInput")?.value || "443", 10);
-      if (!host) {
-        alert("Please enter a valid hostname for TLS probe.");
-        return;
+
+      if (box) {
+        box.style.display = "block";
+        box.innerHTML = `<div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary);"><span class="badge info">PROBING</span> <span>Probing TLS socket at ${escapeHtml(host)}:${port}...</span></div>`;
       }
-      res = await fetch("/api/verify/tls", {
+
+      res = await fetch(`${API_BASE}/api/verify/tls`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ host, port })
@@ -1866,9 +2112,14 @@ async function executeVerifier(moduleName) {
 
       const fileInput = document.getElementById(fileInputId);
       if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        alert("Please select a file to upload for verification.");
+        alert("Please select a file to upload or click '⚡ Load Sample & Verify' to use reference test data.");
         if (box) box.style.display = "none";
         return;
+      }
+
+      if (box) {
+        box.style.display = "block";
+        box.innerHTML = `<div style="display:flex; align-items:center; gap:8px; color:var(--text-secondary);"><span class="badge info">ANALYZING</span> <span>Uploading &amp; analyzing evidence file...</span></div>`;
       }
 
       const formData = new FormData();
@@ -1878,49 +2129,16 @@ async function executeVerifier(moduleName) {
         formData.append("privileged_value", privVal);
       }
 
-      res = await fetch(`/api/verify/${encodeURIComponent(moduleName)}`, {
+      res = await fetch(`${API_BASE}/api/verify/${encodeURIComponent(moduleName)}`, {
         method: "POST",
         body: formData
       });
     }
 
     const json = await res.json();
-    if (json.success && json.data) {
-      const v = json.data;
-      // Store or replace in verifiedEvidenceStore
-      verifiedEvidenceStore = verifiedEvidenceStore.filter(e => e.module !== moduleName);
-      verifiedEvidenceStore.push(v);
-      updateVerifiedEvidenceBadgeCount();
-
-      if (badge) {
-        badge.style.display = "inline-block";
-        if (v.verified_score >= 1.0) {
-          badge.className = "badge success";
-          badge.textContent = "VERIFIED (1.0)";
-        } else if (v.verified_score >= 0.5) {
-          badge.className = "badge warning";
-          badge.textContent = `PARTIAL (${v.verified_score.toFixed(1)})`;
-        } else {
-          badge.className = "badge danger";
-          badge.textContent = "DEFICIT (0.0)";
-        }
-      }
-
-      if (box) {
-        box.innerHTML = `
-          <div style="color:var(--text-primary); margin-bottom:4px;"><strong>Status:</strong> ${v.claim_supported ? '<span style="color:var(--success);">Claim Supported</span>' : '<span style="color:var(--warning);">Claim Deficit</span>'} (Score: ${v.verified_score.toFixed(2)})</div>
-          <div style="color:var(--text-secondary); margin-bottom:6px;">${escapeHtml(v.details)}</div>
-          <div style="font-size:11px; color:var(--text-muted);"><pre style="margin:0; white-space:pre-wrap;">${escapeHtml(JSON.stringify(v.metrics, null, 2))}</pre></div>
-        `;
-      }
-      showToast(`${moduleName} evidence verified successfully!`);
-    } else {
-      if (box) box.innerHTML = `<span style="color:var(--critical);">Verification failed: ${escapeHtml(json.error || 'Unknown error')}</span>`;
-      alert("Verification Failed: " + (json.error || "Unknown error"));
-    }
+    handleVerifierResponse(moduleName, json, box, badge);
   } catch (err) {
-    if (box) box.innerHTML = `<span style="color:var(--critical);">Network error: ${escapeHtml(err.message)}</span>`;
-    alert("Verification Error: " + err.message);
+    handleVerifierError(moduleName, err, box);
   }
 }
 
@@ -1935,7 +2153,7 @@ async function applyVerifiedEvidenceToActiveAudit() {
     wizardAnswers = { ...PRESET_PROFILES.healthcare };
   }
   try {
-    const res = await fetch("/api/audit/questionnaire", {
+    const res = await fetch(`${API_BASE}/api/audit/questionnaire`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,0 +1,29 @@
+# =====================================================================
+# AI-GRID Empirical Verifier: Adversarial Perturbation Accuracy Drop
+# Target Endpoint: POST /api/verify/robustness
+# Replaces: Q1 (q1_adversarial_tested)
+# Required Columns: clean_prediction, perturbed_prediction, ground_truth
+# Formula: Drop = (acc_clean - acc_pert) / acc_clean
+# Expected Outcome: Clean=100%, Perturbed=95%, Drop = 5.0% (<= 5%) -> Score: 1.0 (PASS)
+# =====================================================================
+clean_prediction,perturbed_prediction,ground_truth
+1,1,1
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,0,1
+0,0,0
+1,1,1
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0
+1,1,1
+0,0,0

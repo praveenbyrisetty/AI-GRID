@@ -1,0 +1,524 @@
+==========================================================================================
+AI-GRID: COMPLETE 35-QUESTION AUDIT CONTROL SPECIFICATION GUIDE
+Grounded in QB4AIRA (IEEE 2024), EU AI Act (Arts 9-15), NIST AI 100-1, OWASP Top 10
+==========================================================================================
+
+HOW TO USE THIS GUIDE:
+1. Each question represents a technical AI governance control evaluated by AI-GRID.
+2. 'Option Value' is the exact string passed in the JSON API body or selected in the UI.
+3. 'Score Contribution' ranges from 1.0 (Full Compliance), 0.5/0.6 (Partial), to 0.0 (Non-Compliant).
+4. 'Recommended Input' provides a verified compliant answer for a High-Risk Clinical AI Model.
+
+
+------------------------------------------------------------------------------------------
+### Step 1: System Identity (Contextual Metadata)
+------------------------------------------------------------------------------------------
+
+[ID: model_name]
+Prompt: What is the name of your AI model/system?
+Trust Dimension: System Identity
+Input Type: Text Field
+Recommended Value to Try: "ClinicalRisk-CardioNet"
+
+[ID: model_version]
+Prompt: What is the release version?
+Trust Dimension: System Identity
+Input Type: Text Field
+Recommended Value to Try: "2.4.0"
+
+[ID: domain]
+Prompt: What operational domain does this AI belong to?
+Trust Dimension: System Identity
+Options Available:
+  • healthcare: "Healthcare / Medical Diagnostics (High-Risk Annex III)" (Score: N/A)
+  • finance: "Finance / Credit Scoring (High-Risk Annex III)" (Score: N/A)
+  • agriculture: "Agriculture / Environmental Resource Management" (Score: N/A)
+  • education: "Education / Admissions Assessment (High-Risk Annex III)" (Score: N/A)
+  • autonomous_vehicles: "Autonomous Vehicles / Robotics (High-Risk Annex III)" (Score: N/A)
+  • criminal_justice: "Law Enforcement / Judicial Decision Support (High-Risk Annex III)" (Score: N/A)
+  • cybersecurity: "Cybersecurity / Critical Digital Infrastructure" (Score: N/A)
+  • ecommerce: "E-Commerce / Commercial Retail" (Score: N/A)
+  • manufacturing: "Manufacturing / Industrial Automation" (Score: N/A)
+  • entertainment: "Entertainment / Media Synthesis" (Score: N/A)
+  • other: "General Purpose AI / Other" (Score: N/A)
+Recommended Value to Try: "healthcare"
+
+[ID: architecture]
+Prompt: What is the core model architecture / framework?
+Trust Dimension: System Identity
+Input Type: Text Field
+Recommended Value to Try: "ResNet-50 + XGBoost Ensemble"
+
+[ID: deployment_type]
+Prompt: What is the deployment topology?
+Trust Dimension: System Identity
+Options Available:
+  • cloud_api: "Public / Multi-Tenant Cloud API" (Score: N/A)
+  • private_cloud: "Dedicated / Private VPC Cloud" (Score: N/A)
+  • on_premise: "On-Premises Air-Gapped Infrastructure" (Score: N/A)
+  • edge_device: "Edge Device / Embedded Systems" (Score: N/A)
+  • hybrid: "Hybrid Cloud / Agentic Mesh" (Score: N/A)
+Recommended Value to Try: "cloud_api"
+
+------------------------------------------------------------------------------------------
+### Step 2: Security & Robustness (EU AI Act Art. 15(4) / NIST MEASURE 2.7)
+------------------------------------------------------------------------------------------
+
+[ID: q1_adversarial_tested]
+Prompt: Q1: Has the model undergone adversarial robustness testing?
+Trust Dimension: Security & Robustness
+Standards: EU AI Act: Art. 15(4) | NIST AI RMF: MEASURE 2.7 | OWASP: OWASP LLM01 (Prompt Injection)
+Academic Source: QB4AIRA §Security; NIST AI 100-1 MEASURE 2.7
+Options Available:
+  • comprehensive: "Comprehensive: Noise injection, evasion attacks & boundary stress testing" (Score: 1.0)
+  • basic: "Basic: Gaussian noise injection or simple synthetic boundary checks" (Score: 0.5)
+  • none: "None: No adversarial robustness testing conducted" (Score: 0.0)
+Recommended Value to Try: "comprehensive"
+
+[ID: q2_drift_monitoring]
+Prompt: Q2: Is continuous data and model concept drift monitoring configured?
+Trust Dimension: Security & Robustness
+Standards: EU AI Act: Art. 9(2)(b) | NIST AI RMF: MANAGE 4.2 | OWASP: OWASP LLM04 (Data Poisoning)
+Academic Source: QB4AIRA §Monitoring; ISO/IEC 42001:2023
+Options Available:
+  • automated: "Automated: Continuous statistical drift monitoring (KS-test, PSI, Wasserstein)" (Score: 1.0)
+  • manual: "Manual: Periodic manual accuracy checks on sampled production logs" (Score: 0.5)
+  • none: "None: No post-deployment drift monitoring active" (Score: 0.0)
+Recommended Value to Try: "automated"
+
+[ID: q3_sbom_tracking]
+Prompt: Q3: Is there a machine-readable AI-BOM / SBOM tracking model weights and runtime dependencies?
+Trust Dimension: Security & Robustness
+Standards: EU AI Act: Art. 15(2) | NIST AI RMF: GOVERN 1.7 | OWASP: OWASP LLM03 (Supply Chain Vulnerabilities)
+Academic Source: NIST SP 800-218 (SSDF); OWASP LLM Top 10 (LLM03)
+Options Available:
+  • formal_sbom: "Formal CycloneDX / SPDX AI-BOM tracking weights, training data hash & libraries" (Score: 1.0)
+  • basic_requirements: "Basic static requirements.txt / lockfile without cryptographic hashes" (Score: 0.5)
+  • none: "None: No formal inventory of software or model supply chain dependencies" (Score: 0.0)
+Recommended Value to Try: "formal_sbom"
+
+[ID: q4_red_teaming]
+Prompt: Q4: Has the system undergone third-party red teaming or penetration testing?
+Trust Dimension: Security & Robustness
+Standards: EU AI Act: Art. 15(4) | NIST AI RMF: MEASURE 2.7 | OWASP: OWASP LLM01 (Prompt Injection)
+Academic Source: OWASP LLM Top 10; MITRE ATLAS
+Options Available:
+  • independent: "Independent third-party AI red teaming completed with remediation verification" (Score: 1.0)
+  • internal: "Internal developer security review conducted without external validation" (Score: 0.5)
+  • none: "None: No red teaming or security penetration testing performed" (Score: 0.0)
+Recommended Value to Try: "independent"
+
+[ID: q5_api_auth_ratelimit]
+Prompt: Q5: Are inference APIs and tool execution endpoints authenticated and rate-limited?
+Trust Dimension: Security & Robustness
+Standards: EU AI Act: Art. 15(3) | NIST AI RMF: MANAGE 2.4 | OWASP: OWASP API04 (Resource Consumption)
+Academic Source: OWASP API Security Top 10 (API4)
+Options Available:
+  • mTLS_ratelimited: "Strong token auth (mTLS / OAuth2 / API keys) with granular rate limiting & quotas" (Score: 1.0)
+  • basic_key: "Static API key authentication without rate limiting or request throttling" (Score: 0.5)
+  • unauthenticated: "Unauthenticated or exposed endpoint without access controls" (Score: 0.0)
+Recommended Value to Try: "mTLS_ratelimited"
+
+------------------------------------------------------------------------------------------
+### Step 3: Fairness & Non-Discrimination (EU AI Act Art. 10(2)(f) / NIST MEASURE 2.11)
+------------------------------------------------------------------------------------------
+
+[ID: q6_demographic_coverage]
+Prompt: Q6: What percentage of target demographic/geographic populations does training data cover?
+Trust Dimension: Fairness & Non-Discrimination
+Standards: EU AI Act: Art. 10(2)(f) | NIST AI RMF: MAP 2.2 | OWASP: OWASP LLM08
+Academic Source: QB4AIRA §Fairness; NIST AI 100-1 MEASURE 2.11; Kamiran & Calders (2012)
+Options Available:
+  • comprehensive: "Comprehensive: > 80% coverage across target demographics and geography" (Score: 1.0)
+  • partial: "Partial: 40% – 80% coverage with known regional/demographic omissions" (Score: 0.5)
+  • limited: "Limited: < 40% coverage (high risk of discriminatory generalization error)" (Score: 0.0)
+Recommended Value to Try: "comprehensive"
+
+[ID: q7_class_balance]
+Prompt: Q7: How balanced is the class and demographic representation in the training dataset?
+Trust Dimension: Fairness & Non-Discrimination
+Standards: EU AI Act: Art. 10(2)(f) | NIST AI RMF: MEASURE 2.11 | OWASP: OWASP LLM08
+Academic Source: QB4AIRA §Fairness; IBM AIF360 Base Rate Parity Methodology
+Options Available:
+  • balanced: "Balanced: Equal or proportional representation (< 1.5:1 ratio between groups)" (Score: 1.0)
+  • moderate: "Moderate Imbalance: 1.5:1 to 3:1 ratio across majority vs minority groups" (Score: 0.6)
+  • severe: "Severe Imbalance: > 3:1 ratio (minority protected groups heavily underrepresented)" (Score: 0.0)
+Recommended Value to Try: "balanced"
+
+[ID: q8_coverage_gaps]
+Prompt: Q8: Are there documented demographic or geographic coverage gaps?
+Trust Dimension: Fairness & Non-Discrimination
+Standards: EU AI Act: Art. 10(2)(g) | NIST AI RMF: MAP 2.2 | OWASP: OWASP LLM08
+Academic Source: QB4AIRA §Fairness; Mitchell et al. (2019) Model Cards Out-of-Scope
+Options Available:
+  • none: "None: Rigorous demographic stratification shows no significant coverage gaps" (Score: 1.0)
+  • minor: "Minor Gaps: Documented gaps in 1-2 edge demographic or geographic groups" (Score: 0.6)
+  • significant: "Significant Gaps: Substantial underserved populations completely missing" (Score: 0.0)
+Recommended Value to Try: "none"
+
+[ID: q9_dataset_size]
+Prompt: Q9: What is the sample volume of the training dataset?
+Trust Dimension: Fairness & Non-Discrimination
+Standards: EU AI Act: Art. 10(3) | NIST AI RMF: MAP 3.2 | OWASP: OWASP LLM08
+Academic Source: EU AI Act Art. 10; NIST AI 100-1 MAP 1.1; ISO/IEC 42001
+Options Available:
+  • large: "Production Scale (> 10,000 verified samples with representative validation)" (Score: 1.0)
+  • moderate: "Moderate Volume (2,000 – 10,000 samples with basic cross-validation)" (Score: 0.7)
+  • small: "Insufficient Volume (< 2,000 samples, high risk of severe overfitting)" (Score: 0.2)
+Recommended Value to Try: "large"
+
+[ID: q10_fairness_audit]
+Prompt: Q10: Has disparate impact testing (e.g., DIR, Statistical Parity) been formally computed?
+Trust Dimension: Fairness & Non-Discrimination
+Standards: EU AI Act: Art. 10(2)(f) | NIST AI RMF: MEASURE 2.11 | OWASP: OWASP LLM08
+Academic Source: AIF360; EEOC 80% Rule; Kamiran & Calders (2012)
+Options Available:
+  • formal_audit: "Formal Audit: DIR (Four-Fifths Rule >= 0.80) and SPD computed across protected classes" (Score: 1.0)
+  • informal: "Informal: Ad-hoc spot checking of demographic slices without formal parity metrics" (Score: 0.5)
+  • none: "None: No disparate impact or algorithmic fairness metrics calculated" (Score: 0.0)
+Recommended Value to Try: "formal_audit"
+
+------------------------------------------------------------------------------------------
+### Step 4: Transparency & Explainability (EU AI Act Art. 13 / NIST MAP 1.5)
+------------------------------------------------------------------------------------------
+
+[ID: q11_xai_engine]
+Prompt: Q11: Does the model incorporate an algorithmic explainability engine?
+Trust Dimension: Transparency & Explainability
+Standards: EU AI Act: Art. 13(1) | NIST AI RMF: MAP 1.5 | OWASP: OWASP LLM05
+Academic Source: QB4AIRA §Transparency; NIST AI 100-1 MAP 1.5; ISO/IEC 42001
+Options Available:
+  • full_xai: "Full XAI: Deterministic local explanations (TreeSHAP, KernelSHAP, LIME, Grad-CAM)" (Score: 1.0)
+  • partial_xai: "Partial: Global feature importance rankings only (no prediction-level attributions)" (Score: 0.5)
+  • none: "None: Black-box model with zero explainability or interpretability telemetry" (Score: 0.0)
+Recommended Value to Try: "full_xai"
+
+[ID: q12_attribution_count]
+Prompt: Q12: How many feature attributions are computed and exposed per inference?
+Trust Dimension: Transparency & Explainability
+Standards: EU AI Act: Art. 13(3)(b) | NIST AI RMF: MEASURE 2.6 | OWASP: OWASP LLM05
+Academic Source: QB4AIRA §Transparency; Mitchell et al. (2019) Model Cards
+Options Available:
+  • comprehensive: "Comprehensive: >= 4 quantitative feature importance weights per decision" (Score: 1.0)
+  • limited: "Limited: 1 – 3 feature attributions exposed with partial weight quantification" (Score: 0.6)
+  • zero: "Zero: Model outputs single prediction score without attribution factors" (Score: 0.0)
+Recommended Value to Try: "comprehensive"
+
+[ID: q13_reasoning_summaries]
+Prompt: Q13: Does the system deliver plain-language human-readable reasoning summaries?
+Trust Dimension: Transparency & Explainability
+Standards: EU AI Act: Art. 13(3)(d) | NIST AI RMF: MAP 1.5 | OWASP: OWASP LLM05
+Academic Source: EU AI Act Art. 13(3)(d); NIST AI 100-1 MAP 1.5
+Options Available:
+  • yes: "Yes: Generates automated plain-language rationale explaining prediction drivers" (Score: 1.0)
+  • technical_only: "Technical Only: Raw numerical tensors or floating-point weights without narration" (Score: 0.5)
+  • no: "No: Raw prediction returned without reasoning explanation" (Score: 0.0)
+Recommended Value to Try: "yes"
+
+[ID: q14_model_card_doc]
+Prompt: Q14: Is there an authoritative Model Card / System Card documenting intended use & limitations?
+Trust Dimension: Transparency & Explainability
+Standards: EU AI Act: Art. 11 & Art. 13(1) | NIST AI RMF: GOVERN 1.5 | OWASP: OWASP LLM05
+Academic Source: Model Cards (Mitchell et al., 2019); IEEE P8000.1 Standard
+Options Available:
+  • published_card: "Published Model Card: Standardized card (Mitchell et al. 2019) with performance boundaries" (Score: 1.0)
+  • internal_readme: "Informal developer README without verified benchmarks or failure mode analysis" (Score: 0.5)
+  • none: "None: Undocumented model without technical documentation sheet" (Score: 0.0)
+Recommended Value to Try: "published_card"
+
+[ID: q15_uncertainty_scores]
+Prompt: Q15: Does every inference provide calibrated prediction confidence / uncertainty bounds?
+Trust Dimension: Transparency & Explainability
+Standards: EU AI Act: Art. 13(3)(b) | NIST AI RMF: MEASURE 2.6 | OWASP: OWASP LLM05
+Academic Source: QB4AIRA §Transparency; Guo et al. (ICML) On Calibration of Modern Neural Networks
+Options Available:
+  • calibrated_intervals: "Calibrated uncertainty intervals (temperature-scaled confidence / conformal bounds)" (Score: 1.0)
+  • raw_softmax: "Uncalibrated raw softmax probability without empirical reliability calibration" (Score: 0.5)
+  • none: "None: Categorical prediction returned with zero confidence metric" (Score: 0.0)
+Recommended Value to Try: "calibrated_intervals"
+
+------------------------------------------------------------------------------------------
+### Step 5: Privacy & Data Governance (EU AI Act Art. 10(5) / GDPR / NIST GOVERN 1.2)
+------------------------------------------------------------------------------------------
+
+[ID: q16_encryption_rest]
+Prompt: Q16: Is all stored training data, cache, and inference logs encrypted at rest?
+Trust Dimension: Privacy & Data Governance
+Standards: EU AI Act: Art. 10(5) | NIST AI RMF: GOVERN 1.2 | OWASP: OWASP LLM06 (Sensitive Data Disclosure)
+Academic Source: NIST SP 800-53 (SC-28); GDPR Article 32(1)(a)
+Options Available:
+  • aes256_kms: "AES-256 with managed KMS key rotation and hardware security module (HSM) backing" (Score: 1.0)
+  • standard_disk: "Standard OS-level disk encryption without granular key rotation" (Score: 0.6)
+  • plaintext: "Plaintext / Unencrypted data at rest (high vulnerability)" (Score: 0.0)
+Recommended Value to Try: "aes256_kms"
+
+[ID: q17_encryption_transit]
+Prompt: Q17: Is data encrypted in transit across all network boundaries?
+Trust Dimension: Privacy & Data Governance
+Standards: EU AI Act: Art. 15(3) | NIST AI RMF: GOVERN 1.2 | OWASP: OWASP API04 (Resource Consumption)
+Academic Source: NIST SP 800-53 (SC-8); RFC 8446 (TLS 1.3)
+Options Available:
+  • tls13_strict: "TLS 1.3 enforced with strict HSTS, mutual TLS, and certificate pinning" (Score: 1.0)
+  • tls12_mixed: "Standard TLS 1.2 with fallback or mixed internal unencrypted links" (Score: 0.6)
+  • unencrypted_http: "Unencrypted HTTP or plaintext socket protocol" (Score: 0.0)
+Recommended Value to Try: "tls13_strict"
+
+[ID: q18_data_retention]
+Prompt: Q18: What is the data retention and automated purging policy for user inference logs?
+Trust Dimension: Privacy & Data Governance
+Standards: EU AI Act: Art. 10(5) | NIST AI RMF: GOVERN 1.2 | OWASP: OWASP LLM06
+Academic Source: GDPR Art. 5(1)(e) Storage Limitation; QB4AIRA §Privacy
+Options Available:
+  • strict_90: "Strict <= 90 days with cryptographically verified automated shredding" (Score: 1.0)
+  • moderate_180: "Standard 90 – 180 days retention with manual periodic review" (Score: 0.6)
+  • indefinite: "Indefinite or unmanaged log retention (> 180 days / no purge mechanism)" (Score: 0.0)
+Recommended Value to Try: "strict_90"
+
+[ID: q19_pii_handling]
+Prompt: Q19: Does the system detect, redact, or anonymize Personally Identifiable Information (PII)?
+Trust Dimension: Privacy & Data Governance
+Standards: EU AI Act: Art. 10(5) | NIST AI RMF: MAP 1.6 | OWASP: OWASP LLM06
+Academic Source: GDPR Art. 25 Data Protection by Design; NIST AI 100-1 GOVERN 1.2
+Options Available:
+  • automated_redaction: "Automated regex & NER PII redaction pipeline before prompt storage / logging" (Score: 1.0)
+  • basic_filtering: "Basic keyword filtering without specialized NER entity masking" (Score: 0.5)
+  • none: "None: Raw user prompts and sensitive records stored unredacted" (Score: 0.0)
+Recommended Value to Try: "automated_redaction"
+
+[ID: q20_governance_policy]
+Prompt: Q20: Is there an established AI data governance policy with formally designated Data Stewards?
+Trust Dimension: Privacy & Data Governance
+Standards: EU AI Act: Art. 10(2) | NIST AI RMF: GOVERN 1.1 | OWASP: OWASP LLM04 (Data Poisoning)
+Academic Source: ISO/IEC 42001:2023 §A.7; QB4AIRA §Governance
+Options Available:
+  • formal_policy: "Formal ISO/IEC 42001 aligned AI data governance charter with designated owners" (Score: 1.0)
+  • general_it: "General corporate IT data policy without AI-specific training data safeguards" (Score: 0.5)
+  • none: "None: No formal data governance charter or steward assigned" (Score: 0.0)
+Recommended Value to Try: "formal_policy"
+
+------------------------------------------------------------------------------------------
+### Step 6: Human Oversight & Agency (EU AI Act Art. 14 / NIST GOVERN 1.4)
+------------------------------------------------------------------------------------------
+
+[ID: q21_human_oversight]
+Prompt: Q21: Is human oversight mandatory before AI decisions are actuated in production?
+Trust Dimension: Human Oversight & Agency
+Standards: EU AI Act: Art. 14(1) | NIST AI RMF: GOVERN 1.4 | OWASP: OWASP LLM08
+Academic Source: QB4AIRA §Accountability; Mitchell et al. (2019) Model Cards
+Options Available:
+  • mandatory_hitl: "Mandatory HITL: Qualified human expert must sign off on high-risk decisions" (Score: 1.0)
+  • optional_hotl: "Human-on-the-loop: AI acts automatically with retrospective operator audit" (Score: 0.5)
+  • none: "Zero Oversight: Fully autonomous execution without human review interface" (Score: 0.0)
+Recommended Value to Try: "mandatory_hitl"
+
+[ID: q22_autonomy_level]
+Prompt: Q22: What autonomy classification characterizes this AI's operational mode?
+Trust Dimension: Human Oversight & Agency
+Standards: EU AI Act: Art. 14(4) | NIST AI RMF: GOVERN 1.4 | OWASP: OWASP LLM08 (Excessive Agency)
+Academic Source: EU AI Act Art. 14(4); NIST AI 100-1 GOVERN 1.4
+Options Available:
+  • advisory: "Advisory Only: AI provides recommendations; natural person executes action" (Score: 1.0)
+  • semi_autonomous: "Semi-Autonomous: AI takes routine actions; alerts operator for exceptions" (Score: 0.6)
+  • fully_autonomous: "Fully Autonomous: AI initiates and completes irreversible workflows alone" (Score: 0.1)
+Recommended Value to Try: "advisory"
+
+[ID: q24_kill_switch]
+Prompt: Q23: Does an authorized human operator possess an immediate emergency kill-switch?
+Trust Dimension: Human Oversight & Agency
+Standards: EU AI Act: Art. 14(4)(e) | NIST AI RMF: GOVERN 1.4 | OWASP: OWASP LLM08 (Excessive Agency)
+Academic Source: EU AI Act Art. 14(4)(e); NIST AI 100-1 GOVERN 1.4
+Options Available:
+  • instant_killswitch: "Instant hardware/software kill-switch: Safely suspends AI execution within seconds" (Score: 1.0)
+  • graceful_drain: "Graceful process drain requiring cloud console administrator privileges" (Score: 0.6)
+  • none: "None: Cannot interrupt running workflows without tearing down primary service" (Score: 0.0)
+Recommended Value to Try: "instant_killswitch"
+
+[ID: q24b_operator_training]
+Prompt: Q24: Have human overseers received verified training on system operational boundaries?
+Trust Dimension: Human Oversight & Agency
+Standards: EU AI Act: Art. 14(2) | NIST AI RMF: GOVERN 2.2 | OWASP: OWASP LLM08
+Academic Source: EU AI Act Art. 14(2); NIST AI RMF GOVERN 2.2
+Options Available:
+  • certified_training: "Certified Training: Mandatory role-based competency certification and boundary drills" (Score: 1.0)
+  • basic_briefing: "Informal: Product walkthrough briefing or standard operating procedure document" (Score: 0.5)
+  • none: "None: No formal training on automation bias or error detection provided" (Score: 0.0)
+Recommended Value to Try: "certified_training"
+
+[ID: q24c_override_capability]
+Prompt: Q25: Can operators intervene, override, or reverse AI decisions in real time?
+Trust Dimension: Human Oversight & Agency
+Standards: EU AI Act: Art. 14(4)(a) | NIST AI RMF: GOVERN 1.4 | OWASP: OWASP LLM08
+Academic Source: EU AI Act Art. 14(4)(a); IEEE TAI 2026 §Human Agency
+Options Available:
+  • instant_override: "Real-time Override: Dedicated operator console can instantly reverse decisions" (Score: 1.0)
+  • post_hoc_ticket: "Post-hoc Review: Decisions can be flagged for support review within business hours" (Score: 0.5)
+  • irreversible: "Irreversible: Decisions execute automatically without manual override hook" (Score: 0.0)
+Recommended Value to Try: "instant_override"
+
+------------------------------------------------------------------------------------------
+### Step 7: Accountability & Governance (EU AI Act Arts 9,11,12 / NIST GOVERN 2.1)
+------------------------------------------------------------------------------------------
+
+[ID: q23_incident_escalation]
+Prompt: Q26: Is there a documented incident escalation and anomaly triage protocol?
+Trust Dimension: Accountability & Governance
+Standards: EU AI Act: Art. 9(9) | NIST AI RMF: MANAGE 4.1 | OWASP: OWASP LLM08 (Excessive Agency)
+Academic Source: ISO/IEC 42001 §A.8; QB4AIRA §Accountability
+Options Available:
+  • formal_escalation: "Documented 24/7 on-call escalation protocol with defined SLAs and incident commander" (Score: 1.0)
+  • informal_slack: "Ad-hoc developer alerting (email/Slack) without guaranteed response SLA" (Score: 0.5)
+  • none: "None: No defined incident triage or failure escalation pathway" (Score: 0.0)
+Recommended Value to Try: "formal_escalation"
+
+[ID: q25_decision_logging]
+Prompt: Q27: Are all AI inputs, prompts, weights, and decisions logged in tamper-evident audit trails?
+Trust Dimension: Accountability & Governance
+Standards: EU AI Act: Art. 12(1) | NIST AI RMF: MEASURE 2.5 | OWASP: OWASP LLM08
+Academic Source: QB4AIRA §Accountability; EU AI Act Article 12 Automatic Logging
+Options Available:
+  • append_only_signed: "Cryptographically signed append-only logs with WORM storage (Art. 12 compliant)" (Score: 1.0)
+  • standard_cloudwatch: "Standard database/cloud logging without cryptographic integrity verification" (Score: 0.6)
+  • none: "None: Ephemeral logging or decisions discarded immediately after response" (Score: 0.0)
+Recommended Value to Try: "append_only_signed"
+
+[ID: q25b_technical_dossier]
+Prompt: Q28: Is a comprehensive EU AI Act Annex IV Technical Documentation dossier maintained?
+Trust Dimension: Accountability & Governance
+Standards: EU AI Act: Art. 11 | NIST AI RMF: GOVERN 1.5 | OWASP: OWASP LLM05
+Academic Source: EU AI Act Article 11 & Annex IV; ISO/IEC 42001 §A.9
+Options Available:
+  • full_annex_iv: "Full Annex IV: Version-controlled technical dossier with architecture, training data & validation" (Score: 1.0)
+  • partial_docs: "Partial: Standard software engineering documentation without statutory Annex IV sections" (Score: 0.5)
+  • none: "None: Undocumented system architecture and missing regulatory records" (Score: 0.0)
+Recommended Value to Try: "full_annex_iv"
+
+[ID: q25c_post_market_monitoring]
+Prompt: Q29: Is there a systematic post-market monitoring plan and regulatory authority reporting workflow?
+Trust Dimension: Accountability & Governance
+Standards: EU AI Act: Art. 72 | NIST AI RMF: MANAGE 4.3 | OWASP: OWASP LLM08
+Academic Source: EU AI Act Article 72; NIST AI RMF MANAGE 4.3
+Options Available:
+  • active_monitoring: "Active Plan: Continuous post-market telemetry with automated serious incident alerting per Art. 72" (Score: 1.0)
+  • reactive_support: "Reactive: Customer ticket intake without formal regulatory incident reporting SLAs" (Score: 0.5)
+  • none: "None: No post-market monitoring or incident disclosure protocol" (Score: 0.0)
+Recommended Value to Try: "active_monitoring"
+
+[ID: q25d_governance_charter]
+Prompt: Q30: Has an executive AI Governance Charter designated responsible compliance stewards?
+Trust Dimension: Accountability & Governance
+Standards: EU AI Act: Art. 9(1) | NIST AI RMF: GOVERN 1.1 | OWASP: OWASP LLM08
+Academic Source: ISO/IEC 42001:2023 §5 Leadership; NIST AI RMF GOVERN 1.1
+Options Available:
+  • formal_charter: "Formal Charter: Designated AI Ethics Board, Chief AI Safety Officer, and line-of-business owners" (Score: 1.0)
+  • ad_hoc_committee: "Ad-hoc committee without formal executive veto power or defined accountability lines" (Score: 0.5)
+  • none: "None: No designated AI governance owner or organizational accountability structure" (Score: 0.0)
+Recommended Value to Try: "formal_charter"
+
+------------------------------------------------------------------------------------------
+### Step 8: Safety & Reliability (EU AI Act Arts 9,15(1) / NIST MANAGE 2.2)
+------------------------------------------------------------------------------------------
+
+[ID: q26_input_validation]
+Prompt: Q31: Does the model validate and reject corrupted, malformed, or out-of-range inputs?
+Trust Dimension: Safety & Reliability
+Standards: EU AI Act: Art. 15(1) | NIST AI RMF: MANAGE 2.2 | OWASP: OWASP LLM01 (Prompt Injection)
+Academic Source: QB4AIRA §Safety; NIST AI 100-1 MANAGE 2.2
+Options Available:
+  • comprehensive_rejection: "Comprehensive: Strict Pydantic/JSON-schema validation, range clamps & corrupted data rejection" (Score: 1.0)
+  • basic_types: "Basic: Primitive type coercion (casts string to float) without domain range bounds" (Score: 0.5)
+  • none: "None: Direct passthrough of arbitrary raw inputs to model tensors" (Score: 0.0)
+Recommended Value to Try: "comprehensive_rejection"
+
+[ID: q27_guardrail_count]
+Prompt: Q32: How many independent safety guardrails are operational in the pipeline?
+Trust Dimension: Safety & Reliability
+Standards: EU AI Act: Art. 9(2)(a) | NIST AI RMF: MANAGE 2.2 | OWASP: OWASP LLM05 (Improper Output Handling)
+Academic Source: EU AI Act Article 9; NIST AI 100-1 MANAGE 2.4
+Options Available:
+  • 3plus: ">= 3 Guardrails: Input schema validator + Output range clamp + Anomaly detector" (Score: 1.0)
+  • 1to2: "1 – 2 Guardrails: Partial controls (e.g., input type check only)" (Score: 0.5)
+  • zero: "Zero: Model runs without active software guardrails or safety filters" (Score: 0.0)
+Recommended Value to Try: "3plus"
+
+[ID: q28_output_clamping]
+Prompt: Q33: Does the system enforce deterministic safety clamping on dangerous output bounds?
+Trust Dimension: Safety & Reliability
+Standards: EU AI Act: Art. 15(1) | NIST AI RMF: MANAGE 2.2 | OWASP: OWASP LLM05
+Academic Source: QB4AIRA §Safety; NIST AI 100-1 MANAGE 2.2; Clinical Dosage Benchmark
+Options Available:
+  • hard_clamping: "Hard Clamping: Strict programmatic limits enforce legal/physical boundaries on outputs" (Score: 1.0)
+  • soft_warning: "Soft Advisory: Flags out-of-bounds outputs but allows consumer execution" (Score: 0.5)
+  • raw_unclamped: "Raw Unclamped: Extreme unbounded values emitted directly to consumers" (Score: 0.0)
+Recommended Value to Try: "hard_clamping"
+
+[ID: q29_contextual_advisory]
+Prompt: Q34: Does the system emit contextual or environmental safety advisories alongside predictions?
+Trust Dimension: Safety & Reliability
+Standards: EU AI Act: Art. 13(3)(d) | NIST AI RMF: MANAGE 2.3 | OWASP: OWASP LLM05
+Academic Source: EU AI Act Art. 13(3)(d); NIST AI 100-1 MANAGE 2.3
+Options Available:
+  • yes_dynamic: "Yes: Dynamic warnings generated based on real-world environment/safety context" (Score: 1.0)
+  • static_disclaimer: "Static Disclaimer: Generic boiler-plate disclaimer text appended to responses" (Score: 0.5)
+  • no: "No: Outputs emitted without safety or operational context advisories" (Score: 0.0)
+Recommended Value to Try: "yes_dynamic"
+
+[ID: q30_failure_mode_testing]
+Prompt: Q35: Has the system been validated against documented edge cases and known failure modes?
+Trust Dimension: Safety & Reliability
+Standards: EU AI Act: Art. 15(1) | NIST AI RMF: MEASURE 2.8 | OWASP: OWASP LLM05
+Academic Source: QB4AIRA §Reliability; NIST AI 100-1
+Options Available:
+  • formal_failure_suite: "Formal Test Suite: Regression suite covering 100% of cataloged failure modes & edge cases" (Score: 1.0)
+  • partial_tests: "Partial: Ad-hoc unit tests for known bugs without systematic edge case harness" (Score: 0.5)
+  • none: "None: No formal regression or failure-mode test harness active" (Score: 0.0)
+Recommended Value to Try: "formal_failure_suite"
+
+==========================================================================================
+READY-TO-USE JSON API PAYLOAD (POST /api/audit/questionnaire)
+==========================================================================================
+Copy and paste this exact JSON body into Postman, curl, or your Python test client:
+
+{
+  "answers": {
+    "model_name": "ClinicalRisk-CardioNet",
+    "model_version": "2.4.0",
+    "domain": "healthcare",
+    "architecture": "ResNet-50 + XGBoost Ensemble",
+    "deployment_type": "cloud_api",
+    "q1_adversarial_tested": "comprehensive",
+    "q2_drift_monitoring": "automated",
+    "q3_sbom_tracking": "formal_sbom",
+    "q4_red_teaming": "independent",
+    "q5_api_auth_ratelimit": "mTLS_ratelimited",
+    "q6_demographic_coverage": "comprehensive",
+    "q7_class_balance": "balanced",
+    "q8_coverage_gaps": "none",
+    "q9_dataset_size": "large",
+    "q10_fairness_audit": "formal_audit",
+    "q11_xai_engine": "full_xai",
+    "q12_attribution_count": "comprehensive",
+    "q13_reasoning_summaries": "yes",
+    "q14_model_card_doc": "published_card",
+    "q15_uncertainty_scores": "calibrated_intervals",
+    "q16_encryption_rest": "aes256_kms",
+    "q17_encryption_transit": "tls13_strict",
+    "q18_data_retention": "strict_90",
+    "q19_pii_handling": "automated_redaction",
+    "q20_governance_policy": "formal_policy",
+    "q21_human_oversight": "mandatory_hitl",
+    "q22_autonomy_level": "advisory",
+    "q24_kill_switch": "instant_killswitch",
+    "q24b_operator_training": "certified_training",
+    "q24c_override_capability": "instant_override",
+    "q23_incident_escalation": "formal_escalation",
+    "q25_decision_logging": "append_only_signed",
+    "q25b_technical_dossier": "full_annex_iv",
+    "q25c_post_market_monitoring": "active_monitoring",
+    "q25d_governance_charter": "formal_charter",
+    "q26_input_validation": "comprehensive_rejection",
+    "q27_guardrail_count": "3plus",
+    "q28_output_clamping": "hard_clamping",
+    "q29_contextual_advisory": "yes_dynamic",
+    "q30_failure_mode_testing": "formal_failure_suite"
+  }
+}

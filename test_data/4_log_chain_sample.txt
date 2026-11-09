@@ -1,0 +1,12 @@
+# =====================================================================
+# AI-GRID Empirical Verifier: Cryptographic Log Chain Integrity
+# Target Endpoint: POST /api/verify/log-integrity
+# Replaces: Q27 (q25_decision_logging)
+# Method: Verifies SHA-256 hash link from GENESIS block across all entries
+# Expected Outcome: 5 unbroken blocks validated -> Score: 1.0 (VALID)
+# =====================================================================
+{"prev_hash": "GENESIS", "data": {"event": "system_boot", "model": "CardioNet", "version": "2.4.0"}, "hash": "5bb149e8da3b38220cfdcbf0293935f42f2ab7d965277ee8d9b3f8ad6394778e"}
+{"prev_hash": "5bb149e8da3b38220cfdcbf0293935f42f2ab7d965277ee8d9b3f8ad6394778e", "data": {"event": "inference_request", "patient_id": "anon-9481", "confidence": 0.94}, "hash": "88b9a0de64d31b6022e2f9eeb5dabeb08c439c68f9f3ce7cdd1bb8cf0c61c993"}
+{"prev_hash": "88b9a0de64d31b6022e2f9eeb5dabeb08c439c68f9f3ce7cdd1bb8cf0c61c993", "data": {"event": "human_oversight_gate", "physician_id": "MD-402", "status": "APPROVED"}, "hash": "bdc8fdbef13ecc745da08d362e41ecf56ee72523317fa860720c67e9621f97cd"}
+{"prev_hash": "bdc8fdbef13ecc745da08d362e41ecf56ee72523317fa860720c67e9621f97cd", "data": {"event": "output_clamp_verified", "clamped_value": 0.82, "limit": 0.95}, "hash": "0afd1ea9492c4c54e9206d1fa4c854e5355d310150837d2e99f6b030c3dab7b6"}
+{"prev_hash": "0afd1ea9492c4c54e9206d1fa4c854e5355d310150837d2e99f6b030c3dab7b6", "data": {"event": "post_market_telemetry", "metric": "latency_ms", "value": 42.1}, "hash": "87b617c258290e6af113a32fa176aa48b52d2a45ea3bd72e8c0d307a95fb2508"}
