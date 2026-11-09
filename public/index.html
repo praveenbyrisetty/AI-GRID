@@ -517,138 +517,194 @@
           </div>
 
           <!-- 5 Modular Verification Cards -->
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <!-- 5 Modular Verification Cards Stacked Vertically -->
+          <div class="verifier-vertical-stack" style="display:flex; flex-direction:column; gap:20px;">
 
             <!-- 1. Fairness Verifier -->
-            <div class="card" id="card-verify-fairness">
-              <div class="card-header-row" style="margin-bottom:12px;">
-                <div>
-                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">1. Demographic Fairness (DIR / SPD)</h3>
-                  <span class="badge info">Q10 &bull; Art. 10(2)(f) &bull; MEASURE 2.11</span>
+            <div class="card verifier-card-wide" id="card-verify-fairness">
+              <div class="card-header-row" style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h3 class="card-title" style="font-size:16px; margin:0;">1. Demographic Fairness (DIR / SPD)</h3>
+                  <span class="badge info">Q10 &bull; EU AI Act Art. 10(2)(f) &bull; NIST MEASURE 2.11 &bull; EEOC 4/5ths Rule</span>
                 </div>
                 <span class="badge" id="badge-fairness-status" style="display:none;">UNVERIFIED</span>
               </div>
-              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
-                Upload predictions CSV or test with pre-packaged reference data. Computes Disparate Impact Ratio (DIR &ge; 0.80), Statistical Parity Difference (SPD &le; 0.10), and Equal Opportunity Difference.
-              </p>
-              <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="verifier-card-wide-body">
                 <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Privileged Group Value:</label>
-                  <input type="text" id="fairnessPrivilegedVal" value="male" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                  <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+                    Upload predictions CSV or test with pre-packaged reference data. Computes Disparate Impact Ratio (DIR &ge; 0.80), Statistical Parity Difference (SPD &le; 0.10), and Equal Opportunity Difference across demographic cohorts.
+                  </p>
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Privileged Group Value:</label>
+                      <input type="text" id="fairnessPrivilegedVal" value="male" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                    </div>
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Predictions CSV File:</label>
+                      <input type="file" id="fairnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('fairness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('fairness')" style="flex:1;">Upload &amp; Verify</button>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Predictions CSV File:</label>
-                  <input type="file" id="fairnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                <div id="fairnessResultBox">
+                  <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
+                    <div style="font-size:18px; margin-bottom:4px;">⚖️</div>
+                    <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Demographic Fairness GRC Standby</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Verifies Disparate Impact Ratio (DIR ≥ 0.80) &amp; SPD per EU AI Act Art. 10(2)(f) and EEOC Four-Fifths Rule.</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                  </div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('fairness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
-                  <button type="button" class="btn-primary sm" onclick="executeVerifier('fairness')" style="flex:1;">Upload &amp; Verify</button>
-                </div>
-                <div id="fairnessResultBox" style="display:none;"></div>
               </div>
             </div>
 
             <!-- 2. Dependencies / SBOM Verifier -->
-            <div class="card" id="card-verify-dependencies">
-              <div class="card-header-row" style="margin-bottom:12px;">
-                <div>
-                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">2. AI-BOM &amp; CVE Supply Chain</h3>
-                  <span class="badge info">Q3 &bull; NIST SP 800-218 &bull; OWASP LLM03</span>
+            <div class="card verifier-card-wide" id="card-verify-dependencies">
+              <div class="card-header-row" style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h3 class="card-title" style="font-size:16px; margin:0;">2. AI-BOM &amp; CVE Supply Chain</h3>
+                  <span class="badge info">Q3 &bull; NIST SP 800-218 (SSDF) &bull; OWASP LLM03 &bull; EU AI Act Art. 15</span>
                 </div>
                 <span class="badge" id="badge-dependencies-status" style="display:none;">UNVERIFIED</span>
               </div>
-              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
-                Upload <code>requirements.txt</code> or CycloneDX JSON SBOM. Queries public OSV API (api.osv.dev) for high-severity vulnerabilities across runtime packages.
-              </p>
-              <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="verifier-card-wide-body">
                 <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">SBOM / Requirements File:</label>
-                  <input type="file" id="dependenciesFileInput" accept=".txt,.json" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                  <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+                    Upload <code>requirements.txt</code> or CycloneDX JSON SBOM. Queries public OSV API (api.osv.dev) for high-severity vulnerabilities across runtime packages to verify software supply chain security.
+                  </p>
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">SBOM / Requirements File:</label>
+                      <input type="file" id="dependenciesFileInput" accept=".txt,.json" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('dependencies')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('dependencies')" style="flex:1;">Upload &amp; Verify</button>
+                    </div>
+                  </div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('dependencies')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
-                  <button type="button" class="btn-primary sm" onclick="executeVerifier('dependencies')" style="flex:1;">Upload &amp; Verify</button>
+                <div id="dependenciesResultBox">
+                  <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
+                    <div style="font-size:18px; margin-bottom:4px;">📦</div>
+                    <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Supply Chain SBOM GRC Standby</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Queries OSV vulnerability database for package CVEs per NIST SP 800-218 and OWASP LLM03.</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                  </div>
                 </div>
-                <div id="dependenciesResultBox" style="display:none;"></div>
               </div>
             </div>
 
             <!-- 3. TLS Verifier -->
-            <div class="card" id="card-verify-tls">
-              <div class="card-header-row" style="margin-bottom:12px;">
-                <div>
-                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">3. In-Transit Encryption (TLS Probe)</h3>
-                  <span class="badge info">Q17 &bull; RFC 8446 (TLS 1.3) &bull; SC-8</span>
+            <div class="card verifier-card-wide" id="card-verify-tls">
+              <div class="card-header-row" style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h3 class="card-title" style="font-size:16px; margin:0;">3. In-Transit Encryption (TLS Probe)</h3>
+                  <span class="badge info">Q17 &bull; RFC 8446 (TLS 1.3) &bull; NIST SP 800-52r2 &bull; SC-8</span>
                 </div>
                 <span class="badge" id="badge-tls-status" style="display:none;">UNVERIFIED</span>
               </div>
-              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
-                Probes public model serving endpoint for TLS 1.3 protocol and certificate validity. Hardened with SSRF protection (accepts only standard ports 443/8443; rejects private/loopback IPs).
-              </p>
-              <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="verifier-card-wide-body">
                 <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Endpoint Hostname:</label>
-                  <input type="text" id="tlsHostInput" value="api.github.com" placeholder="e.g., api.github.com or huggingface.co" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                  <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+                    Probes public model serving endpoint for TLS 1.3 protocol and certificate validity. Hardened with SSRF protection (accepts standard ports 443/8443; rejects private/loopback IPs).
+                  </p>
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Endpoint Hostname:</label>
+                      <input type="text" id="tlsHostInput" value="api.github.com" placeholder="e.g., api.github.com or huggingface.co" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                    </div>
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Port (443 or 8443):</label>
+                      <input type="number" id="tlsPortInput" value="443" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('tls')" style="flex:1;">⚡ Default Probe (GitHub)</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('tls')" style="flex:1;">Probe Custom Host</button>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Port (443 or 8443):</label>
-                  <input type="number" id="tlsPortInput" value="443" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
+                <div id="tlsResultBox">
+                  <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
+                    <div style="font-size:18px; margin-bottom:4px;">🔒</div>
+                    <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">In-Transit TLS 1.3 Probe Standby</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Probes public inference endpoint for TLS 1.3 cryptographic handshake per NIST SP 800-52r2 &amp; SC-8.</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Default Probe (GitHub)" or specify host</div>
+                  </div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('tls')" style="flex:1;">⚡ Default Probe (GitHub)</button>
-                  <button type="button" class="btn-primary sm" onclick="executeVerifier('tls')" style="flex:1;">Probe Custom Host</button>
-                </div>
-                <div id="tlsResultBox" style="display:none;"></div>
               </div>
             </div>
 
             <!-- 4. Log Integrity Verifier -->
-            <div class="card" id="card-verify-log_integrity">
-              <div class="card-header-row" style="margin-bottom:12px;">
-                <div>
-                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">4. Tamper-Evident Audit Logging</h3>
-                  <span class="badge info">Q27 &bull; EU AI Act Art. 12 &bull; ISO 42001 &sect;A.8</span>
+            <div class="card verifier-card-wide" id="card-verify-log_integrity">
+              <div class="card-header-row" style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h3 class="card-title" style="font-size:16px; margin:0;">4. Tamper-Evident Audit Logging</h3>
+                  <span class="badge info">Q27 &bull; EU AI Act Art. 12 &bull; ISO/IEC 42001 &sect;A.8 &bull; NIST GOVERN 2.1</span>
                 </div>
                 <span class="badge" id="badge-log_integrity-status" style="display:none;">UNVERIFIED</span>
               </div>
-              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
-                Upload JSONL log file with SHA-256 hash chain (<code>prev_hash</code>, <code>data</code>, <code>hash</code>). Validates unbroken genesis and cryptographic tamper resistance.
-              </p>
-              <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="verifier-card-wide-body">
                 <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">JSONL Hash-Chain Log File:</label>
-                  <input type="file" id="logIntegrityFileInput" accept=".jsonl,.json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                  <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+                    Upload JSONL log file with SHA-256 hash chain (<code>prev_hash</code>, <code>data</code>, <code>hash</code>). Validates unbroken genesis anchor and cryptographic tamper resistance for regulatory compliance.
+                  </p>
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">JSONL Hash-Chain Log File:</label>
+                      <input type="file" id="logIntegrityFileInput" accept=".jsonl,.json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('log_integrity')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('log_integrity')" style="flex:1;">Upload &amp; Verify</button>
+                    </div>
+                  </div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('log_integrity')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
-                  <button type="button" class="btn-primary sm" onclick="executeVerifier('log_integrity')" style="flex:1;">Upload &amp; Verify</button>
+                <div id="logIntegrityResultBox">
+                  <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
+                    <div style="font-size:18px; margin-bottom:4px;">⛓️</div>
+                    <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Audit Trail Hash-Chain Standby</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Verifies cryptographic SHA-256 chain and GENESIS block immutability per EU AI Act Art. 12 &amp; ISO 42001.</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                  </div>
                 </div>
-                <div id="logIntegrityResultBox" style="display:none;"></div>
               </div>
             </div>
 
             <!-- 5. Robustness Verifier -->
-            <div class="card" id="card-verify-robustness">
-              <div class="card-header-row" style="margin-bottom:12px;">
-                <div>
-                  <h3 class="card-title" style="font-size:15px; margin:0 0 4px 0;">5. Adversarial Robustness Degradation</h3>
-                  <span class="badge info">Q1 &bull; EU AI Act Art. 15(4) &bull; MEASURE 2.7</span>
+            <div class="card verifier-card-wide" id="card-verify-robustness">
+              <div class="card-header-row" style="margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                  <h3 class="card-title" style="font-size:16px; margin:0;">5. Adversarial Robustness Degradation</h3>
+                  <span class="badge info">Q1 &bull; EU AI Act Art. 15(4) &bull; NIST AI RMF MEASURE 2.7 &bull; MITRE ATLAS</span>
                 </div>
                 <span class="badge" id="badge-robustness-status" style="display:none;">UNVERIFIED</span>
               </div>
-              <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">
-                Upload precomputed evaluations CSV with columns <code>clean_prediction</code>, <code>perturbed_prediction</code>, <code>ground_truth</code>. Measures empirical accuracy drop under perturbation.
-              </p>
-              <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="verifier-card-wide-body">
                 <div>
-                  <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Robustness Evaluation CSV:</label>
-                  <input type="file" id="robustnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                  <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+                    Upload precomputed evaluations CSV with columns <code>clean_prediction</code>, <code>perturbed_prediction</code>, <code>ground_truth</code>. Measures empirical accuracy drop (bound &le; 5%) under perturbation.
+                  </p>
+                  <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Robustness Evaluation CSV:</label>
+                      <input type="file" id="robustnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                      <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('robustness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('robustness')" style="flex:1;">Upload &amp; Verify</button>
+                    </div>
+                  </div>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
-                  <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('robustness')" style="flex:1;">⚡ Load Sample &amp; Verify</button>
-                  <button type="button" class="btn-primary sm" onclick="executeVerifier('robustness')" style="flex:1;">Upload &amp; Verify</button>
+                <div id="robustnessResultBox">
+                  <div style="padding:18px 16px; border-radius:8px; border:1px dashed var(--border-card); background:rgba(255,255,255,0.02); text-align:center; color:var(--text-muted); font-size:12px;">
+                    <div style="font-size:18px; margin-bottom:4px;">🛡️</div>
+                    <div style="font-weight:600; color:var(--text-secondary); margin-bottom:2px;">Adversarial Robustness GRC Standby</div>
+                    <div style="max-width:440px; margin:0 auto; line-height:1.4;">Measures empirical accuracy degradation drop (≤5%) under perturbation per EU AI Act Art. 15(4).</div>
+                    <div style="margin-top:6px; font-size:11px; color:var(--primary-500); font-weight:600;">⚡ Click "Load Sample &amp; Verify" or select a file</div>
+                  </div>
                 </div>
-                <div id="robustnessResultBox" style="display:none;"></div>
               </div>
             </div>
 

@@ -1160,6 +1160,53 @@ body {
 .rem-item-card.medium { border-left: 3px solid var(--info); }
 .rem-item-card.safe { border-left: 3px solid var(--success); }
 
+/* ==========================================================================
+   VERTICAL VERIFIER PIPELINE & GRC CONFORMITY VERDICTS
+   ========================================================================== */
+.verifier-vertical-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.verifier-card-wide {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.verifier-card-wide-body {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .verifier-card-wide-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grc-verdict-box {
+  border-radius: 8px;
+  transition: all 0.25s ease;
+}
+
+.grc-verdict-box.grc-good {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+  border-color: var(--success-border) !important;
+}
+
+.grc-verdict-box.grc-acceptable {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
+  border-color: var(--warning-border) !important;
+}
+
+.grc-verdict-box.grc-risk {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.02));
+  border-color: var(--critical-border) !important;
+}
+
 .summary-target-strip {
   display: flex;
   align-items: center;
