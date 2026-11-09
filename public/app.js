@@ -52,6 +52,89 @@ const defaultDimensions = {
   "Accountability & Governance": 0
 };
 
+const DIMENSION_CONTROLS_SPEC = {
+  "Security & Robustness": [
+    { key: "q1", name: "Adversarial Stress Testing", mod: "robustness" },
+    { key: "q2", name: "Drift Monitoring", mod: null },
+    { key: "q3", name: "Supply Chain AI-BOM", mod: "dependencies" },
+    { key: "q4", name: "Third-Party Red Teaming", mod: null },
+    { key: "q5", name: "mTLS & Rate Limiting", mod: null }
+  ],
+  "Safety & Reliability": [
+    { key: "q26", name: "Strict Input Validation", mod: null },
+    { key: "q27", name: "Multi-Tier Guardrails", mod: null },
+    { key: "q28", name: "Output Clamping Bounds", mod: null },
+    { key: "q30", name: "Failure-Mode Regression", mod: null }
+  ],
+  "Fairness & Non-Discrimination": [
+    { key: "q6", name: "Cohort Representation", mod: null },
+    { key: "q7", name: "Class Balance Checks", mod: null },
+    { key: "q8", name: "Demographic Stratification", mod: null },
+    { key: "q10", name: "DIR / SPD Fairness Audit", mod: "fairness" }
+  ],
+  "Transparency & Explainability": [
+    { key: "q11", name: "Local TreeSHAP Attributions", mod: null },
+    { key: "q12", name: "Feature Importance Weights", mod: null },
+    { key: "q13", name: "Plain-Language Summaries", mod: null },
+    { key: "q14", name: "Standardized Model Card", mod: null },
+    { key: "q15", name: "Calibrated Uncertainty", mod: null }
+  ],
+  "Privacy & Data Governance": [
+    { key: "q16", name: "AES-256 Envelope KMS", mod: null },
+    { key: "q17", name: "In-Transit TLS 1.3 Strict", mod: "tls" },
+    { key: "q18", name: "Automated Data Retention", mod: null },
+    { key: "q19", name: "Automated PII Redaction", mod: null },
+    { key: "q20", name: "ISO 42001 AI Charter", mod: null }
+  ],
+  "Human Oversight & Agency": [
+    { key: "q21", name: "Mandatory HITL Review", mod: null },
+    { key: "q22", name: "Advisory-Only Autonomy", mod: null },
+    { key: "q24", name: "Hardware Kill-Switch", mod: null },
+    { key: "q24b", name: "Role Competency Training", mod: null },
+    { key: "q24c", name: "Operator Override Console", mod: null }
+  ],
+  "Accountability & Governance": [
+    { key: "q23", name: "24/7 Incident Escalation", mod: null },
+    { key: "q25", name: "Cryptographic WORM Logs", mod: "log_integrity" },
+    { key: "q25b", name: "Annex IV Technical Dossier", mod: null },
+    { key: "q25c", name: "Post-Market Telemetry", mod: null },
+    { key: "q25d", name: "AI Ethics Board Charter", mod: null }
+  ]
+};
+
+function renderDimensionControlsHTML(dimName, data) {
+  const controls = DIMENSION_CONTROLS_SPEC[dimName] || [];
+  if (!data || !data.dimensions || data.dimensions[dimName] === undefined) {
+    return `<small style="color:var(--text-secondary); line-height:1.5;">${controls.slice(0, 3).map(c => escapeHtml(c.name)).join(" &bull; ")}</small>`;
+  }
+
+  const findings = data.remediation_plan || [];
+  const verifiedList = data.verified_evidence || [];
+  const verifiedMods = new Set(verifiedList.map(v => v.module));
+  const dimScore = Number(data.dimensions[dimName] || 0);
+
+  const chips = controls.slice(0, 3).map(ctrl => {
+    if (ctrl.mod && verifiedMods.has(ctrl.mod)) {
+      return `<span class="badge success" style="font-size:10px; padding:2px 6px; display:inline-flex; align-items:center; gap:3px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>${escapeHtml(ctrl.name)} (T1)</span>`;
+    }
+
+    const f = findings.find(p => p.dimension === dimName && (p.finding.toLowerCase().includes(ctrl.name.toLowerCase()) || p.finding.toLowerCase().includes(ctrl.key)));
+    if (f) {
+      const isCrit = f.priority === 'CRITICAL' || f.priority === 'HIGH';
+      const badgeCls = isCrit ? 'critical' : 'warning';
+      return `<span class="badge ${badgeCls}" style="font-size:10px; padding:2px 6px;">${escapeHtml(ctrl.name)} (${f.priority === 'CRITICAL' ? 'Deficit' : 'Partial'})</span>`;
+    }
+
+    if (dimScore >= 70) {
+      return `<span class="badge success" style="font-size:10px; padding:2px 6px;">${escapeHtml(ctrl.name)} (Pass)</span>`;
+    } else {
+      return `<span class="badge warning" style="font-size:10px; padding:2px 6px;">${escapeHtml(ctrl.name)} (Review)</span>`;
+    }
+  });
+
+  return `<div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">${chips.join("")}</div>`;
+}
+
 // =========================================================================
 // REFERENCE PRESET PROFILES (GROUNDED IN ANNEX III & EMPIRICAL CONTROLS)
 // =========================================================================
@@ -462,6 +545,13 @@ function clearAuditUI() {
     }
   });
 
+  Object.entries(PILLAR_KEYS).forEach(([dimName, pid]) => {
+    const controlsEl = document.getElementById(`pillarControls_${pid}`);
+    if (controlsEl) {
+      controlsEl.innerHTML = renderDimensionControlsHTML(dimName, null);
+    }
+  });
+
   // Terminal log
   const term = document.getElementById("terminalLog");
   if (term) {
@@ -836,6 +926,11 @@ function applyAuditDataToUI(data, tierText) {
           tagEl.className = "badge " + (score >= 80 ? "success" : (score >= 60 ? "warning" : "critical"));
         }
 
+        const controlsEl = document.getElementById(`pillarControls_${pid}`);
+        if (controlsEl) {
+          controlsEl.innerHTML = renderDimensionControlsHTML(dimName, data);
+        }
+
         // Summary mini pillar row
         const smini = document.getElementById(`smini_${pid}`);
         const sminiFill = document.getElementById(`sminiFill_${pid}`);
@@ -1122,6 +1217,42 @@ function openDimensionDrawer(dimKey) {
         : '<span class="badge warning">DEFICIT DETECTED</span> Sub-optimal boundary clamping or attestation gap requires engineering remediation before production release.')
     : '<span class="badge info">AWAITING AUDIT</span> Complete the 35-item questionnaire or load a reference profile to evaluate empirical adequacy.';
 
+  const dimControls = DIMENSION_CONTROLS_SPEC[titles[dimKey]] || [];
+  const controlsDetailedHTML = dimControls.map(ctrl => {
+    let statusBadge = `<span class="badge info" style="font-size:10px;">STANDBY</span>`;
+    let detailNote = "Baseline technical specification.";
+
+    if (hasAudit) {
+      const verifiedList = currentAuditData.verified_evidence || [];
+      const isVerified = ctrl.mod && verifiedList.some(v => v.module === ctrl.mod);
+      const f = (currentAuditData.remediation_plan || []).find(p => p.dimension === titles[dimKey] && (p.finding.toLowerCase().includes(ctrl.name.toLowerCase()) || p.finding.toLowerCase().includes(ctrl.key)));
+
+      if (isVerified) {
+        statusBadge = `<span class="badge success" style="font-size:10px;">VERIFIED (TIER T1)</span>`;
+        detailNote = "Empirical cryptographic/statistical proof recorded.";
+      } else if (f) {
+        statusBadge = `<span class="badge ${f.priority === 'CRITICAL' ? 'critical' : 'warning'}" style="font-size:10px;">${escapeHtml(f.priority)} DEFICIT</span>`;
+        detailNote = escapeHtml(f.action || f.finding);
+      } else if (currentScore >= 70) {
+        statusBadge = `<span class="badge success" style="font-size:10px;">CONFORMANT</span>`;
+        detailNote = "Operational engineering control satisfied.";
+      } else {
+        statusBadge = `<span class="badge warning" style="font-size:10px;">SUB-OPTIMAL</span>`;
+        detailNote = "Requires technical verification.";
+      }
+    }
+
+    return `
+      <div style="padding:8px 10px; border-radius:6px; background:var(--bg-surface-elevated); border:1px solid var(--border-card); display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div style="flex:1;">
+          <strong style="font-size:12px; display:block; color:var(--text-primary);">${escapeHtml(ctrl.name)}</strong>
+          <small style="font-size:11px; color:var(--text-secondary); line-height:1.4; display:block;">${detailNote}</small>
+        </div>
+        <div>${statusBadge}</div>
+      </div>
+    `;
+  }).join("");
+
   const html = `
     <div class="drawer-section">
       <div class="drawer-section-title">Current Pillar Score</div>
@@ -1130,6 +1261,12 @@ function openDimensionDrawer(dimKey) {
     <div class="drawer-section">
       <div class="drawer-section-title">Regulatory &amp; Threat Anchors</div>
       <div class="drawer-section-content" style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">${anchors[dimKey]}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Mandatory Engineering Controls</div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        ${controlsDetailedHTML}
+      </div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Evidence &amp; Verification Methodology</div>

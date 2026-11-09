@@ -338,7 +338,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><strong>Security &amp; Robustness</strong></td>
                     <td><span class="badge success">Art. 15(4)</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MEASURE 2.7</small></td>
-                    <td>Adversarial FGSM/AutoAttack stress testing &bull; SBOM dependency tracking &bull; mTLS API ratelimiting</td>
+                    <td id="pillarControls_security">Adversarial FGSM/AutoAttack stress testing &bull; SBOM dependency tracking &bull; mTLS API ratelimiting</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_security">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_security">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('security')" title="Inspect Security & Robustness">Inspect</button></td>
@@ -348,7 +348,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><strong>Safety &amp; Reliability</strong></td>
                     <td><span class="badge success">Art. 9 &bull; Art. 15</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MANAGE 2.2</small></td>
-                    <td>Deterministic output clamping &bull; Input sanitization &bull; Failure-mode simulation bounds</td>
+                    <td id="pillarControls_safety">Deterministic output clamping &bull; Input sanitization &bull; Failure-mode simulation bounds</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_safety">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_safety">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('safety')" title="Inspect Safety & Reliability">Inspect</button></td>
@@ -358,7 +358,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg><strong>Fairness &amp; Non-Discrimination</strong></td>
                     <td><span class="badge success">Art. 10(2)</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MAP 1.6</small></td>
-                    <td>Disparate impact ratio (&ge;0.80) &bull; Demographic parity audit &bull; Pre-processing reweighing</td>
+                    <td id="pillarControls_fairness">Disparate impact ratio (&ge;0.80) &bull; Demographic parity audit &bull; Pre-processing reweighing</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_fairness">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_fairness">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('fairness')" title="Inspect Fairness & Non-Discrimination">Inspect</button></td>
@@ -368,7 +368,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><strong>Transparency &amp; Explainability</strong></td>
                     <td><span class="badge success">Art. 13</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">MAP 1.5</small></td>
-                    <td>TreeSHAP local feature attribution &bull; Calibrated prediction intervals &bull; Machine-readable Model Cards</td>
+                    <td id="pillarControls_transparency">TreeSHAP local feature attribution &bull; Calibrated prediction intervals &bull; Machine-readable Model Cards</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_transparency">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_transparency">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('transparency')" title="Inspect Transparency & Explainability">Inspect</button></td>
@@ -378,7 +378,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L10 10l-1.5-1.5L6 11l-4 4 3 3 4-4 2.5 2.5 2.5-2.5 1.5 1.5 2.5-2.5-1.5-1.5 3.5-3.5 2-2z"/></svg><strong>Privacy &amp; Data Governance</strong></td>
                     <td><span class="badge success">Art. 10(5)</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 1.2</small></td>
-                    <td>AES-256 envelope KMS encryption &bull; TLS 1.3 in-transit strict &bull; Automated PII redaction pipeline</td>
+                    <td id="pillarControls_privacy">AES-256 envelope KMS encryption &bull; TLS 1.3 in-transit strict &bull; Automated PII redaction pipeline</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_privacy">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_privacy">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('privacy')" title="Inspect Privacy & Data Governance">Inspect</button></td>
@@ -388,7 +388,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><strong>Human Oversight &amp; Agency</strong></td>
                     <td><span class="badge success">Art. 14</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 1.4</small></td>
-                    <td>Mandatory human-in-the-loop (HITL) gate &bull; Hardware kill-switch interrupt &bull; Operator override protocol</td>
+                    <td id="pillarControls_oversight">Mandatory human-in-the-loop (HITL) gate &bull; Hardware kill-switch interrupt &bull; Operator override protocol</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_oversight">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_oversight">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('oversight')" title="Inspect Human Oversight & Agency">Inspect</button></td>
@@ -398,7 +398,7 @@
                     <td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:8px; color:var(--primary-400);"><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="5 6 12 3 19 6"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/><line x1="8" y1="14" x2="8" y2="17"/><line x1="12" y1="14" x2="12" y2="17"/><line x1="16" y1="14" x2="16" y2="17"/></svg><strong>Accountability &amp; Governance</strong></td>
                     <td><span class="badge success">Art. 9 &bull; Art. 17</span></td>
                     <td><small style="font-family:var(--font-mono); color:var(--text-muted);">GOVERN 2.1</small></td>
-                    <td>WORM cryptographic append-only telemetry &bull; Formal QA risk management &bull; Post-market monitoring</td>
+                    <td id="pillarControls_accountability">WORM cryptographic append-only telemetry &bull; Formal QA risk management &bull; Post-market monitoring</td>
                     <td style="text-align:right; font-family:var(--font-mono); font-weight:700;" id="pillarScore_accountability">—</td>
                     <td style="text-align:center;"><span class="badge info" id="pillarTag_accountability">STANDBY</span></td>
                     <td style="text-align:center;"><button class="btn-secondary sm" onclick="openDimensionDrawer('accountability')" title="Inspect Accountability & Governance">Inspect</button></td>

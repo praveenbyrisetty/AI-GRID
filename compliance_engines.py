@@ -283,6 +283,16 @@ def evaluate_eu_ai_act_compliance(domain: str,
         valid = [s for s in scores if s is not None]
         return round(sum(valid) / len(valid), 1) if valid else None
 
+    ans = answers or {}
+
+    def ctrl_status(val: Optional[str], good_vals: List[str], base_label: str) -> str:
+        if not ans or val is None:
+            return base_label
+        val_str = str(val).lower().strip()
+        if any(g.lower() in val_str for g in good_vals):
+            return f"{base_label} [Implemented]"
+        return f"{base_label} [Deficit]"
+
     articles = [
         {
             "article": "Article 9",
@@ -290,7 +300,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Continuous iterative risk management identifying known and foreseeable risks across lifecycle.",
             "status": determine_status(safe_avg(safe_score, sec_score), "Safety & Reliability", 68.0),
             "score": safe_avg(safe_score, sec_score),
-            "mandatory_controls": ["Continuous drift monitoring", "Risk mitigation plan", "Known failure mode catalog"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q2_drift_monitoring"), ["automated"], "Continuous concept & data drift monitoring"),
+                ctrl_status(ans.get("q27_guardrail_count"), ["3", "multi"], "Deterministic input/output guardrails"),
+                ctrl_status(ans.get("q30_failure_mode_testing"), ["comprehensive", "formal"], "Known failure-mode simulation testing")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -299,7 +313,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Training, validation, and testing datasets must be relevant, representative, and examined for biases.",
             "status": determine_status(safe_avg(fair_score, priv_score), "Fairness & Non-Discrimination", 68.0),
             "score": safe_avg(fair_score, priv_score),
-            "mandatory_controls": ["Data origin documentation", "Statistical bias analysis", "Data encryption declarations"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q10_fairness_audit"), ["formal", "audit"], "Demographic fairness & disparate impact audit"),
+                ctrl_status(ans.get("q6_demographic_coverage"), ["comprehensive", "80"], "Cohort demographic coverage analysis"),
+                ctrl_status(ans.get("q19_pii_handling"), ["automated", "redaction"], "PII data governance & automated redaction")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -308,7 +326,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Detailed technical documentation drawn up before placement on market (system architecture, parameters, validation).",
             "status": determine_status(safe_avg(trans_score, acct_score), "Transparency & Explainability", 65.0),
             "score": safe_avg(trans_score, acct_score),
-            "mandatory_controls": ["Comprehensive Model Card", "Validation test benchmarks", "Dependency inventory"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q14_model_card_doc"), ["published", "comprehensive"], "Standardized machine-readable Model Card"),
+                ctrl_status(ans.get("q25b_technical_dossier"), ["full", "annex"], "Annex IV technical architecture dossier"),
+                ctrl_status(ans.get("q3_sbom_tracking"), ["formal", "cyclonedx", "spdx"], "Software supply chain AI-BOM dependency inventory")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -317,7 +339,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Automatic logging of events during operation ensuring traceability and post-market monitoring.",
             "status": determine_status(acct_score, "Accountability & Governance", 65.0),
             "score": round(acct_score, 1) if acct_score is not None else None,
-            "mandatory_controls": ["Decision audit trail", "Tamper-evident logs", "Audit log retention >= 6 months"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q25_decision_logging"), ["cryptographic", "worm"], "Cryptographic WORM decision audit trail"),
+                ctrl_status(ans.get("q18_data_retention"), ["strict", "90"], "Audit log lifecycle retention policy"),
+                ctrl_status(ans.get("q25c_post_market_monitoring"), ["active", "automated"], "Post-market operational telemetry logging")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -326,7 +352,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Operation sufficiently transparent to enable deployers to interpret outputs and use appropriately.",
             "status": determine_status(trans_score, "Transparency & Explainability", 72.0),
             "score": round(trans_score, 1) if trans_score is not None else None,
-            "mandatory_controls": ["Feature attributions", "Intended purpose documentation", "Deployer user manual"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q11_xai_engine"), ["full", "shap"], "Local TreeSHAP feature attributions"),
+                ctrl_status(ans.get("q15_uncertainty_scores"), ["calibrated", "intervals"], "Calibrated prediction uncertainty intervals"),
+                ctrl_status(ans.get("q13_reasoning_summaries"), ["yes", "automated"], "Plain-language decision rationale summaries")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -335,7 +365,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Designed to be effectively overseen by natural persons; ability to override, interrupt, or stop system.",
             "status": determine_status(over_score, "Human Oversight & Agency", 70.0),
             "score": round(over_score, 1) if over_score is not None else None,
-            "mandatory_controls": ["Human oversight gates", "Emergency stop mechanism", "Escalation protocol"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q21_human_oversight"), ["mandatory", "hitl"], "Mandatory human-in-the-loop (HITL) review gate"),
+                ctrl_status(ans.get("q24_kill_switch"), ["instant", "hardware", "software"], "Hardware/software kill-switch interrupt"),
+                ctrl_status(ans.get("q24c_override_capability"), ["realtime", "override", "console"], "Real-time operator override capability")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         },
         {
@@ -344,7 +378,11 @@ def evaluate_eu_ai_act_compliance(domain: str,
             "requirement": "Resilient against errors, adversarial attacks, data poisoning, and unauthorized system manipulation.",
             "status": determine_status(safe_avg(sec_score, safe_score), "Security & Robustness", 72.0),
             "score": safe_avg(sec_score, safe_score),
-            "mandatory_controls": ["Adversarial robustness testing", "Input validation & corrupted data rejection", "Output clamping"],
+            "mandatory_controls": [
+                ctrl_status(ans.get("q1_adversarial_tested"), ["comprehensive"], "Adversarial FGSM/AutoAttack robustness testing"),
+                ctrl_status(ans.get("q28_output_clamping"), ["hard", "strict"], "Deterministic programmatic output clamping"),
+                ctrl_status(ans.get("q17_encryption_transit"), ["1.3", "strict"], "Strict TLS 1.3 in-transit encrypted transport")
+            ],
             "assessment_type": "Technical Pre-Audit Indicator"
         }
     ]
