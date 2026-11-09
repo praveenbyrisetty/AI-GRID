@@ -256,6 +256,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   z-index: 100;
+  overflow-x: hidden;
   transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.3s ease;
 }
 
@@ -272,6 +273,7 @@ body {
 .sidebar-top {
   padding: 16px 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
 }
 
@@ -313,12 +315,18 @@ body {
 .sidebar.collapsed .nav-section-label,
 .sidebar.collapsed .nav-text,
 .sidebar.collapsed .auditor-meta,
-.sidebar.collapsed .governance-status-text,
+.sidebar.collapsed .governance-status-text {
+  display: none !important;
+}
 
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 8px 0 18px 0;
+}
 
 .sidebar.collapsed .nav-item {
   justify-content: center;
-  padding: 10px;
+  padding: 10px 0;
 }
 
 .sidebar.collapsed .nav-icon-wrap {
@@ -432,14 +440,33 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-x: hidden;
 }
 
 [data-theme="dark"] .sidebar-bottom {
   background: transparent;
 }
 
-.governance-status-pill,
+.governance-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  padding: 4px 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
 
+.sidebar.collapsed .sidebar-bottom {
+  padding: 12px 8px;
+}
+
+.sidebar.collapsed .governance-status-pill {
+  justify-content: center;
+  padding: 6px 0;
+}
 
 .status-beacon-dot {
   width: 7px;
