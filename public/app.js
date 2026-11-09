@@ -1646,6 +1646,8 @@ function renderOverviewRemediationList() {
     dimension: p.dimension || 'Governance Control',
     finding: p.finding || 'Unspecified compliance finding',
     action: p.action || 'Remediate control according to AI governance requirements',
+    verification_criteria: p.verification_criteria || '',
+    nist_ref: p.nist_ref || '',
     eu_ai_act_ref: p.eu_ai_act_ref || 'Art. 9',
     isDeficit: true
   }));
@@ -1810,7 +1812,14 @@ function openFindingDrawer(idx) {
     <div class="drawer-section">
       <div class="drawer-section-title">Verification Criteria</div>
       <div class="drawer-section-content">
-        Validate technical control attestation and verify deterministic boundary guardrails. Verify that extreme inputs are constrained without unhandled runtime exceptions.
+        ${escapeHtml(item.verification_criteria || 'Validate that the engineering control satisfies the referenced regulatory and standards requirements. Confirm with auditable evidence.')}
+      </div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Evidence Tier</div>
+      <div class="drawer-section-content" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <span class="badge info" style="font-size:10px;">${escapeHtml(item.evidence_tier || 'T3')} Evidence</span>
+        ${item.nist_ref ? `<span class="badge info" style="font-size:10px;">NIST ${escapeHtml(item.nist_ref)}</span>` : ''}
       </div>
     </div>
   `;
@@ -2229,15 +2238,39 @@ function resetVerifierBoxToStandby(moduleName, box) {
   `;
 }
 
+function getVerifierResultBox(moduleName) {
+  if (!moduleName) return null;
+  const modLower = String(moduleName).toLowerCase();
+  const modUnder = modLower.replace(/-/g, "_");
+  const modCamel = modUnder.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  return document.getElementById(`${modUnder}ResultBox`) ||
+         document.getElementById(`${modCamel}ResultBox`) ||
+         document.getElementById(`${moduleName}ResultBox`) ||
+         document.getElementById("log_integrityResultBox") ||
+         document.getElementById("logIntegrityResultBox");
+}
+
+function getVerifierFileInput(moduleName) {
+  if (!moduleName) return null;
+  const modLower = String(moduleName).toLowerCase();
+  const modUnder = modLower.replace(/-/g, "_");
+  const modCamel = modUnder.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  return document.getElementById(`${modUnder}FileInput`) ||
+         document.getElementById(`${modCamel}FileInput`) ||
+         document.getElementById(`${moduleName}FileInput`) ||
+         document.getElementById("log_integrityFileInput") ||
+         document.getElementById("logIntegrityFileInput");
+}
+
 function clearVerifiedEvidence() {
   verifiedEvidenceStore = [];
   updateVerifiedEvidenceBadgeCount();
   ["fairness", "dependencies", "tls", "log_integrity", "robustness"].forEach(mod => {
     const badge = document.getElementById(`badge-${mod}-status`);
     if (badge) badge.style.display = "none";
-    const box = document.getElementById(`${mod}ResultBox`);
+    const box = getVerifierResultBox(mod);
     if (box) resetVerifierBoxToStandby(mod, box);
-    const fileInput = document.getElementById(`${mod === 'log_integrity' ? 'logIntegrity' : mod}FileInput`);
+    const fileInput = getVerifierFileInput(mod);
     if (fileInput) fileInput.value = "";
     const cardEl = document.getElementById(`card-verify-${mod}`);
     if (cardEl) cardEl.className = "card verifier-card-wide";
@@ -2465,6 +2498,9 @@ function formatVerifierResultHTML(v) {
 }
 
 function handleVerifierResponse(moduleName, json, box, badge) {
+  if (!box) box = getVerifierResultBox(moduleName);
+  if (!badge) badge = document.getElementById(`badge-${moduleName}-status`);
+
   if (json.success && json.data) {
     const v = json.data;
     verifiedEvidenceStore = verifiedEvidenceStore.filter(e => e.module !== moduleName);
@@ -2512,6 +2548,7 @@ function handleVerifierResponse(moduleName, json, box, badge) {
 
 function handleVerifierError(moduleName, err, box) {
   console.error(`Verification error [${moduleName}]:`, err);
+  if (!box) box = getVerifierResultBox(moduleName);
   if (box) {
     box.style.display = "block";
     const isNetworkErr = err.message && (err.message.includes("fetch") || err.message.includes("Network"));
@@ -2525,7 +2562,7 @@ function handleVerifierError(moduleName, err, box) {
 }
 
 async function loadSampleAndVerify(moduleName) {
-  const box = document.getElementById(`${moduleName}ResultBox`);
+  const box = getVerifierResultBox(moduleName);
   const badge = document.getElementById(`badge-${moduleName}-status`);
   if (box) {
     box.style.display = "block";
@@ -2583,7 +2620,7 @@ async function verifyAllSamples() {
 }
 
 async function executeVerifier(moduleName) {
-  const box = document.getElementById(`${moduleName}ResultBox`);
+  const box = getVerifierResultBox(moduleName);
   const badge = document.getElementById(`badge-${moduleName}-status`);
 
   try {
@@ -2603,13 +2640,7 @@ async function executeVerifier(moduleName) {
         body: JSON.stringify({ host, port })
       });
     } else {
-      let fileInputId = "";
-      if (moduleName === "fairness") fileInputId = "fairnessFileInput";
-      else if (moduleName === "dependencies") fileInputId = "dependenciesFileInput";
-      else if (moduleName === "log_integrity") fileInputId = "logIntegrityFileInput";
-      else if (moduleName === "robustness") fileInputId = "robustnessFileInput";
-
-      const fileInput = document.getElementById(fileInputId);
+      const fileInput = getVerifierFileInput(moduleName);
       if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
         alert("Please select a file to upload or click 'Run Sample Verification' to use reference test data.");
         if (box) box.style.display = "none";

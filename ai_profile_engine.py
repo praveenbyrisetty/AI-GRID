@@ -857,7 +857,7 @@ def calculate_dimension_scores(
     findings: List[Dict[str, Any]] = []
     logs: List[Dict[str, str]] = []
 
-    def finding(dim: str, sev: str, issue: str, action: str, eu_ref: str = "", nist_ref: str = "", tier: str = "T3", weight: float = 0.6):
+    def finding(dim: str, sev: str, issue: str, action: str, eu_ref: str = "", nist_ref: str = "", tier: str = "T3", weight: float = 0.6, verification_criteria: str = ""):
         badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
         findings.append({
             "priority": sev,
@@ -868,7 +868,8 @@ def calculate_dimension_scores(
             "eu_ai_act_ref": eu_ref,
             "nist_ref": nist_ref,
             "evidence_tier": tier,
-            "evidence_weight": weight
+            "evidence_weight": weight,
+            "verification_criteria": verification_criteria
         })
 
     # Buckets for weighted scoring:
@@ -916,27 +917,39 @@ def calculate_dimension_scores(
         dim_verified_items[dim].append((eff_score, eff_weight))
 
         # Record deficiency finding based on effective score
+        # Build the best-practice option label for verification criteria
+        best_opts = [o for o in q_def.get("options", []) if float(o.get("score", 0)) >= 1.0]
+        best_label = best_opts[0]["label"] if best_opts else "comprehensive implementation"
+        q_label_short = q_def["label"].split(": ", 1)[-1] if ": " in q_def["label"] else q_def["label"]
+
         if eff_score == 0.0:
             finding(
                 dim=dim,
                 sev="CRITICAL" if dim in ("Security & Robustness", "Safety & Reliability") else "HIGH",
                 issue=f"{q_def['label']} — Control absent: {matched_opt.get('label', '')}",
-                action=f"Remediate control mapped to {q_def.get('eu_ai_act_ref', 'compliance')} and {q_def.get('nist_rmf_ref', '')}.",
+                action=f"Deploy mandatory engineering control for {q_label_short} to satisfy {q_def.get('eu_ai_act_ref', 'regulatory requirement')} ({q_def.get('nist_rmf_ref', 'baseline')})."
+                       f" Target standard: {best_label}.",
                 eu_ref=q_def.get("eu_ai_act_ref", ""),
                 nist_ref=q_def.get("nist_rmf_ref", ""),
                 tier=eff_tier,
-                weight=eff_weight
+                weight=eff_weight,
+                verification_criteria=f"Confirm that control '{q_label_short}' is fully operational and produces auditable evidence."
+                                      f" Benchmark requirement: {best_label}."
+                                      f" Citation: {q_def.get('research_source', 'EU AI Act & NIST AI RMF')}."
             )
         elif eff_score <= 0.6:
             finding(
                 dim=dim,
                 sev="MEDIUM",
                 issue=f"{q_def['label']} — Partial implementation: {matched_opt.get('label', '')}",
-                action=f"Upgrade control to comprehensive status per {q_def.get('research_source', '')}.",
+                action=f"Upgrade {q_label_short} from current partial baseline to full compliance: {best_label}."
+                       f" Governed by {q_def.get('eu_ai_act_ref', 'EU AI Act')} and NIST {q_def.get('nist_rmf_ref', 'AI RMF')}.",
                 eu_ref=q_def.get("eu_ai_act_ref", ""),
                 nist_ref=q_def.get("nist_rmf_ref", ""),
                 tier=eff_tier,
-                weight=eff_weight
+                weight=eff_weight,
+                verification_criteria=f"Verify transition of '{q_label_short}' from '{matched_opt.get('label', 'partial')}' to '{best_label}'."
+                                      f" Technical compliance check against {q_def.get('research_source', 'applicable standards')}."
             )
 
     # Compute verified dimension scores and claimed dimension scores
