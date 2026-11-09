@@ -2085,6 +2085,67 @@ body {
 }
 
 /* ==========================================================================
+   EMPIRICAL EVIDENCE VERIFICATION DOSSIER & PROGRESS TRACK
+   ========================================================================== */
+.evidence-progress-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.evidence-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.evidence-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.evidence-pill.verified {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+.evidence-pill.verified .evidence-pill-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.verifier-card-wide {
+  transition: border-left 0.25s ease, box-shadow 0.25s ease;
+}
+
+.verifier-card-wide.card-verified {
+  border-left: 4px solid var(--success) !important;
+}
+
+.verifier-card-wide.card-partial {
+  border-left: 4px solid var(--warning) !important;
+}
+
+.verifier-card-wide.card-failed {
+  border-left: 4px solid var(--danger) !important;
+}
+
+/* ==========================================================================
    RESPONSIVE BREAKPOINTS
    ========================================================================== */
 @media (max-width: 1024px) {

@@ -312,12 +312,14 @@ def allowed_file(filename: str) -> bool:
 
 @app.route("/api/verify/<module>", methods=["POST"])
 def verify_module(module: str):
+    module_clean = module.lower().replace("-", "_").strip()
     valid_modules = {"fairness", "dependencies", "tls", "log_integrity", "robustness"}
-    if module not in valid_modules:
+    if module_clean not in valid_modules:
         return jsonify({
             "success": False,
             "error": f"Invalid verifier module '{module}'. Supported modules: {', '.join(sorted(valid_modules))}."
         }), 400
+    module = module_clean
 
     client_ip = request.remote_addr or "unknown"
     claimed_value = None

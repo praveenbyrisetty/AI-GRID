@@ -2150,6 +2150,28 @@ function updateVerifiedEvidenceBadgeCount() {
       dossierBadge.textContent = "READY";
     }
   }
+
+  // Update progress pills track
+  const verifiedModulesSet = new Set(verifiedEvidenceStore.map(e => e.module));
+  const modulesList = [
+    { key: "fairness", label: "1. Fairness (DIR/SPD)" },
+    { key: "dependencies", label: "2. AI-BOM & CVEs" },
+    { key: "tls", label: "3. TLS 1.3 In-Transit" },
+    { key: "log_integrity", label: "4. Audit Log Integrity" },
+    { key: "robustness", label: "5. Robustness Drop" }
+  ];
+  modulesList.forEach(m => {
+    const pill = document.getElementById(`pill-verify-${m.key}`);
+    if (pill) {
+      if (verifiedModulesSet.has(m.key)) {
+        pill.className = "evidence-pill verified";
+        pill.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg> ${m.label}`;
+      } else {
+        pill.className = "evidence-pill";
+        pill.innerHTML = `<span class="evidence-pill-dot"></span> ${m.label}`;
+      }
+    }
+  });
 }
 
 function makeGrcBadge(level, text) {
@@ -2217,6 +2239,8 @@ function clearVerifiedEvidence() {
     if (box) resetVerifierBoxToStandby(mod, box);
     const fileInput = document.getElementById(`${mod === 'log_integrity' ? 'logIntegrity' : mod}FileInput`);
     if (fileInput) fileInput.value = "";
+    const cardEl = document.getElementById(`card-verify-${mod}`);
+    if (cardEl) cardEl.className = "card verifier-card-wide";
   });
   showToast("All verified evidence items cleared.");
 }
@@ -2311,11 +2335,12 @@ function computeGrcVerdict(v) {
   }
 
   if (mod === "log_integrity") {
-    const isGenesis = !!m.genesis_valid;
-    const isTamper = !!m.chain_tamper_resistant;
-    const count = m.total_entries || 0;
+    const isPass = v.claim_supported && score >= 1.0;
+    const isGenesis = m.genesis_valid !== undefined ? !!m.genesis_valid : isPass;
+    const isTamper = m.chain_tamper_resistant !== undefined ? !!m.chain_tamper_resistant : isPass;
+    const count = m.total_entries || m.verified_records || 0;
 
-    if (score >= 1.0 && isGenesis && isTamper) {
+    if (isPass && isGenesis && isTamper) {
       return {
         level: "good",
         badge: makeGrcBadge("good", "GRC CONFORMANT (GOOD)"),
@@ -2327,7 +2352,7 @@ function computeGrcVerdict(v) {
         level: "risk",
         badge: makeGrcBadge("risk", "GRC AUDIT FAILURE (CHAIN TAMPERED)"),
         framework: "EU AI Act Art. 12 • ISO/IEC 42001 §A.8",
-        message: `Broken cryptographic hash chain or invalid genesis anchor detected. Telemetry fails tamper-resistance test and cannot be legally relied upon.`
+        message: escapeHtml(v.details || "Broken cryptographic hash chain or invalid genesis anchor detected. Telemetry fails tamper-resistance test and cannot be legally relied upon.")
       };
     }
   }
@@ -2398,9 +2423,13 @@ function formatVerifierResultHTML(v) {
       if (v.metrics.cipher_suite !== undefined) chips.push(`Cipher: <strong>${escapeHtml(v.metrics.cipher_suite)}</strong>`);
       if (v.metrics.days_until_expiry !== undefined) chips.push(`Days Valid: <strong>${v.metrics.days_until_expiry}</strong>`);
     } else if (v.module === "log_integrity") {
-      if (v.metrics.total_entries !== undefined) chips.push(`Entries: <strong>${v.metrics.total_entries}</strong>`);
-      if (v.metrics.genesis_valid !== undefined) chips.push(`Genesis: <strong>${v.metrics.genesis_valid ? 'Valid' : 'Invalid'}</strong>`);
-      if (v.metrics.chain_tamper_resistant !== undefined) chips.push(`Tamper Proof: <strong>${v.metrics.chain_tamper_resistant ? 'Yes' : 'No'}</strong>`);
+      const recs = v.metrics.total_entries || v.metrics.verified_records || 0;
+      chips.push(`Entries: <strong>${recs}</strong>`);
+      chips.push(`Genesis: <strong>${(v.metrics.genesis_valid ?? (v.claim_supported && score >= 1.0)) ? 'Valid' : 'Invalid'}</strong>`);
+      chips.push(`Tamper Proof: <strong>${(v.metrics.chain_tamper_resistant ?? (v.claim_supported && score >= 1.0)) ? 'Yes' : 'No'}</strong>`);
+      if (v.metrics.chain_head_hash) {
+        chips.push(`Head Hash: <strong>${escapeHtml(v.metrics.chain_head_hash.substring(0, 8))}...</strong>`);
+      }
     } else if (v.module === "robustness") {
       if (v.metrics.accuracy_clean !== undefined) chips.push(`Clean Acc: <strong>${(v.metrics.accuracy_clean * 100).toFixed(1)}%</strong>`);
       if (v.metrics.accuracy_perturbed !== undefined) chips.push(`Perturbed Acc: <strong>${(v.metrics.accuracy_perturbed * 100).toFixed(1)}%</strong>`);
@@ -2460,6 +2489,18 @@ function handleVerifierResponse(moduleName, json, box, badge) {
       box.style.display = "block";
       box.innerHTML = formatVerifierResultHTML(v);
     }
+
+    const cardEl = document.getElementById(`card-verify-${moduleName}`);
+    if (cardEl) {
+      if (v.verified_score >= 1.0) {
+        cardEl.className = "card verifier-card-wide card-verified";
+      } else if (v.verified_score >= 0.5) {
+        cardEl.className = "card verifier-card-wide card-partial";
+      } else {
+        cardEl.className = "card verifier-card-wide card-failed";
+      }
+    }
+
     showToast(`${moduleName} evidence verified successfully!`);
   } else {
     if (box) {

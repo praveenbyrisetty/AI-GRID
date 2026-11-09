@@ -41,6 +41,12 @@ def verify_fairness(
     item_id = "q10_fairness_audit"
     dimension = "Fairness & Non-Discrimination"
 
+    if isinstance(csv_content, bytes):
+        try:
+            csv_content = csv_content.decode("utf-8")
+        except UnicodeDecodeError:
+            csv_content = csv_content.decode("latin-1", errors="replace")
+
     if not csv_content or not csv_content.strip():
         return {
             "module": "fairness",
@@ -226,6 +232,12 @@ def verify_dependencies(
     """
     item_id = "q3_sbom_tracking"
     dimension = "Security & Robustness"
+
+    if isinstance(content, bytes):
+        try:
+            content = content.decode("utf-8")
+        except UnicodeDecodeError:
+            content = content.decode("latin-1", errors="replace")
 
     # Compute claimed_score to preserve on offline/network failure
     if isinstance(claimed_value, (int, float)):
@@ -663,6 +675,12 @@ def verify_log_integrity(
     item_id = "q25_decision_logging"
     dimension = "Accountability & Governance"
 
+    if isinstance(log_content, bytes):
+        try:
+            log_content = log_content.decode("utf-8")
+        except UnicodeDecodeError:
+            log_content = log_content.decode("latin-1", errors="replace")
+
     if not log_content or not log_content.strip():
         return {
             "module": "log_integrity",
@@ -792,6 +810,9 @@ def verify_log_integrity(
         "claim_supported": True,
         "metrics": {
             "verified_records": verified_records,
+            "total_entries": verified_records,
+            "genesis_valid": True,
+            "chain_tamper_resistant": True,
             "chain_head_hash": prev_expected_hash
         },
         "details": f"Verified unbroken SHA-256 cryptographic chain across {verified_records} log entries."
@@ -813,6 +834,12 @@ def verify_robustness(
     """
     item_id = "q1_adversarial_tested"
     dimension = "Security & Robustness"
+
+    if isinstance(csv_content, bytes):
+        try:
+            csv_content = csv_content.decode("utf-8")
+        except UnicodeDecodeError:
+            csv_content = csv_content.decode("latin-1", errors="replace")
 
     if not csv_content or not csv_content.strip():
         return {

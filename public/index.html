@@ -532,6 +532,14 @@
                 <p style="margin:0; font-size:13px; color:var(--text-secondary); max-width:680px; line-height:1.5;">
                   Active verified modules: <strong id="verifiedModulesCount" style="color:var(--primary-500);">0 of 5 verified</strong>. Verified items are awarded Tier T1 weight (1.0) and override questionnaire responses with empirical cryptographic &amp; statistical proof.
                 </p>
+                <!-- Interactive Evidence Progress Track Strip -->
+                <div class="evidence-progress-strip" id="evidenceProgressPills">
+                  <span class="evidence-pill" id="pill-verify-fairness"><span class="evidence-pill-dot"></span> 1. Fairness (DIR/SPD)</span>
+                  <span class="evidence-pill" id="pill-verify-dependencies"><span class="evidence-pill-dot"></span> 2. AI-BOM &amp; CVEs</span>
+                  <span class="evidence-pill" id="pill-verify-tls"><span class="evidence-pill-dot"></span> 3. TLS 1.3 In-Transit</span>
+                  <span class="evidence-pill" id="pill-verify-log_integrity"><span class="evidence-pill-dot"></span> 4. Audit Log Integrity</span>
+                  <span class="evidence-pill" id="pill-verify-robustness"><span class="evidence-pill-dot"></span> 5. Robustness Drop</span>
+                </div>
               </div>
               <div style="display:flex; gap:10px;">
                 <button class="btn-secondary sm" onclick="clearVerifiedEvidence()">Reset All Evidence</button>
@@ -563,12 +571,15 @@
                       <input type="text" id="fairnessPrivilegedVal" value="male" class="form-control" style="width:100%; padding:6px 10px; font-size:12px;">
                     </div>
                     <div>
-                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Predictions CSV File:</label>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); margin:0;">Predictions CSV File:</label>
+                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--primary-400);">Sample pre-loaded</span>
+                      </div>
                       <input type="file" id="fairnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
                       <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('fairness')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
-                      <button type="button" class="btn-primary sm" onclick="executeVerifier('fairness')" style="flex:1;">Upload &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('fairness')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
@@ -601,12 +612,15 @@
                   </p>
                   <div style="display:flex; flex-direction:column; gap:10px;">
                     <div>
-                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">SBOM / Requirements File:</label>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); margin:0;">SBOM / Requirements File:</label>
+                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--primary-400);">Sample pre-loaded</span>
+                      </div>
                       <input type="file" id="dependenciesFileInput" accept=".txt,.json" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
                       <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('dependencies')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
-                      <button type="button" class="btn-primary sm" onclick="executeVerifier('dependencies')" style="flex:1;">Upload &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('dependencies')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
@@ -648,7 +662,7 @@
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
                       <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('tls')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Probe GitHub Endpoint</button>
-                      <button type="button" class="btn-primary sm" onclick="executeVerifier('tls')" style="flex:1;">Probe Custom Host</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('tls')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Probe Custom Host</button>
                     </div>
                   </div>
                 </div>
@@ -681,12 +695,15 @@
                   </p>
                   <div style="display:flex; flex-direction:column; gap:10px;">
                     <div>
-                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">JSONL Hash-Chain Log File:</label>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); margin:0;">JSONL Hash-Chain Log File:</label>
+                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--primary-400);">Sample pre-loaded</span>
+                      </div>
                       <input type="file" id="logIntegrityFileInput" accept=".jsonl,.json,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
                       <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('log_integrity')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
-                      <button type="button" class="btn-primary sm" onclick="executeVerifier('log_integrity')" style="flex:1;">Upload &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('log_integrity')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
@@ -719,12 +736,15 @@
                   </p>
                   <div style="display:flex; flex-direction:column; gap:10px;">
                     <div>
-                      <label style="font-size:12px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:4px;">Robustness Evaluation CSV:</label>
+                      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <label style="font-size:12px; font-weight:600; color:var(--text-secondary); margin:0;">Robustness Evaluation CSV:</label>
+                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--primary-400);">Sample pre-loaded</span>
+                      </div>
                       <input type="file" id="robustnessFileInput" accept=".csv,.txt" class="form-control" style="width:100%; padding:6px; font-size:12px;">
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;">
                       <button type="button" class="btn-secondary sm" onclick="loadSampleAndVerify('robustness')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>Run Sample Verification</button>
-                      <button type="button" class="btn-primary sm" onclick="executeVerifier('robustness')" style="flex:1;">Upload &amp; Verify</button>
+                      <button type="button" class="btn-primary sm" onclick="executeVerifier('robustness')" style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload &amp; Verify</button>
                     </div>
                   </div>
                 </div>
