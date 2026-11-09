@@ -345,9 +345,6 @@ function clearAuditUI() {
   if (statusTag) statusTag.className = "status-tag";
   if (statusText) statusText.textContent = "Standby";
 
-  const targetEl = document.getElementById("sidebarContextTarget");
-  if (targetEl) targetEl.textContent = "Target: Standby";
-
   // KPIs
   const kpiAas = document.getElementById("kpiAasScore");
   if (kpiAas) kpiAas.textContent = "—";
@@ -718,9 +715,6 @@ function applyAuditDataToUI(data, tierText) {
   const statusText = document.getElementById("assessmentStatusText");
   if (statusTag) statusTag.className = "status-tag completed";
   if (statusText) statusText.textContent = "Attestations Evaluated";
-
-  const targetEl = document.getElementById("sidebarContextTarget");
-  if (targetEl) targetEl.textContent = "Target: " + (data.model_metadata?.model_name || data.model_metadata?.name || data.model_card?.model_name || "Active System");
 
   // 2. Scoring & KPIs
   const sc = data.scoring || {};
