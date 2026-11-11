@@ -857,6 +857,54 @@ def calculate_dimension_scores(
     findings: List[Dict[str, Any]] = []
     logs: List[Dict[str, str]] = []
 
+    # GRC-focused action templates per dimension
+    GRC_ACTION_TEMPLATES: Dict[str, Dict[str, str]] = {
+        "Security & Robustness": {
+            "critical": "Establish a formal Cybersecurity & Adversarial Risk Assessment Policy mandating independent third-party security evaluation. Document threat mitigation procedures in the enterprise risk register per {eu_ref} and NIST {nist_ref}.",
+            "medium": "Strengthen organizational security governance posture for {q_short} by commissioning accredited adversarial risk evaluation and formalizing vulnerability disclosure procedures per {eu_ref} and NIST {nist_ref}.",
+            "verification": "Confirm the organization maintains a signed security audit report from an accredited assessor, with findings tracked in the risk register per ISO/IEC 42001 and {source}."
+        },
+        "Safety & Reliability": {
+            "critical": "Draft and enforce a continuous Risk Management System (RMS) protocol addressing {q_short}, documenting acceptable risk thresholds and residual hazard mitigations per {eu_ref} and NIST {nist_ref}.",
+            "medium": "Upgrade the existing risk management documentation for {q_short} to meet full lifecycle compliance standards per {eu_ref} and NIST {nist_ref}. Ensure residual risks are formally documented and accepted by executive leadership.",
+            "verification": "Verify that a signed Risk Management File exists with documented residual risk acceptance, traceable to {eu_ref} and {source}."
+        },
+        "Fairness & Non-Discrimination": {
+            "critical": "Commission an independent algorithmic bias impact assessment for {q_short} and adopt an Anti-Discrimination & Data Quality Governance Charter adhering to {eu_ref} and NIST {nist_ref} benchmark standards.",
+            "medium": "Strengthen demographic representation governance for {q_short} by formalizing bias monitoring procedures and periodic fairness audit schedules per {eu_ref} and NIST {nist_ref}.",
+            "verification": "Confirm a signed fairness audit report exists with documented demographic parity metrics, traceable to {eu_ref} and {source}."
+        },
+        "Transparency & Explainability": {
+            "critical": "Publish a standardized Annex IV Technical Documentation dossier and deployer-facing transparency brief addressing {q_short} per {eu_ref} and NIST {nist_ref}.",
+            "medium": "Enhance transparency documentation for {q_short} by formalizing model decision explanation procedures and stakeholder communication protocols per {eu_ref} and NIST {nist_ref}.",
+            "verification": "Verify that published technical documentation and model transparency summaries are accessible to deployers and regulators per {eu_ref} and {source}."
+        },
+        "Privacy & Data Governance": {
+            "critical": "Adopt a formal Data Protection & PII Minimization Policy addressing {q_short}, compliant with {eu_ref} and GDPR Art. 5(1)(e). Commission a Data Protection Impact Assessment (DPIA) with defined data lifecycle governance and retention schedules per NIST {nist_ref}.",
+            "medium": "Strengthen data governance controls for {q_short} by formalizing retention schedules and automated PII handling procedures per {eu_ref} and NIST {nist_ref}.",
+            "verification": "Confirm a signed DPIA and formal Data Retention Policy exist with defined lifecycle limits, traceable to {eu_ref} and {source}."
+        },
+        "Human Oversight & Agency": {
+            "critical": "Institute a Human-in-the-Loop (HITL) Standard Operating Procedure (SOP) addressing {q_short}, granting trained overseers explicit legal and operational authority to halt or override automated decisions per {eu_ref} and NIST {nist_ref}.",
+            "medium": "Formalize human oversight governance for {q_short} by documenting operator intervention rights, training certification requirements, and emergency escalation procedures per {eu_ref} and NIST {nist_ref}.",
+            "verification": "Verify that a signed HITL SOP exists with documented operator training records and override authority delegation, traceable to {eu_ref} and {source}."
+        },
+        "Accountability & Governance": {
+            "critical": "Adopt a Quality Management System (QMS) addressing {q_short} under ISO/IEC 42001, enforcing immutable audit trail retention (minimum 6 months) and establishing executive AI Compliance Officer accountability per {eu_ref} and NIST {nist_ref}.",
+            "medium": "Strengthen accountability governance for {q_short} by formalizing audit log retention policies and incident reporting chains per {eu_ref} and NIST {nist_ref}.",
+            "verification": "Confirm a signed QMS policy and formal incident escalation chain exist with defined retention periods and accountability roles, traceable to {eu_ref} and {source}."
+        }
+    }
+
+    def _grc_action(dim: str, severity: str, q_short: str, eu_ref: str, nist_ref: str, source: str) -> str:
+        templates = GRC_ACTION_TEMPLATES.get(dim, GRC_ACTION_TEMPLATES["Accountability & Governance"])
+        key = "critical" if severity in ("CRITICAL", "HIGH") else "medium"
+        return templates[key].format(q_short=q_short, eu_ref=eu_ref or "EU AI Act", nist_ref=nist_ref or "AI RMF", source=source or "applicable standards")
+
+    def _grc_verification(dim: str, q_short: str, eu_ref: str, source: str) -> str:
+        templates = GRC_ACTION_TEMPLATES.get(dim, GRC_ACTION_TEMPLATES["Accountability & Governance"])
+        return templates["verification"].format(q_short=q_short, eu_ref=eu_ref or "EU AI Act", source=source or "applicable standards")
+
     def finding(dim: str, sev: str, issue: str, action: str, eu_ref: str = "", nist_ref: str = "", tier: str = "T3", weight: float = 0.6, verification_criteria: str = ""):
         badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
         findings.append({
@@ -917,39 +965,42 @@ def calculate_dimension_scores(
         dim_verified_items[dim].append((eff_score, eff_weight))
 
         # Record deficiency finding based on effective score
-        # Build the best-practice option label for verification criteria
-        best_opts = [o for o in q_def.get("options", []) if float(o.get("score", 0)) >= 1.0]
-        best_label = best_opts[0]["label"] if best_opts else "comprehensive implementation"
         q_label_short = q_def["label"].split(": ", 1)[-1] if ": " in q_def["label"] else q_def["label"]
 
         if eff_score == 0.0:
+            sev = "CRITICAL" if dim in ("Security & Robustness", "Safety & Reliability") else "HIGH"
             finding(
                 dim=dim,
-                sev="CRITICAL" if dim in ("Security & Robustness", "Safety & Reliability") else "HIGH",
+                sev=sev,
                 issue=f"{q_def['label']} — Control absent: {matched_opt.get('label', '')}",
-                action=f"Deploy mandatory engineering control for {q_label_short} to satisfy {q_def.get('eu_ai_act_ref', 'regulatory requirement')} ({q_def.get('nist_rmf_ref', 'baseline')})."
-                       f" Target standard: {best_label}.",
+                action=_grc_action(dim, sev, q_label_short,
+                                   q_def.get("eu_ai_act_ref", ""),
+                                   q_def.get("nist_rmf_ref", ""),
+                                   q_def.get("research_source", "")),
                 eu_ref=q_def.get("eu_ai_act_ref", ""),
                 nist_ref=q_def.get("nist_rmf_ref", ""),
                 tier=eff_tier,
                 weight=eff_weight,
-                verification_criteria=f"Confirm that control '{q_label_short}' is fully operational and produces auditable evidence."
-                                      f" Benchmark requirement: {best_label}."
-                                      f" Citation: {q_def.get('research_source', 'EU AI Act & NIST AI RMF')}."
+                verification_criteria=_grc_verification(dim, q_label_short,
+                                                        q_def.get("eu_ai_act_ref", ""),
+                                                        q_def.get("research_source", ""))
             )
         elif eff_score <= 0.6:
             finding(
                 dim=dim,
                 sev="MEDIUM",
                 issue=f"{q_def['label']} — Partial implementation: {matched_opt.get('label', '')}",
-                action=f"Upgrade {q_label_short} from current partial baseline to full compliance: {best_label}."
-                       f" Governed by {q_def.get('eu_ai_act_ref', 'EU AI Act')} and NIST {q_def.get('nist_rmf_ref', 'AI RMF')}.",
+                action=_grc_action(dim, "MEDIUM", q_label_short,
+                                   q_def.get("eu_ai_act_ref", ""),
+                                   q_def.get("nist_rmf_ref", ""),
+                                   q_def.get("research_source", "")),
                 eu_ref=q_def.get("eu_ai_act_ref", ""),
                 nist_ref=q_def.get("nist_rmf_ref", ""),
                 tier=eff_tier,
                 weight=eff_weight,
-                verification_criteria=f"Verify transition of '{q_label_short}' from '{matched_opt.get('label', 'partial')}' to '{best_label}'."
-                                      f" Technical compliance check against {q_def.get('research_source', 'applicable standards')}."
+                verification_criteria=_grc_verification(dim, q_label_short,
+                                                        q_def.get("eu_ai_act_ref", ""),
+                                                        q_def.get("research_source", ""))
             )
 
     # Compute verified dimension scores and claimed dimension scores

@@ -1938,7 +1938,7 @@ function openFindingDrawer(idx) {
       <div class="drawer-section-content">${escapeHtml(item.dimension)}</div>
     </div>
     <div class="drawer-section">
-      <div class="drawer-section-title">Recommended Engineering Fix</div>
+      <div class="drawer-section-title">Recommended GRC Action</div>
       <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${escapeHtml(item.action)}</div>
     </div>
     <div class="drawer-section">
