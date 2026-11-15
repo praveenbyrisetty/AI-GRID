@@ -29,7 +29,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 from aigrid_auditor import AIGRIDAuditor
-from ai_profile_engine import get_questions, compute_aas_and_bottleneck
+from ai_profile_engine import get_questions, compute_aas_and_bottleneck, QUESTIONS
 from audit_store import AuditStore
 from compliance_engines import (
     solve_remediation_priority,
@@ -191,13 +191,13 @@ def health():
     return jsonify({
         "status": "healthy",
         "service": "AI-GRID Trust & Assurance Framework (Questionnaire Governance Engine)",
-        "version": "4.0.0",
+        "version": "5.1.0",
         "dimensions": 7,
-        "question_bank_size": 35,
+        "question_bank_size": sum(1 for q in QUESTIONS if not q.get("is_identity")),
         "evidence_tiers": {
-            "T1": {"description": "Declared Architecture & Specifications", "weight": 1.0},
-            "T2": {"description": "Benchmark & Technical Evidence Validation", "weight": 0.8},
-            "T3": {"description": "Self-Attested Structured Questionnaire", "weight": 0.6},
+            "T1": {"description": "Machine-verified by an AI-GRID verifier module", "weight": 1.0},
+            "T2": {"description": "Documentary evidence reference supplied, not machine-verified", "weight": 0.8},
+            "T3": {"description": "Self-attested questionnaire answer", "weight": 0.6},
         },
         "compliance_engines": [
             "Custom Fairness Metrics (DIR, SPD from predictions)",
@@ -265,8 +265,21 @@ def run_questionnaire_audit():
     if not isinstance(verified_evidence, list):
         verified_evidence = []
 
+    # Optional scoring controls (all validated; defaults reproduce the standard AAS)
+    alpha = body.get("alpha", 0.6)
+    if isinstance(alpha, bool) or not isinstance(alpha, (int, float)) or not (0.0 <= float(alpha) <= 1.0):
+        return jsonify({"success": False, "error": "'alpha' must be a number between 0 and 1"}), 400
+    weight_profile = body.get("weight_profile", "equal")
+    if not (weight_profile in ("equal", "domain") or isinstance(weight_profile, dict)):
+        return jsonify({"success": False, "error": "'weight_profile' must be 'equal', 'domain' or an object of dimension weights"}), 400
+    evidence_refs = body.get("evidence_refs", {})
+    if not isinstance(evidence_refs, dict):
+        return jsonify({"success": False, "error": "'evidence_refs' must be an object {question_id: reference}"}), 400
+
     try:
-        results = auditor.run_questionnaire_audit(answers, verified_evidence=verified_evidence)
+        results = auditor.run_questionnaire_audit(
+            answers, verified_evidence=verified_evidence, alpha=float(alpha),
+            weight_profile=weight_profile, evidence_refs=evidence_refs)
         results["disclaimer"] = DISCLAIMER_TEXT
 
         # Persist audit run to SQLite
@@ -275,6 +288,8 @@ def run_questionnaire_audit():
 
         last_audit_data = results
         return jsonify({"success": True, "data": results, "audit_id": audit_id})
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
     except Exception:
         logger.exception("Error executing questionnaire audit")
         return jsonify({"success": False, "error": "Failed to process questionnaire audit"}), 500

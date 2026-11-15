@@ -20,11 +20,11 @@ def auth_headers():
 
 
 def test_api_status(client):
-    """Verify /api/status returns 200, version 4.0.0, 7 dimensions, and legal disclaimer."""
+    """Verify /api/status returns 200, version 5.1.0, 7 dimensions, and legal disclaimer."""
     resp = client.get("/api/status")
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["version"] == "4.0.0"
+    assert data["version"] == "5.1.0"
     assert data["dimensions"] == 7
     assert "evidence_tiers" in data
     assert "disclaimer" in data

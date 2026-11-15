@@ -1,4 +1,4 @@
-# AI-GRID (v5.0.0)
+# AI-GRID (v5.1.0)
 
 ### AI governance risk assessment framework with verified evidence
 
@@ -72,7 +72,7 @@ pydantic==2.5.0
 - **Method**: Queries the public OSV API (`POST https://api.osv.dev/v1/querybatch`, PyPI ecosystem, Python `urllib` only) with a 5-second timeout and up to 200 packages.
 - **Thresholds**: Valid CycloneDX with no CVSS $\ge 7.0$ match $\to 1.0$; requirements-only manifest or high vulnerability match $\to 0.5$.
 - **Offline / Failure Resilience**: If the OSV lookup is offline or unreachable, returns `"vulnerability lookup unavailable"` and preserves the claimed score without penalizing for network failure.
-- Replaces self-attested answer for `q3_aibom_inventory`.
+- Replaces self-attested answer for `q3_sbom_tracking`.
 
 ### 3. TLS Encryption & Certificate Prober (`/api/verify/tls`)
 Submit target host and port via JSON payload:
@@ -94,7 +94,7 @@ Upload a JSONL audit log containing `prev_hash`, `data`, and `hash`:
 ```
 - **Method**: Cryptographically validates SHA-256 hash chains from genesis block: $\text{hash}_k = \text{SHA256}(\text{prev\_hash}_k + \text{data}_k)$.
 - **Thresholds**: Valid unbroken chain $\to 1.0$; broken link or altered entry $\to 0.0$.
-- Replaces self-attested answer for `q27_tamper_evident_logs`.
+- Replaces self-attested answer for `q25_decision_logging`.
 
 ### 5. Adversarial Robustness Evaluation (`/api/verify/robustness`)
 Upload clean baseline predictions and perturbed evaluation predictions CSV:
@@ -106,7 +106,7 @@ clean_prediction,perturbed_prediction,ground_truth
 ```
 - **Method**: Measures accuracy degradation: $\Delta \text{Acc} = \text{Acc}_{\text{clean}} - \text{Acc}_{\text{perturbed}}$.
 - **Thresholds**: Degradation $\Delta \text{Acc} \le 0.05$ (<= 5%) $\to 1.0$; $\Delta \text{Acc} \le 0.15$ (<= 15%) $\to 0.5$; drop $> 15\% \to 0.0$.
-- Replaces self-attested answer for `q1_adversarial_testing`.
+- Replaces self-attested answer for `q1_adversarial_tested`.
 
 ---
 
@@ -179,6 +179,13 @@ python server.py
 Open **`http://localhost:8000`** in any modern web browser.
 
 ---
+
+## What is new in v5.1
+
+Governance-first roadmap (owner, evidence and EU/NIST references per action), evidence-coverage reporting, grade caps,
+a corrected attestation gap, validated scoring parameters (`alpha`, `weight_profile`, `evidence_refs`), a mapping
+verification log (`docs/MAPPING_VERIFICATION.md`), a methodology and limitations document (`docs/METHODOLOGY.md`) and
+a script that regenerates every reported number: `python scripts/reproduce_results.py` (outputs in `results/`).
 
 ## Reference Presets
 

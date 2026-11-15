@@ -573,7 +573,7 @@ function clearAuditUI() {
   if (remTbody) {
     remTbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No active findings. Execute an audit to dynamically generate remediation roadmap.</td>
+        <td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No active findings. Execute an audit to dynamically generate remediation roadmap.</td>
       </tr>
     `;
   }
@@ -583,7 +583,7 @@ function clearAuditUI() {
   if (euArticlesTbody) {
     euArticlesTbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No compliance data loaded. Run an audit to evaluate conformity.</td>
+        <td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No compliance data loaded. Run an audit to evaluate conformity.</td>
       </tr>
     `;
   }
@@ -633,7 +633,7 @@ function clearAuditUI() {
   if (remBody) {
     remBody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align:center; padding:18px; color:var(--text-muted);">No findings recorded. Execute an audit to generate roadmap.</td>
+        <td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">No findings recorded. Execute an audit to generate roadmap.</td>
       </tr>
     `;
   }
@@ -899,7 +899,11 @@ function applyAuditDataToUI(data, tierText) {
   if (sumSub) {
     const domain = data.domain || "Clinical AI";
     const arch = data.target_system?.architecture || "Production Classifier";
-    sumSub.textContent = `${domain} · Arch: ${arch} · Tier: T3 Evidence`;
+    const cov = data.evidence_coverage || {};
+    const assurance = cov.assurance_level ? String(cov.assurance_level).replace(/_/g, " ").toLowerCase() : "self assessed";
+    const capNote = (sc.grade_caps_applied && sc.grade_caps_applied.length && sc.uncapped_grade) ? ` · grade capped from ${sc.uncapped_grade}` : "";
+    const gapNote = (cov.unanswered_questions && cov.unanswered_questions.length) ? ` · ${cov.unanswered_questions.length} not assessed` : "";
+    sumSub.textContent = `${domain} · Arch: ${arch} · Assurance: ${assurance} (${cov.verified_questions ?? 0} of ${cov.answered_questions ?? 0} verified)${capNote}${gapNote}`;
   }
   const sumTier = document.getElementById("summaryTierBadge");
   if (sumTier) {
@@ -1912,8 +1916,9 @@ function renderRemediationTable(plan) {
         <td><span class="badge ${badgeClass}">${escapeHtml(item.priority)}</span></td>
         <td><strong>${escapeHtml(item.dimension)}</strong></td>
         <td>${escapeHtml(item.finding)}</td>
-        <td><strong style="color:var(--primary-500);">${escapeHtml(item.action)}</strong></td>
-        <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref || 'Art. 9')}</small></td>
+        <td><strong style="color:var(--primary-500);">${escapeHtml(item.required_governance_action || item.action)}</strong></td>
+        <td>${escapeHtml(item.owner_role || '—')}</td>
+        <td><small style="font-family:var(--font-mono); color:var(--text-muted);">${escapeHtml(item.eu_ai_act_ref || 'Art. 9')}${item.nist_ref ? ' | NIST ' + escapeHtml(item.nist_ref) : ''}</small></td>
       </tr>
     `;
   }).join("");
@@ -1938,13 +1943,21 @@ function openFindingDrawer(idx) {
       <div class="drawer-section-content">${escapeHtml(item.dimension)}</div>
     </div>
     <div class="drawer-section">
-      <div class="drawer-section-title">Recommended GRC Action</div>
-      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${escapeHtml(item.action)}</div>
+      <div class="drawer-section-title">Required Governance Action</div>
+      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${escapeHtml(item.required_governance_action || item.action)}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Accountable Owner</div>
+      <div class="drawer-section-content">${escapeHtml(item.owner_role || 'Not assigned')}</div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Evidence an Auditor Expects</div>
+      <div class="drawer-section-content">${escapeHtml(item.evidence_expected || 'Documented, dated and approved evidence of the control.')}</div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Verification Criteria</div>
       <div class="drawer-section-content">
-        ${escapeHtml(item.verification_criteria || 'Validate that the engineering control satisfies the referenced regulatory and standards requirements. Confirm with auditable evidence.')}
+        ${escapeHtml(item.verification_criteria || 'Validate that the governance control satisfies the referenced regulatory and standards requirements. Confirm with auditable evidence.')}
       </div>
     </div>
     <div class="drawer-section">
@@ -2057,7 +2070,7 @@ The target AI system has completed automated governance and cybersecurity evalua
 - **Board Impact:** This single bottleneck caps the overall trust ceiling. Deployments into mission-critical environments are gated until remediation is complete.
 
 ### Priority Action Items for Engineering
-${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}:** ${f.action} *(Ref: ${f.eu_ai_act_ref || 'EU AI Act'})*`).join('\n') || 'All monitored engineering controls satisfy regulatory benchmarks.'}
+${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}:** ${f.action} *(Ref: ${f.eu_ai_act_ref || 'EU AI Act'})*`).join('\n') || 'All monitored governance controls satisfy regulatory benchmarks.'}
 
 ### Regulatory Posture
 - **EU AI Act Status:** ${eu.tier || 'HIGH RISK'} (${eu.conformant_articles || '7/7'} Articles Conformant)

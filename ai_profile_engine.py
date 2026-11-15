@@ -833,21 +833,153 @@ def get_questions() -> List[Dict[str, Any]]:
     return QUESTIONS
 
 
+# =====================================================================
+# v5.1 SCORING PARAMETERS (all are DESIGN PARAMETERS, not empirically derived)
+# Justification and sensitivity analysis: docs/METHODOLOGY.md, scripts/reproduce_results.py
+# =====================================================================
+from governance_catalog import merge_into_questions as _merge_catalog
+
+_merge_catalog(QUESTIONS)   # corrected EU/NIST refs + governance action, owner, evidence per question
+
+# Evidence tiers (weight of an item in its dimension average):
+#   T1 = machine-verified by an AI-GRID verifier module (score replaced by measured result)
+#   T2 = documentary evidence reference supplied for the answer, not machine-verified
+#   T3 = self-attested questionnaire answer
+EVIDENCE_TIER_WEIGHTS = {"T1": 1.0, "T2": 0.8, "T3": 0.6}
+DEFAULT_ALPHA = 0.6                      # AAS = alpha * mean + (1 - alpha) * min
+ILLUSTRATIVE_TARGET_AAS = 76.0           # heuristic benchmark threshold used by the remediation ranker
+VERIFIABLE_QUESTION_IDS = (              # questions that currently have a verifier module
+    "q1_adversarial_tested", "q3_sbom_tracking", "q10_fairness_audit",
+    "q17_encryption_transit", "q25_decision_logging",
+)
+
+# Illustrative domain weight profiles (relative importance of each dimension). Equal weighting is the
+# neutral default. These profiles are design assumptions reflecting the Annex III use-case context and
+# should be replaced by expert-elicited weights (e.g. AHP) in future work.
+DOMAIN_WEIGHT_PROFILES: Dict[str, Dict[str, float]] = {
+    "healthcare": {"Safety & Reliability": 1.5, "Human Oversight & Agency": 1.5, "Privacy & Data Governance": 1.25},
+    "finance": {"Fairness & Non-Discrimination": 1.5, "Transparency & Explainability": 1.5,
+                "Accountability & Governance": 1.25, "Privacy & Data Governance": 1.25},
+    "criminal_justice": {"Fairness & Non-Discrimination": 1.5, "Human Oversight & Agency": 1.5,
+                         "Transparency & Explainability": 1.5, "Accountability & Governance": 1.25},
+    "autonomous_vehicles": {"Safety & Reliability": 1.75, "Security & Robustness": 1.5, "Human Oversight & Agency": 1.25},
+    "education": {"Fairness & Non-Discrimination": 1.5, "Transparency & Explainability": 1.25, "Privacy & Data Governance": 1.25},
+    "cybersecurity": {"Security & Robustness": 1.75},
+    "biometrics": {"Privacy & Data Governance": 1.5, "Fairness & Non-Discrimination": 1.5, "Accountability & Governance": 1.25},
+}
+
+GRADE_ORDER = ["F", "D", "C", "B", "A", "A+"]
+GRADE_CAP_NO_REFUTED_CLAIM = "C"     # a verifier refuted a claimed answer
+GRADE_CAP_NO_CRITICAL_GAP = "C"      # at least one CRITICAL finding is open
+
+
+def resolve_dimension_weights(profile: Any, domain: str = "") -> Optional[Dict[str, float]]:
+    """'equal' / None -> None (equal weights); 'domain' -> illustrative profile for the domain;
+    dict -> custom weights (validated, missing dimensions default to 1.0)."""
+    if profile in (None, "", "equal"):
+        return None
+    if profile == "domain":
+        d = (domain or "").lower().replace(" / ", "_").replace(" ", "_").strip()
+        key = next((k for k in DOMAIN_WEIGHT_PROFILES if k in d), None)
+        if key is None:
+            return None
+        return {dim: float(DOMAIN_WEIGHT_PROFILES[key].get(dim, 1.0)) for dim in DIMENSIONS_LIST}
+    if isinstance(profile, dict):
+        out = {}
+        for dim in DIMENSIONS_LIST:
+            w = float(profile.get(dim, 1.0))
+            if w <= 0:
+                raise ValueError(f"dimension weight for '{dim}' must be > 0")
+            out[dim] = w
+        return out
+    raise ValueError("weight_profile must be 'equal', 'domain' or a {dimension: weight} object")
+
+
+def _q_map() -> Dict[str, Dict[str, Any]]:
+    return {q["id"]: q for q in QUESTIONS if not q.get("is_identity")}
+
+
+def assess_coverage(
+    answers: Dict[str, Any],
+    verified_evidence: Optional[List[Dict[str, Any]]] = None,
+    evidence_refs: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """How much of the score rests on verified evidence, and what was not assessed.
+    An unanswered question is reported as a gap and is never treated as compliant."""
+    q_map = _q_map()
+    v_ids = {v["item_id"] for v in (verified_evidence or []) if isinstance(v, dict) and v.get("item_id") in q_map}
+    refs = {k for k, v in (evidence_refs or {}).items() if k in q_map and str(v).strip()}
+    answered, invalid, unanswered = [], [], []
+    per_dim = {d: {"questions": 0, "answered": 0, "verified": 0, "documented": 0} for d in DIMENSIONS_LIST}
+    for qid, q in q_map.items():
+        per_dim[q["dimension"]]["questions"] += 1
+        val = answers.get(qid)
+        valid_values = {o["value"] for o in q.get("options", [])}
+        if val is None:
+            unanswered.append({"id": qid, "dimension": q["dimension"], "question": q["label"],
+                               "eu_ai_act_ref": q.get("eu_ai_act_ref", ""), "nist_ref": q.get("nist_rmf_ref", ""),
+                               "reason": "not answered"})
+        elif val not in valid_values:
+            invalid.append({"id": qid, "dimension": q["dimension"], "value": str(val),
+                            "reason": "value is not one of the defined options"})
+        else:
+            answered.append(qid)
+            per_dim[q["dimension"]]["answered"] += 1
+            if qid in v_ids:
+                per_dim[q["dimension"]]["verified"] += 1
+            elif qid in refs:
+                per_dim[q["dimension"]]["documented"] += 1
+    verified_n = sum(1 for qid in answered if qid in v_ids)
+    documented_n = sum(1 for qid in answered if qid not in v_ids and qid in refs)
+    verifiable = [qid for qid in VERIFIABLE_QUESTION_IDS if qid in q_map]
+    n_ans = len(answered)
+    if verified_n == 0:
+        level = "SELF_ASSESSED"
+    elif verified_n >= len(verifiable):
+        level = "VERIFIED_WITHIN_VERIFIABLE_SCOPE"
+    else:
+        level = "PARTIALLY_VERIFIED"
+    return {
+        "total_questions": len(q_map),
+        "answered_questions": n_ans,
+        "unanswered_questions": unanswered,
+        "invalid_answers": invalid,
+        "verified_questions": verified_n,
+        "documented_questions": documented_n,
+        "self_attested_questions": n_ans - verified_n - documented_n,
+        "verifiable_questions": len(verifiable),
+        "verified_coverage_pct": round(100.0 * verified_n / n_ans, 1) if n_ans else 0.0,
+        "verifiable_scope_coverage_pct": round(100.0 * verified_n / len(verifiable), 1) if verifiable else 0.0,
+        "max_attainable_verified_coverage_pct": round(100.0 * len(verifiable) / len(q_map), 1) if q_map else 0.0,
+        "assurance_level": level,
+        "by_dimension": per_dim,
+        "note": "Only questions with a verifier module can reach Tier T1. The remainder of the score rests on self-attestation or documentary evidence.",
+    }
+
+
 def calculate_dimension_scores(
     answers: Dict[str, Any],
     evidence_tier: str = "T3",
-    verified_evidence: Optional[List[Dict[str, Any]]] = None
+    verified_evidence: Optional[List[Dict[str, Any]]] = None,
+    evidence_refs: Optional[Dict[str, Any]] = None,
+    tier_weights: Optional[Dict[str, float]] = None,
+    alpha: float = DEFAULT_ALPHA,
+    dimension_weights: Optional[Dict[str, float]] = None,
 ) -> Tuple[Dict[str, Optional[float]], List[Dict[str, Any]], List[Dict[str, str]], Dict[str, Any]]:
     """
     Computes 7 dimension scores using multi-tier evidence weighting:
-    - Verified items (Tier 1): weight = 1.0, score overridden by empirical verifier
-    - Unverified self-attestations (Tier 3): weight = 0.6, claimed answer score
-    Also calculates the Attestation Gap between claimed and verified assurance.
-    """
-    tier_weights = {"T1": 1.0, "T2": 0.8, "T3": 0.6}
-    default_w = tier_weights.get(evidence_tier, 0.6)
+    - T1 verified item: score replaced by the verifier's measured result, weight tier_weights['T1']
+    - T2 documented item: claimed answer plus a document reference, weight tier_weights['T2']
+    - T3 self-attested item: claimed answer, weight tier_weights['T3']
 
-    # Index verified evidence items by item_id
+    Attestation gap: the claimed score uses the SAME item weights as the verified score and differs only
+    where a verifier overrode an answer, so the gap measures verifier disagreement, not weighting effects.
+    """
+    tw = dict(EVIDENCE_TIER_WEIGHTS)
+    tw.update(tier_weights or {})
+    default_w = tw.get(evidence_tier, tw["T3"])
+    refs = {k: v for k, v in (evidence_refs or {}).items() if str(v).strip()}
+
     v_map: Dict[str, Dict[str, Any]] = {}
     if verified_evidence:
         for v in verified_evidence:
@@ -857,186 +989,109 @@ def calculate_dimension_scores(
     findings: List[Dict[str, Any]] = []
     logs: List[Dict[str, str]] = []
 
-    # GRC-focused action templates per dimension
-    GRC_ACTION_TEMPLATES: Dict[str, Dict[str, str]] = {
-        "Security & Robustness": {
-            "critical": "Establish a formal Cybersecurity & Adversarial Risk Assessment Policy mandating independent third-party security evaluation. Document threat mitigation procedures in the enterprise risk register per {eu_ref} and NIST {nist_ref}.",
-            "medium": "Strengthen organizational security governance posture for {q_short} by commissioning accredited adversarial risk evaluation and formalizing vulnerability disclosure procedures per {eu_ref} and NIST {nist_ref}.",
-            "verification": "Confirm the organization maintains a signed security audit report from an accredited assessor, with findings tracked in the risk register per ISO/IEC 42001 and {source}."
-        },
-        "Safety & Reliability": {
-            "critical": "Draft and enforce a continuous Risk Management System (RMS) protocol addressing {q_short}, documenting acceptable risk thresholds and residual hazard mitigations per {eu_ref} and NIST {nist_ref}.",
-            "medium": "Upgrade the existing risk management documentation for {q_short} to meet full lifecycle compliance standards per {eu_ref} and NIST {nist_ref}. Ensure residual risks are formally documented and accepted by executive leadership.",
-            "verification": "Verify that a signed Risk Management File exists with documented residual risk acceptance, traceable to {eu_ref} and {source}."
-        },
-        "Fairness & Non-Discrimination": {
-            "critical": "Commission an independent algorithmic bias impact assessment for {q_short} and adopt an Anti-Discrimination & Data Quality Governance Charter adhering to {eu_ref} and NIST {nist_ref} benchmark standards.",
-            "medium": "Strengthen demographic representation governance for {q_short} by formalizing bias monitoring procedures and periodic fairness audit schedules per {eu_ref} and NIST {nist_ref}.",
-            "verification": "Confirm a signed fairness audit report exists with documented demographic parity metrics, traceable to {eu_ref} and {source}."
-        },
-        "Transparency & Explainability": {
-            "critical": "Publish a standardized Annex IV Technical Documentation dossier and deployer-facing transparency brief addressing {q_short} per {eu_ref} and NIST {nist_ref}.",
-            "medium": "Enhance transparency documentation for {q_short} by formalizing model decision explanation procedures and stakeholder communication protocols per {eu_ref} and NIST {nist_ref}.",
-            "verification": "Verify that published technical documentation and model transparency summaries are accessible to deployers and regulators per {eu_ref} and {source}."
-        },
-        "Privacy & Data Governance": {
-            "critical": "Adopt a formal Data Protection & PII Minimization Policy addressing {q_short}, compliant with {eu_ref} and GDPR Art. 5(1)(e). Commission a Data Protection Impact Assessment (DPIA) with defined data lifecycle governance and retention schedules per NIST {nist_ref}.",
-            "medium": "Strengthen data governance controls for {q_short} by formalizing retention schedules and automated PII handling procedures per {eu_ref} and NIST {nist_ref}.",
-            "verification": "Confirm a signed DPIA and formal Data Retention Policy exist with defined lifecycle limits, traceable to {eu_ref} and {source}."
-        },
-        "Human Oversight & Agency": {
-            "critical": "Institute a Human-in-the-Loop (HITL) Standard Operating Procedure (SOP) addressing {q_short}, granting trained overseers explicit legal and operational authority to halt or override automated decisions per {eu_ref} and NIST {nist_ref}.",
-            "medium": "Formalize human oversight governance for {q_short} by documenting operator intervention rights, training certification requirements, and emergency escalation procedures per {eu_ref} and NIST {nist_ref}.",
-            "verification": "Verify that a signed HITL SOP exists with documented operator training records and override authority delegation, traceable to {eu_ref} and {source}."
-        },
-        "Accountability & Governance": {
-            "critical": "Adopt a Quality Management System (QMS) addressing {q_short} under ISO/IEC 42001, enforcing immutable audit trail retention (minimum 6 months) and establishing executive AI Compliance Officer accountability per {eu_ref} and NIST {nist_ref}.",
-            "medium": "Strengthen accountability governance for {q_short} by formalizing audit log retention policies and incident reporting chains per {eu_ref} and NIST {nist_ref}.",
-            "verification": "Confirm a signed QMS policy and formal incident escalation chain exist with defined retention periods and accountability roles, traceable to {eu_ref} and {source}."
-        }
-    }
-
-    def _grc_action(dim: str, severity: str, q_short: str, eu_ref: str, nist_ref: str, source: str) -> str:
-        templates = GRC_ACTION_TEMPLATES.get(dim, GRC_ACTION_TEMPLATES["Accountability & Governance"])
-        key = "critical" if severity in ("CRITICAL", "HIGH") else "medium"
-        return templates[key].format(q_short=q_short, eu_ref=eu_ref or "EU AI Act", nist_ref=nist_ref or "AI RMF", source=source or "applicable standards")
-
-    def _grc_verification(dim: str, q_short: str, eu_ref: str, source: str) -> str:
-        templates = GRC_ACTION_TEMPLATES.get(dim, GRC_ACTION_TEMPLATES["Accountability & Governance"])
-        return templates["verification"].format(q_short=q_short, eu_ref=eu_ref or "EU AI Act", source=source or "applicable standards")
-
-    def finding(dim: str, sev: str, issue: str, action: str, eu_ref: str = "", nist_ref: str = "", tier: str = "T3", weight: float = 0.6, verification_criteria: str = ""):
+    def finding(q_def: Dict[str, Any], dim: str, sev: str, issue: str, action: str,
+                tier: str, weight: float, verification_criteria: str):
         badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
         findings.append({
             "priority": sev,
             "badge": badge_map.get(sev, "info"),
             "dimension": dim,
+            "question_id": q_def["id"],
             "finding": issue,
             "action": action,
-            "eu_ai_act_ref": eu_ref,
-            "nist_ref": nist_ref,
+            "required_governance_action": q_def.get("governance_action", ""),
+            "owner_role": q_def.get("owner_role", ""),
+            "evidence_expected": q_def.get("evidence_expected", ""),
+            "eu_ai_act_ref": q_def.get("eu_ai_act_ref", ""),
+            "nist_ref": q_def.get("nist_rmf_ref", ""),
             "evidence_tier": tier,
             "evidence_weight": weight,
-            "verification_criteria": verification_criteria
+            "verification_criteria": verification_criteria,
+            "severity_basis": "control gap and dimension",
         })
 
-    # Buckets for weighted scoring:
-    # dim -> list of (score_0_to_1, evidence_weight)
-    dim_verified_items: Dict[str, List[Tuple[float, float]]] = {d: [] for d in DIMENSIONS_LIST}
-    # dim -> list of claimed_score_0_to_1
-    dim_claimed_items: Dict[str, List[float]] = {d: [] for d in DIMENSIONS_LIST}
+    dim_effective: Dict[str, List[Tuple[float, float]]] = {d: [] for d in DIMENSIONS_LIST}
+    dim_claimed: Dict[str, List[Tuple[float, float]]] = {d: [] for d in DIMENSIONS_LIST}
 
-    q_map = {q["id"]: q for q in QUESTIONS if not q.get("is_identity")}
-
-    for q_id, q_def in q_map.items():
+    for q_id, q_def in _q_map().items():
         dim = q_def["dimension"]
         user_val = answers.get(q_id)
         if user_val is None:
             continue
-
-        matched_opt = None
-        for opt in q_def.get("options", []):
-            if opt["value"] == user_val:
-                matched_opt = opt
-                break
-
+        matched_opt = next((o for o in q_def.get("options", []) if o["value"] == user_val), None)
         if matched_opt is None:
             continue
 
         claimed_score = float(matched_opt.get("score", 0.0))
-        dim_claimed_items[dim].append(claimed_score)
 
-        # Check if empirical verified evidence exists for this question
         if q_id in v_map:
             v_item = v_map[q_id]
             eff_score = float(v_item.get("verified_score", 0.0))
-            eff_tier = "T1"
-            eff_weight = 1.0
+            eff_tier, eff_weight = "T1", tw["T1"]
             logs.append({
                 "timestamp": datetime.now().isoformat(),
                 "event": "VERIFIED_EVIDENCE_APPLIED",
-                "message": f"Verified evidence override for {q_id}: claimed={claimed_score:.2f}, verified={eff_score:.2f} (Tier T1, weight 1.0)."
+                "message": f"Verified evidence override for {q_id}: claimed={claimed_score:.2f}, verified={eff_score:.2f} (Tier T1, weight {eff_weight})."
             })
+        elif q_id in refs:
+            eff_score, eff_tier, eff_weight = claimed_score, "T2", tw["T2"]
         else:
-            eff_score = claimed_score
-            eff_tier = evidence_tier
-            eff_weight = default_w
+            eff_score, eff_tier, eff_weight = claimed_score, evidence_tier, default_w
 
-        dim_verified_items[dim].append((eff_score, eff_weight))
+        dim_effective[dim].append((eff_score, eff_weight))
+        dim_claimed[dim].append((claimed_score, eff_weight))
 
-        # Record deficiency finding based on effective score
+        best_opts = [o for o in q_def.get("options", []) if float(o.get("score", 0)) >= 1.0]
+        best_label = best_opts[0]["label"] if best_opts else "full implementation"
         q_label_short = q_def["label"].split(": ", 1)[-1] if ": " in q_def["label"] else q_def["label"]
+        gov = q_def.get("governance_action") or f"Close the gap on: {q_label_short}"
+        eu_ref = q_def.get("eu_ai_act_ref", "")
+        nist_ref = q_def.get("nist_rmf_ref", "")
+        ref_txt = f"[{eu_ref} | NIST {nist_ref}]"
+        cite = q_def.get("research_source", "EU AI Act & NIST AI RMF")
 
         if eff_score == 0.0:
-            sev = "CRITICAL" if dim in ("Security & Robustness", "Safety & Reliability") else "HIGH"
-            finding(
-                dim=dim,
-                sev=sev,
-                issue=f"{q_def['label']} — Control absent: {matched_opt.get('label', '')}",
-                action=_grc_action(dim, sev, q_label_short,
-                                   q_def.get("eu_ai_act_ref", ""),
-                                   q_def.get("nist_rmf_ref", ""),
-                                   q_def.get("research_source", "")),
-                eu_ref=q_def.get("eu_ai_act_ref", ""),
-                nist_ref=q_def.get("nist_rmf_ref", ""),
-                tier=eff_tier,
-                weight=eff_weight,
-                verification_criteria=_grc_verification(dim, q_label_short,
-                                                        q_def.get("eu_ai_act_ref", ""),
-                                                        q_def.get("research_source", ""))
-            )
+            finding(q_def, dim,
+                    "CRITICAL" if dim in ("Security & Robustness", "Safety & Reliability") else "HIGH",
+                    f"{q_def['label']} — Control absent: {matched_opt.get('label', '')}",
+                    f"{gov}. {ref_txt}",
+                    eff_tier, eff_weight,
+                    f"Obtain the evidence listed for '{q_label_short}': {q_def.get('evidence_expected', best_label)}. Citation: {cite}.")
         elif eff_score <= 0.6:
-            finding(
-                dim=dim,
-                sev="MEDIUM",
-                issue=f"{q_def['label']} — Partial implementation: {matched_opt.get('label', '')}",
-                action=_grc_action(dim, "MEDIUM", q_label_short,
-                                   q_def.get("eu_ai_act_ref", ""),
-                                   q_def.get("nist_rmf_ref", ""),
-                                   q_def.get("research_source", "")),
-                eu_ref=q_def.get("eu_ai_act_ref", ""),
-                nist_ref=q_def.get("nist_rmf_ref", ""),
-                tier=eff_tier,
-                weight=eff_weight,
-                verification_criteria=_grc_verification(dim, q_label_short,
-                                                        q_def.get("eu_ai_act_ref", ""),
-                                                        q_def.get("research_source", ""))
-            )
+            finding(q_def, dim, "MEDIUM",
+                    f"{q_def['label']} — Partial implementation: {matched_opt.get('label', '')}",
+                    f"Move from partial to full — {gov}. Target state: {best_label}. {ref_txt}",
+                    eff_tier, eff_weight,
+                    f"Verify transition of '{q_label_short}' to: {best_label}. Evidence: {q_def.get('evidence_expected', '')}. Citation: {cite}.")
 
-    # Compute verified dimension scores and claimed dimension scores
+    def wavg(items: List[Tuple[float, float]]) -> Optional[float]:
+        w_total = sum(w for _, w in items)
+        return round(100.0 * sum(s * w for s, w in items) / w_total, 1) if w_total > 0 else None
+
     dimension_scores: Dict[str, Optional[float]] = {}
     claimed_scores: Dict[str, Optional[float]] = {}
     attestation_gap: Dict[str, Any] = {"dimensions": {}, "composite_gap": 0.0}
 
     for dim in DIMENSIONS_LIST:
-        items = dim_verified_items[dim]
-        c_items = dim_claimed_items[dim]
-
+        items, c_items = dim_effective[dim], dim_claimed[dim]
         if not items:
             dimension_scores[dim] = None
             claimed_scores[dim] = None
-        else:
-            w_sum = sum(s * w for s, w in items)
-            w_total = sum(w for _, w in items)
-            dim_score = round(100.0 * (w_sum / w_total), 1) if w_total > 0 else None
-            dimension_scores[dim] = dim_score
+            continue
+        dim_score, c_score = wavg(items), wavg(c_items)
+        dimension_scores[dim] = dim_score
+        claimed_scores[dim] = c_score
+        gap = round(c_score - dim_score, 1) if (c_score is not None and dim_score is not None) else 0.0
+        attestation_gap["dimensions"][dim] = {
+            "claimed_score": c_score,
+            "verified_score": dim_score,
+            "gap": gap,
+            "verified_count": sum(1 for q_id, q in _q_map().items()
+                                  if q["dimension"] == dim and q_id in v_map and answers.get(q_id) is not None),
+        }
 
-            c_score = round(100.0 * (sum(c_items) / len(c_items)), 1) if c_items else None
-            claimed_scores[dim] = c_score
-
-            gap = round((c_score - dim_score), 1) if (c_score is not None and dim_score is not None) else 0.0
-            attestation_gap["dimensions"][dim] = {
-                "claimed_score": c_score,
-                "verified_score": dim_score,
-                "gap": gap,
-                "verified_count": sum(1 for s, w in items if w == 1.0)
-            }
-
-    # Calculate overall composite gap
-    c_aas_obj = compute_aas_and_bottleneck(claimed_scores, alpha=0.6)
-    v_aas_obj = compute_aas_and_bottleneck(dimension_scores, alpha=0.6)
-    c_aas = c_aas_obj.get("aas_score")
-    v_aas = v_aas_obj.get("aas_score")
+    c_aas = compute_aas_and_bottleneck(claimed_scores, alpha=alpha, dimension_weights=dimension_weights).get("aas_score")
+    v_aas = compute_aas_and_bottleneck(dimension_scores, alpha=alpha, dimension_weights=dimension_weights).get("aas_score")
     if c_aas is not None and v_aas is not None:
         attestation_gap["composite_gap"] = round(c_aas - v_aas, 1)
         attestation_gap["claimed_aas"] = c_aas
@@ -1047,23 +1102,58 @@ def calculate_dimension_scores(
     return dimension_scores, findings, logs, attestation_gap
 
 
-def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: float = 0.6) -> Dict[str, Any]:
+def escalate_for_high_risk(findings: List[Dict[str, Any]], regulatory_tier: str) -> None:
+    """For HIGH RISK systems the mapped Art. 9-15/17/72/73 requirements are binding, so every open gap
+    is raised one severity level (CRITICAL stays CRITICAL). The base severity is kept for transparency."""
+    if regulatory_tier != "HIGH RISK":
+        return
+    up = {"LOW": "MEDIUM", "MEDIUM": "HIGH", "HIGH": "CRITICAL"}
+    badge_map = {"CRITICAL": "danger", "HIGH": "warning", "MEDIUM": "info", "LOW": "info"}
+    for f in findings:
+        if f["priority"] in up:
+            f["priority_base"] = f["priority"]
+            f["priority"] = up[f["priority"]]
+            f["badge"] = badge_map[f["priority"]]
+            f["severity_basis"] = "escalated one level: mapped obligation is binding for high-risk systems"
+
+
+def apply_grade_caps(
+    scoring: Dict[str, Any],
+    findings: List[Dict[str, Any]],
+    verified_evidence: Optional[List[Dict[str, Any]]],
+) -> Dict[str, Any]:
+    """Caps the displayed grade so a high average cannot hide an integrity problem or an open critical gap.
+    The numeric AAS is never changed. Returns the list of caps applied."""
+    grade = scoring.get("trust_grade")
+    scoring["uncapped_grade"] = grade
+    scoring["grade_caps_applied"] = []
+    if grade not in GRADE_ORDER:
+        return scoring
+    caps = []
+    if any(isinstance(v, dict) and v.get("claim_supported") is False for v in (verified_evidence or [])):
+        caps.append((GRADE_CAP_NO_REFUTED_CLAIM, "a claimed answer was refuted by verified evidence"))
+    if any(f.get("priority") == "CRITICAL" for f in findings):
+        caps.append((GRADE_CAP_NO_CRITICAL_GAP, "at least one CRITICAL finding is open"))
+    for cap, reason in caps:
+        if GRADE_ORDER.index(grade) > GRADE_ORDER.index(cap):
+            grade = cap
+        scoring["grade_caps_applied"].append({"cap": cap, "reason": reason})
+    scoring["trust_grade"] = grade
+    return scoring
+
+
+def compute_aas_and_bottleneck(
+    dimensions: Dict[str, Optional[float]],
+    alpha: float = DEFAULT_ALPHA,
+    dimension_weights: Optional[Dict[str, float]] = None,
+) -> Dict[str, Any]:
     """
-    Computes Bottleneck-Penalized Trust Score (AAS) via bottleneck-penalised aggregate,
-    inspired by average-case versus worst-case ERM:
-    AAS = alpha * mean(S) + (1 - alpha) * min(S)
-    Dimensions with score=None are excluded from mean and min.
-    Withholds AAS if fewer than 4 dimensions have evidence.
+    Bottleneck-penalised trust score:
+        AAS = alpha * weighted_mean(S) + (1 - alpha) * min(S)
+    weighted_mean uses dimension_weights when given (default: equal weights).
+    Dimensions with score=None are excluded. AAS is withheld if fewer than 4 dimensions have data.
     """
-    canonical_7 = [
-        "Security & Robustness",
-        "Safety & Reliability",
-        "Fairness & Non-Discrimination",
-        "Transparency & Explainability",
-        "Privacy & Data Governance",
-        "Human Oversight & Agency",
-        "Accountability & Governance",
-    ]
+    canonical_7 = list(DIMENSIONS_LIST)
     has_7 = any(k in dimensions for k in ("Human Oversight & Agency", "Accountability & Governance"))
     if has_7:
         eval_dims = {k: v for k, v in dimensions.items() if k in canonical_7 and v is not None}
@@ -1083,7 +1173,11 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: fl
             "status": "INSUFFICIENT_EVIDENCE",
         }
 
-    weighted_average = sum(valid_scores) / len(valid_scores)
+    if dimension_weights:
+        w = {k: float(dimension_weights.get(k, 1.0)) for k in eval_dims}
+        weighted_average = sum(eval_dims[k] * w[k] for k in eval_dims) / sum(w.values())
+    else:
+        weighted_average = sum(valid_scores) / len(valid_scores)
     bottleneck_score = min(valid_scores)
     bottleneck_dimension = next(k for k, v in eval_dims.items() if v == bottleneck_score)
 
@@ -1096,7 +1190,6 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: fl
     elif aas >= 50: grade = "D"
     else: grade = "F"
 
-    # Compute sensitivity curve across alpha in [0.1, 0.9]
     sensitivity_curve = []
     for a_val in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
         score_at_a = round((a_val * weighted_average) + ((1.0 - a_val) * bottleneck_score), 1)
@@ -1113,6 +1206,7 @@ def compute_aas_and_bottleneck(dimensions: Dict[str, Optional[float]], alpha: fl
         "bottleneck_dimension": bottleneck_dimension,
         "trust_grade": grade,
         "alpha_parameter": alpha,
+        "dimension_weights": dict(dimension_weights) if dimension_weights else "equal",
         "sensitivity_curve": sensitivity_curve,
         "status": "COMPUTED",
     }
@@ -1248,12 +1342,24 @@ def aggregate_dimension_scores(
 def generate_audit_from_questionnaire(
     answers: Dict[str, Any],
     evidence_tier: str = "T3",
-    verified_evidence: Optional[List[Dict[str, Any]]] = None
+    verified_evidence: Optional[List[Dict[str, Any]]] = None,
+    alpha: float = DEFAULT_ALPHA,
+    weight_profile: Any = "equal",
+    evidence_refs: Optional[Dict[str, Any]] = None,
+    tier_weights: Optional[Dict[str, float]] = None,
 ) -> Dict[str, Any]:
     """
     Takes user questionnaire answers and executes the complete 7-dimension audit.
     Integrates all research-grounded compliance engines.
+
+    alpha          bottleneck blend in [0, 1] (default 0.6)
+    weight_profile 'equal' (default), 'domain' (illustrative Annex III profile) or {dimension: weight}
+    evidence_refs  {question_id: document reference} -> those answers count as Tier T2
+    tier_weights   optional override of the T1/T2/T3 weights (used by sensitivity analysis)
     """
+    if not isinstance(alpha, (int, float)) or not (0.0 <= float(alpha) <= 1.0):
+        raise ValueError("alpha must be a number between 0 and 1")
+    alpha = float(alpha)
     logs: List[Dict[str, str]] = []
 
     def log(stage: str, msg: str, st: str = "INFO"):
@@ -1266,19 +1372,31 @@ def generate_audit_from_questionnaire(
     deployment_type = answers.get("deployment_type", "cloud_api")
     domain_label = DOMAIN_LABELS.get(domain, "General Purpose AI")
 
+    tw = dict(EVIDENCE_TIER_WEIGHTS)
+    tw.update(tier_weights or {})
+    dim_weights = resolve_dimension_weights(weight_profile, domain)
+
     log("DISCOVERY", f"Initiating research-grounded audit for '{model_name}' v{model_version}...", "INFO")
     log("DISCOVERY", f"Operating Domain: {domain_label} | Architecture: {architecture} | Topology: {deployment_type}", "SUCCESS")
-    log("DISCOVERY", f"Evidence Tier: {evidence_tier} (Confidence Weight: {1.0 if evidence_tier=='T1' else (0.8 if evidence_tier=='T2' else 0.6)})", "INFO")
+    log("DISCOVERY", f"Default evidence tier for unverified answers: {evidence_tier} (weight {tw.get(evidence_tier, tw['T3'])}); alpha={alpha}; dimension weights: {'equal' if not dim_weights else 'domain profile'}", "INFO")
+
+    coverage = assess_coverage(answers, verified_evidence, evidence_refs)
+    n_total, n_answered = coverage["total_questions"], coverage["answered_questions"]
 
     # Phase 1: Compute 7 Dimension Scores
-    dimensions, findings, audit_logs, attestation_gap = calculate_dimension_scores(answers, evidence_tier=evidence_tier, verified_evidence=verified_evidence)
-    log("EVALUATION", "Computed 7 dimension scores across 35 research-grounded question items.", "SUCCESS")
+    dimensions, findings, audit_logs, attestation_gap = calculate_dimension_scores(
+        answers, evidence_tier=evidence_tier, verified_evidence=verified_evidence,
+        evidence_refs=evidence_refs, tier_weights=tw, alpha=alpha, dimension_weights=dim_weights)
+    log("EVALUATION", f"Computed dimension scores from {n_answered} of {n_total} question items "
+                      f"({coverage['verified_questions']} verified, {coverage['documented_questions']} documented, "
+                      f"{coverage['self_attested_questions']} self-attested).", "SUCCESS")
+    if coverage["unanswered_questions"] or coverage["invalid_answers"]:
+        log("EVALUATION", f"{len(coverage['unanswered_questions'])} question(s) unanswered and "
+                          f"{len(coverage['invalid_answers'])} invalid answer(s): reported as assessment gaps, NOT treated as compliant.", "WARNING")
 
     # Phase 2: Compute Bottleneck AAS
-    scoring = compute_aas_and_bottleneck(dimensions, alpha=0.6)
+    scoring = compute_aas_and_bottleneck(dimensions, alpha=alpha, dimension_weights=dim_weights)
     aas = scoring["aas_score"]
-    grade = scoring["trust_grade"]
-    log("SCORING", f"Bottleneck AAS Score: {aas}/100 (Grade: {grade}) | Bottleneck: '{scoring['bottleneck_dimension']}' ({scoring['bottleneck_score']})", "SUCCESS")
 
     # Phase 3: Regulatory Compliance (EU AI Act & NIST AI RMF)
     eu_compliance = evaluate_eu_ai_act_compliance(
@@ -1287,7 +1405,16 @@ def generate_audit_from_questionnaire(
         dimensions=dimensions,
         answers=answers
     )
-    log("COMPLIANCE", f"EU AI Act Classification: {eu_compliance['intended_purpose_classification']['tier']}", "INFO")
+    reg_tier = eu_compliance["intended_purpose_classification"]["tier"]
+    log("COMPLIANCE", f"EU AI Act Classification: {reg_tier}", "INFO")
+
+    # Severity follows the legal obligation: binding for HIGH RISK systems -> escalate one level
+    escalate_for_high_risk(findings, reg_tier)
+    apply_grade_caps(scoring, findings, verified_evidence)
+    grade = scoring["trust_grade"]
+    log("SCORING", f"Bottleneck AAS Score: {aas}/100 (Grade: {grade}"
+                   f"{' - capped from ' + str(scoring['uncapped_grade']) if scoring['uncapped_grade'] != grade else ''}) | "
+                   f"Bottleneck: '{scoring['bottleneck_dimension']}' ({scoring['bottleneck_score']})", "SUCCESS")
 
     nist_compliance = evaluate_nist_ai_rmf(dimensions=dimensions)
     log("COMPLIANCE", "NIST AI RMF 1.0 Subcategory Crosswalk completed across GOVERN, MAP, MEASURE, MANAGE.", "INFO")
@@ -1297,9 +1424,9 @@ def generate_audit_from_questionnaire(
 
     # Phase 5: Empirical Benchmark Engines
     fairness_metrics = compute_fairness_metrics(answers=answers, fairness_score=dimensions.get("Fairness & Non-Discrimination"))
-    counterfactual = solve_remediation_priority(current_aas=aas, dimensions=dimensions, findings=findings, target_score=76.0)
+    counterfactual = solve_remediation_priority(current_aas=aas, dimensions=dimensions, findings=findings,
+                                                target_score=ILLUSTRATIVE_TARGET_AAS)
 
-    # Construct Metadata Payload
     metadata = {
         "model_name": model_name,
         "version": model_version,
@@ -1307,13 +1434,12 @@ def generate_audit_from_questionnaire(
         "model_architecture": architecture,
         "deployment_type": deployment_type,
         "autonomy_level": answers.get("q22_autonomy_level", "semi_autonomous"),
-        "audit_mode": "questionnaire_v3",
+        "audit_mode": "questionnaire_v5.1",
         "evidence_tier": evidence_tier,
-        "evidence_confidence_weight": 1.0 if evidence_tier == "T1" else (0.8 if evidence_tier == "T2" else 0.6),
+        "evidence_confidence_weight": tw.get(evidence_tier, tw["T3"]),
         "audit_timestamp": datetime.now().isoformat()
     }
 
-    # Sort findings by severity
     sev_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
     findings.sort(key=lambda x: sev_order.get(x["priority"], 99))
 
@@ -1321,9 +1447,18 @@ def generate_audit_from_questionnaire(
         "model_metadata": metadata,
         "dimensions": dimensions,
         "scoring": scoring,
+        "scoring_parameters": {
+            "alpha": alpha,
+            "tier_weights": tw,
+            "dimension_weights": dim_weights if dim_weights else "equal",
+            "illustrative_target_aas": ILLUSTRATIVE_TARGET_AAS,
+            "note": "All scoring parameters are documented design choices; see docs/METHODOLOGY.md for justification and sensitivity analysis.",
+        },
+        "evidence_coverage": coverage,
+        "assessment_gaps": coverage["unanswered_questions"] + coverage["invalid_answers"],
         "compliance": {
             "eu_ai_act": {
-                "tier": eu_compliance["intended_purpose_classification"]["tier"],
+                "tier": reg_tier,
                 "badge_color": eu_compliance["intended_purpose_classification"]["badge_color"],
                 "legal_basis": eu_compliance["intended_purpose_classification"]["legal_basis"],
                 "market_placement_permitted": eu_compliance["intended_purpose_classification"]["market_placement_permitted"],
@@ -1342,9 +1477,12 @@ def generate_audit_from_questionnaire(
         "remediation_plan": findings,
         "audit_logs": logs + audit_logs,
         "audit_summary": {
-            "total_questions": 35,
+            "total_questions": n_total,
+            "answered_questions": n_answered,
+            "unanswered_questions": len(coverage["unanswered_questions"]),
             "evidence_tier": evidence_tier,
             "confidence_weight": metadata["evidence_confidence_weight"],
+            "assurance_level": coverage["assurance_level"],
             "findings_count": len(findings),
             "critical_findings": sum(1 for f in findings if f["priority"] == "CRITICAL"),
             "high_findings": sum(1 for f in findings if f["priority"] == "HIGH")
@@ -1356,10 +1494,8 @@ def generate_audit_from_questionnaire(
         "attestation_gap": attestation_gap
     }
 
-    # Generate Google Model Card
     audit_payload["model_card"] = generate_google_model_card(audit_payload)
 
-    # Compute SHA-256 integrity hash of canonical payload
     canonical_bytes = json.dumps(audit_payload, sort_keys=True, default=str).encode("utf-8")
     audit_payload["audit_hash"] = hashlib.sha256(canonical_bytes).hexdigest()
     audit_payload["sha256_hash"] = audit_payload["audit_hash"]

@@ -34,19 +34,19 @@ graph TD
 
 AI-GRID organizes technical assessment across 7 canonical trust dimensions (5 technical controls per dimension = 35 total controls):
 
-1. **Security & Robustness** (`q1_adversarial_testing` to `q5_rate_limiting_auth`):
+1. **Security & Robustness** (`q1_adversarial_tested` to `q5_api_auth_ratelimit`):
    - Adversarial perturbation testing, concept drift monitoring, AI-BOM supply chain inventory, red-teaming, rate limiting.
-2. **Fairness & Non-Discrimination** (`q6_demographic_parity` to `q10_fairness_audit`):
+2. **Fairness & Non-Discrimination** (`q6_demographic_coverage` to `q10_fairness_audit`):
    - Demographic parity, class representation balance, coverage adequacy, training volume sufficiency, empirical disparate impact audits.
-3. **Transparency & Explainability** (`q11_xai_implementation` to `q15_uncertainty_bounds`):
+3. **Transparency & Explainability** (`q11_xai_engine` to `q15_uncertainty_scores`):
    - Prediction attribution telemetry, quantitative feature weighting, plain-language reasoning summaries, Model Cards, uncertainty intervals.
 4. **Privacy & Data Governance** (`q16_encryption_rest` to `q20_governance_policy`):
    - AES-256 encryption at rest, TLS 1.3 transit encryption, automated data retention/purging, automated PII redaction, governance charters.
-5. **Human Oversight & Agency** (`q21_hitl_gates` to `q25_override_records`):
+5. **Human Oversight & Agency** (`q21_human_oversight` to `q24c_override_capability`):
    - Mandatory Human-in-the-Loop decision gates, operational autonomy constraints, immediate kill-switches, operator training, intervention logging.
-6. **Accountability & Governance** (`q26_incident_escalation` to `q30b_governance_charter`):
+6. **Accountability & Governance** (`q23_incident_escalation` to `q25d_governance_charter`):
    - Incident response SLAs, tamper-evident append-only cryptographic logging, technical compliance dossiers, post-market monitoring, accountability frameworks.
-7. **Safety & Reliability** (`q31_input_validation` to `q35_failure_mode_testing`):
+7. **Safety & Reliability** (`q26_input_validation` to `q30_failure_mode_testing`):
    - Input schema validation & corrupted data rejection, active multi-tier guardrails, deterministic output clamping, contextual safety advisories, failure-mode testing.
 
 ---
@@ -87,10 +87,10 @@ AI-GRID provides 5 empirical verification endpoints (`POST /api/verify/<module>`
 | Module | Target Endpoint | Checked Item | Input Formats | Scoring Thresholds |
 |:---|:---|:---|:---|:---|
 | **Fairness** | `/api/verify/fairness` | `q10_fairness_audit` (Fairness) | CSV (`protected_attribute`, `y_true`, `y_pred`) | **1.0**: $\text{DIR} \ge 0.80$ and $|\text{SPD}| \le 0.10$<br>**0.5**: $\text{DIR} \ge 0.70$ and $|\text{SPD}| \le 0.15$<br>**0.0**: otherwise |
-| **Dependencies** | `/api/verify/dependencies` | `q3_aibom_inventory` (Security) | CycloneDX JSON SBOM or `requirements.txt` | **1.0**: CycloneDX with no CVSS $\ge 7.0$ match via OSV API<br>**0.5**: Valid CycloneDX with high match or `requirements.txt` only<br>**Preserved claimed score**: If OSV API offline / unreachable |
+| **Dependencies** | `/api/verify/dependencies` | `q3_sbom_tracking` (Security) | CycloneDX JSON SBOM or `requirements.txt` | **1.0**: CycloneDX with no CVSS $\ge 7.0$ match via OSV API<br>**0.5**: Valid CycloneDX with high match or `requirements.txt` only<br>**Preserved claimed score**: If OSV API offline / unreachable |
 | **TLS** | `/api/verify/tls` | `q17_encryption_transit` (Privacy) | JSON payload (`host`, `port`) | **1.0**: TLS 1.3 + valid non-expired certificate<br>**0.6**: TLS 1.2 + valid certificate<br>**0.0**: Older protocol, expired cert, or unreachable |
-| **Log Integrity** | `/api/verify/log-integrity` | `q27_tamper_evident_logs` (Accountability) | JSONL (`prev_hash`, `data`, `hash`) | **1.0**: Valid SHA-256 chain from genesis (`GENESIS` or 64 zeros)<br>**0.0**: Broken hash chain, altered entry, or missing link |
-| **Robustness** | `/api/verify/robustness` | `q1_adversarial_testing` (Security) | CSV with clean & perturbed predictions | **1.0**: Accuracy degradation $\Delta \text{Acc} \le 0.05$ (&le; 5%)<br>**0.5**: Accuracy degradation $\Delta \text{Acc} \le 0.15$ (&le; 15%)<br>**0.0**: Accuracy drop > 15% |
+| **Log Integrity** | `/api/verify/log-integrity` | `q25_decision_logging` (Accountability) | JSONL (`prev_hash`, `data`, `hash`) | **1.0**: Valid SHA-256 chain from genesis (`GENESIS` or 64 zeros)<br>**0.0**: Broken hash chain, altered entry, or missing link |
+| **Robustness** | `/api/verify/robustness` | `q1_adversarial_tested` (Security) | CSV with clean & perturbed predictions | **1.0**: Accuracy degradation $\Delta \text{Acc} \le 0.05$ (&le; 5%)<br>**0.5**: Accuracy degradation $\Delta \text{Acc} \le 0.15$ (&le; 15%)<br>**0.0**: Accuracy drop > 15% |
 
 ### Security Safeguards in Verifiers:
 - **SSRF Protection**: `verify_tls` strictly restricts ports to 443 and 8443, enforces a 5-second timeout, and validates resolved IP addresses to block private (RFC 1918), loopback (`127.0.0.0/8`), link-local (`169.254.0.0/16`), cloud metadata (`169.254.169.254`), multicast, and unspecified (`0.0.0.0`) destinations.

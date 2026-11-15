@@ -1,0 +1,447 @@
+{
+  "generated_utc": "2026-11-15T03:24:44+00:00",
+  "commit": "31f8f82",
+  "note": "Reference profiles and verifier datasets are designed/simulated, not real-world systems.",
+  "baseline": {
+    "healthcare": {
+      "aas": 100.0,
+      "mean": 100.0,
+      "bottleneck": 100.0,
+      "bottleneck_dimension": "Security & Robustness",
+      "grade": "A+",
+      "uncapped_grade": "A+",
+      "findings": 0,
+      "critical": 0,
+      "assurance": "SELF_ASSESSED",
+      "verified": 0,
+      "answered": 35,
+      "dimensions": {
+        "Security & Robustness": 100.0,
+        "Safety & Reliability": 100.0,
+        "Fairness & Non-Discrimination": 100.0,
+        "Transparency & Explainability": 100.0,
+        "Privacy & Data Governance": 100.0,
+        "Human Oversight & Agency": 100.0,
+        "Accountability & Governance": 100.0
+      }
+    },
+    "finance": {
+      "aas": 68.7,
+      "mean": 81.1,
+      "bottleneck": 50.0,
+      "bottleneck_dimension": "Safety & Reliability",
+      "grade": "C",
+      "uncapped_grade": "C",
+      "findings": 14,
+      "critical": 0,
+      "assurance": "SELF_ASSESSED",
+      "verified": 0,
+      "answered": 35,
+      "dimensions": {
+        "Security & Robustness": 70.0,
+        "Safety & Reliability": 50.0,
+        "Fairness & Non-Discrimination": 74.0,
+        "Transparency & Explainability": 100.0,
+        "Privacy & Data Governance": 100.0,
+        "Human Oversight & Agency": 74.0,
+        "Accountability & Governance": 100.0
+      }
+    },
+    "assistant": {
+      "aas": 51.9,
+      "mean": 53.1,
+      "bottleneck": 50.0,
+      "bottleneck_dimension": "Security & Robustness",
+      "grade": "D",
+      "uncapped_grade": "D",
+      "findings": 34,
+      "critical": 0,
+      "assurance": "SELF_ASSESSED",
+      "verified": 0,
+      "answered": 35,
+      "dimensions": {
+        "Security & Robustness": 50.0,
+        "Safety & Reliability": 50.0,
+        "Fairness & Non-Discrimination": 58.0,
+        "Transparency & Explainability": 52.0,
+        "Privacy & Data Governance": 56.0,
+        "Human Oversight & Agency": 54.0,
+        "Accountability & Governance": 52.0
+      }
+    }
+  },
+  "alpha_sweep": {
+    "healthcare": {
+      "0.1": 100.0,
+      "0.2": 100.0,
+      "0.3": 100.0,
+      "0.4": 100.0,
+      "0.5": 100.0,
+      "0.6": 100.0,
+      "0.7": 100.0,
+      "0.8": 100.0,
+      "0.9": 100.0
+    },
+    "finance": {
+      "0.1": 53.1,
+      "0.2": 56.2,
+      "0.3": 59.3,
+      "0.4": 62.5,
+      "0.5": 65.6,
+      "0.6": 68.7,
+      "0.7": 71.8,
+      "0.8": 74.9,
+      "0.9": 78.0
+    },
+    "assistant": {
+      "0.1": 50.3,
+      "0.2": 50.6,
+      "0.3": 50.9,
+      "0.4": 51.3,
+      "0.5": 51.6,
+      "0.6": 51.9,
+      "0.7": 52.2,
+      "0.8": 52.5,
+      "0.9": 52.8
+    }
+  },
+  "alpha_ordering_stable": true,
+  "evidence_weight_sweep": {
+    "without_verified_evidence": {
+      "0.4": {
+        "healthcare": 100.0,
+        "finance": 68.7,
+        "assistant": 51.9
+      },
+      "0.5": {
+        "healthcare": 100.0,
+        "finance": 68.7,
+        "assistant": 51.9
+      },
+      "0.6": {
+        "healthcare": 100.0,
+        "finance": 68.7,
+        "assistant": 51.9
+      },
+      "0.7": {
+        "healthcare": 100.0,
+        "finance": 68.7,
+        "assistant": 51.9
+      },
+      "0.8": {
+        "healthcare": 100.0,
+        "finance": 68.7,
+        "assistant": 51.9
+      },
+      "1.0": {
+        "healthcare": 100.0,
+        "finance": 68.7,
+        "assistant": 51.9
+      }
+    },
+    "with_refuted_claim": {
+      "0.4": {
+        "healthcare": {
+          "aas": 81.3,
+          "gap": 18.7
+        },
+        "finance": {
+          "aas": 62.5,
+          "gap": 6.7
+        },
+        "assistant": {
+          "aas": 44.8,
+          "gap": 8.6
+        }
+      },
+      "0.5": {
+        "healthcare": {
+          "aas": 83.8,
+          "gap": 16.2
+        },
+        "finance": {
+          "aas": 64.2,
+          "gap": 4.9
+        },
+        "assistant": {
+          "aas": 46.3,
+          "gap": 6.9
+        }
+      },
+      "0.6": {
+        "healthcare": {
+          "aas": 85.7,
+          "gap": 14.3
+        },
+        "finance": {
+          "aas": 65.5,
+          "gap": 3.5
+        },
+        "assistant": {
+          "aas": 47.5,
+          "gap": 5.6
+        }
+      },
+      "0.7": {
+        "healthcare": {
+          "aas": 87.2,
+          "gap": 12.8
+        },
+        "finance": {
+          "aas": 66.5,
+          "gap": 2.4
+        },
+        "assistant": {
+          "aas": 48.4,
+          "gap": 4.6
+        }
+      },
+      "0.8": {
+        "healthcare": {
+          "aas": 88.4,
+          "gap": 11.6
+        },
+        "finance": {
+          "aas": 66.7,
+          "gap": 2.1
+        },
+        "assistant": {
+          "aas": 49.1,
+          "gap": 3.8
+        }
+      },
+      "1.0": {
+        "healthcare": {
+          "aas": 90.3,
+          "gap": 9.7
+        },
+        "finance": {
+          "aas": 67.0,
+          "gap": 1.7
+        },
+        "assistant": {
+          "aas": 50.2,
+          "gap": 2.5
+        }
+      }
+    },
+    "with_confirmed_claim": {
+      "0.4": {
+        "healthcare": {
+          "aas": 100.0,
+          "gap": 0.0
+        },
+        "finance": {
+          "aas": 69.2,
+          "gap": 0.0
+        },
+        "assistant": {
+          "aas": 53.4,
+          "gap": 0.0
+        }
+      },
+      "0.5": {
+        "healthcare": {
+          "aas": 100.0,
+          "gap": 0.0
+        },
+        "finance": {
+          "aas": 69.1,
+          "gap": 0.0
+        },
+        "assistant": {
+          "aas": 53.2,
+          "gap": 0.0
+        }
+      },
+      "0.6": {
+        "healthcare": {
+          "aas": 100.0,
+          "gap": 0.0
+        },
+        "finance": {
+          "aas": 69.0,
+          "gap": 0.0
+        },
+        "assistant": {
+          "aas": 53.1,
+          "gap": 0.0
+        }
+      },
+      "0.7": {
+        "healthcare": {
+          "aas": 100.0,
+          "gap": 0.0
+        },
+        "finance": {
+          "aas": 68.9,
+          "gap": 0.0
+        },
+        "assistant": {
+          "aas": 53.0,
+          "gap": 0.0
+        }
+      },
+      "0.8": {
+        "healthcare": {
+          "aas": 100.0,
+          "gap": 0.0
+        },
+        "finance": {
+          "aas": 68.8,
+          "gap": 0.0
+        },
+        "assistant": {
+          "aas": 52.9,
+          "gap": 0.0
+        }
+      },
+      "1.0": {
+        "healthcare": {
+          "aas": 100.0,
+          "gap": 0.0
+        },
+        "finance": {
+          "aas": 68.7,
+          "gap": 0.0
+        },
+        "assistant": {
+          "aas": 52.7,
+          "gap": 0.0
+        }
+      }
+    }
+  },
+  "evidence_weight_finding": "With no verified evidence all items share one weight, so the T3 weight cancels out of every dimension average and AAS is invariant to it. The weight only matters when verified and unverified items are mixed.",
+  "dimension_weight_sensitivity": {
+    "healthcare": {
+      "equal": 100.0,
+      "domain_profile": 100.0
+    },
+    "finance": {
+      "equal": 68.7,
+      "domain_profile": 69.8
+    },
+    "assistant": {
+      "equal": 51.9,
+      "domain_profile": 51.9
+    },
+    "random_weightings": {
+      "draws": 1000,
+      "weight_range": [
+        0.5,
+        2.0
+      ],
+      "ordering_preserved_pct": 100.0,
+      "aas_min": {
+        "healthcare": 100.0,
+        "finance": 64.5,
+        "assistant": 51.2
+      },
+      "aas_max": {
+        "healthcare": 100.0,
+        "finance": 73.6,
+        "assistant": 52.6
+      }
+    }
+  },
+  "leave_one_question_out": {
+    "healthcare": {
+      "baseline": 100.0,
+      "min": 100.0,
+      "max": 100.0,
+      "range": 0.0
+    },
+    "finance": {
+      "baseline": 68.7,
+      "min": 68.0,
+      "max": 69.2,
+      "range": 1.2
+    },
+    "assistant": {
+      "baseline": 51.9,
+      "min": 51.6,
+      "max": 52.1,
+      "range": 0.5
+    }
+  },
+  "verifier_ablation": {
+    "simulated_evidence": {
+      "claim_supported": false,
+      "verified_score": 0.0,
+      "details": "Computed DIR = 0.250, SPD = -0.600, EOD = -0.750 across 20 evaluated records."
+    },
+    "profiles": {
+      "healthcare": {
+        "aas_without_verifier": 100.0,
+        "grade_without_verifier": "A+",
+        "aas_with_verifier": 85.7,
+        "grade_with_verifier": "C",
+        "uncapped_grade_with_verifier": "A",
+        "attestation_gap": 14.3,
+        "fairness_dim_without": 100.0,
+        "fairness_dim_with": 70.6
+      },
+      "finance": {
+        "aas_without_verifier": 68.7,
+        "grade_without_verifier": "C",
+        "aas_with_verifier": 65.5,
+        "grade_with_verifier": "C",
+        "uncapped_grade_with_verifier": "C",
+        "attestation_gap": 3.5,
+        "fairness_dim_without": 74.0,
+        "fairness_dim_with": 47.6
+      },
+      "assistant": {
+        "aas_without_verifier": 52.7,
+        "grade_without_verifier": "D",
+        "aas_with_verifier": 47.5,
+        "grade_with_verifier": "F",
+        "uncapped_grade_with_verifier": "F",
+        "attestation_gap": 5.6,
+        "fairness_dim_without": 68.0,
+        "fairness_dim_with": 42.4
+      }
+    }
+  },
+  "fairness_threshold_sensitivity": {
+    "note": "Applies the verifier's tiered scoring rule with alternative cut-offs to synthetic selection rates.",
+    "rows": {
+      "selection 80% vs 80%": {
+        "DIR": 1.0,
+        "SPD": 0.0,
+        "current (DIR 0.80 and SPD 0.10 full; 0.70 and 0.15 partial)": 1.0,
+        "stricter (0.90 and 0.05; 0.80 and 0.10)": 1.0,
+        "looser (0.70 and 0.15; 0.60 and 0.20)": 1.0
+      },
+      "selection 80% vs 70%": {
+        "DIR": 0.87,
+        "SPD": -0.1,
+        "current (DIR 0.80 and SPD 0.10 full; 0.70 and 0.15 partial)": 1.0,
+        "stricter (0.90 and 0.05; 0.80 and 0.10)": 0.5,
+        "looser (0.70 and 0.15; 0.60 and 0.20)": 1.0
+      },
+      "selection 80% vs 60%": {
+        "DIR": 0.75,
+        "SPD": -0.2,
+        "current (DIR 0.80 and SPD 0.10 full; 0.70 and 0.15 partial)": 0.0,
+        "stricter (0.90 and 0.05; 0.80 and 0.10)": 0.0,
+        "looser (0.70 and 0.15; 0.60 and 0.20)": 0.5
+      },
+      "selection 80% vs 40%": {
+        "DIR": 0.5,
+        "SPD": -0.4,
+        "current (DIR 0.80 and SPD 0.10 full; 0.70 and 0.15 partial)": 0.0,
+        "stricter (0.90 and 0.05; 0.80 and 0.10)": 0.0,
+        "looser (0.70 and 0.15; 0.60 and 0.20)": 0.0
+      },
+      "selection 80% vs 20%": {
+        "DIR": 0.25,
+        "SPD": -0.6,
+        "current (DIR 0.80 and SPD 0.10 full; 0.70 and 0.15 partial)": 0.0,
+        "stricter (0.90 and 0.05; 0.80 and 0.10)": 0.0,
+        "looser (0.70 and 0.15; 0.60 and 0.20)": 0.0
+      }
+    }
+  }
+}

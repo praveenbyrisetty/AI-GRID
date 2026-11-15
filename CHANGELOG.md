@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.0] - 2026-11-14
+
+### Strengthening release (scoring integrity, GRC mapping, reproducibility)
+- **GRC roadmap:** "Required Engineering Action" is now **Required Governance Action**. Every question carries a
+  `governance_action`, `owner_role` and `evidence_expected` (`governance_catalog.py`); the roadmap UI shows owner and
+  EU AI Act | NIST references.
+- **Mapping corrections:** EU AI Act and NIST references corrected (e.g. SBOM Art. 15(2) -> Art. 15(5), GOVERN 1.7 -> GOVERN 1.6;
+  incident escalation Art. 9(9) -> Art. 73). See `docs/MAPPING_VERIFICATION.md` for the full old-vs-new table and the
+  verification status of each reference group.
+- **Attestation gap fix:** claimed and effective scores now use the same item weights, so the gap isolates verifier
+  disagreement (previously a weighting artefact could produce a non-zero gap with no disagreement).
+- **Evidence coverage:** every audit reports verified / documented / self-attested counts, maximum attainable coverage and an
+  assurance level. Unanswered or invalid answers are reported as `assessment_gaps` instead of silently skipped.
+- **Tier T2 defined:** documentary evidence supplied through `evidence_refs` (weight 0.8).
+- **Grade caps:** displayed grade is capped at C when a claim is refuted by verified evidence or a CRITICAL finding is open.
+  The numeric AAS is unchanged.
+- **Severity follows obligation:** open findings are escalated one level for HIGH RISK systems.
+- **Parameters exposed and validated:** `alpha`, `weight_profile` (`equal`, `domain` or custom) and `evidence_refs` on
+  `POST /api/audit/questionnaire`; the hard-coded question count (35) and status version are computed.
+- **Reproducibility:** `scripts/reproduce_results.py` regenerates every reported number plus alpha, evidence-weight,
+  dimension-weight, leave-one-question-out, verifier-ablation and fairness-threshold sensitivity (`results/`).
+- **Docs:** `docs/METHODOLOGY.md`; corrected stale question IDs in README, ARCHITECTURE and CHANGELOG entries.
+- **Tests:** 14 new tests (`tests/test_hardening.py`); total 69.
+
 ## [5.0.1] - 2026-11-05
 
 ### Architecture Polish & Evidence Model Consolidation
@@ -36,10 +60,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Empirical Evidence Verification & Attestation Gap Engine (Phase 6)
 - **Empirical Verifiers Module (`verifiers.py`)**: Added 5 dedicated verification modules with REST endpoints (`POST /api/verify/<module>`):
   - **Fairness (`/api/verify/fairness`)**: Computes Disparate Impact Ratio (DIR), Statistical Parity Difference (SPD), and Equal Opportunity Difference (EOD) on uploaded predictions CSVs to verify `q10_fairness_audit`.
-  - **Dependencies (`/api/verify/dependencies`)**: Queries the public OSV API (`api.osv.dev`, PyPI ecosystem, `urllib` only) with a 5-second timeout and up to 200 packages to verify `q3_aibom_inventory`. Gracefully handles offline states by preserving claimed scores.
+  - **Dependencies (`/api/verify/dependencies`)**: Queries the public OSV API (`api.osv.dev`, PyPI ecosystem, `urllib` only) with a 5-second timeout and up to 200 packages to verify `q3_sbom_tracking`. Gracefully handles offline states by preserving claimed scores.
   - **TLS Prober (`/api/verify/tls`)**: Probes host and port (443/8443) for TLS 1.3/1.2 negotiation and certificate validity with 5-second socket timeout and strict SSRF defenses to verify `q17_encryption_transit`.
-  - **Log Integrity (`/api/verify/log-integrity`)**: Cryptographically validates SHA-256 hash chains from genesis in uploaded JSONL logs to verify `q27_tamper_evident_logs`.
-  - **Adversarial Robustness (`/api/verify/robustness`)**: Measures accuracy drop between baseline and perturbed prediction CSVs to verify `q1_adversarial_testing`.
+  - **Log Integrity (`/api/verify/log-integrity`)**: Cryptographically validates SHA-256 hash chains from genesis in uploaded JSONL logs to verify `q25_decision_logging`.
+  - **Adversarial Robustness (`/api/verify/robustness`)**: Measures accuracy drop between baseline and perturbed prediction CSVs to verify `q1_adversarial_tested`.
 - **Multi-Tier Evidence Weighting**: Upgraded dimension score computation in `ai_profile_engine.py` to weight Tier T1 verified artifacts at $w=1.0$ and Tier T3 self-attested items at $w=0.6$.
 - **Attestation Gap Analysis**: Computed dimension-level ($\Delta_d = S_{d,\text{claimed}} - S_{d,\text{verified}}$) and composite AAS gaps ($\Delta_{\text{AAS}} = \text{AAS}_{\text{claimed}} - \text{AAS}_{\text{verified}}$) to expose and prevent governance over-claiming.
 - **Verification UI**: Added dedicated "Evidence Verification (T1)" page (`#page-verify`) with card uploaders, real-time result inspector, active badge count, and integrated audit compiler.

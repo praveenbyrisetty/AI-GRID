@@ -30,7 +30,10 @@ class AIGRIDAuditor:
     def run_questionnaire_audit(
         self,
         answers: Dict[str, Any],
-        verified_evidence: Optional[List[Dict[str, Any]]] = None
+        verified_evidence: Optional[List[Dict[str, Any]]] = None,
+        alpha: float = 0.6,
+        weight_profile: Any = "equal",
+        evidence_refs: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Executes an audit from structured questionnaire responses (Tier T3)
@@ -39,7 +42,10 @@ class AIGRIDAuditor:
         results = generate_audit_from_questionnaire(
             answers,
             evidence_tier="T3",
-            verified_evidence=verified_evidence
+            verified_evidence=verified_evidence,
+            alpha=alpha,
+            weight_profile=weight_profile,
+            evidence_refs=evidence_refs,
         )
         self.last_results = results
         return results
