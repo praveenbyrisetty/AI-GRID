@@ -24,7 +24,7 @@ let isTerminalPaused = false;
 const pageTitles = {
   "page-overview": "AI Assurance Overview",
   "page-setup": "AI Governance Questionnaire",
-  "page-verify": "Empirical Evidence Verification (Tier T1)",
+  "page-verify": "Evidence Verification",
   "page-compliance": "EU AI Act Regulatory Compliance",
   "page-history": "Audit Records & History",
   "page-question-bank": "Research Question Bank (35 Items)",
