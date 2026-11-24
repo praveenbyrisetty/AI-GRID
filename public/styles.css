@@ -1,9 +1,14 @@
 /* ==========================================================================
-   AI-GRID DESIGN SYSTEM v6.0 — "CYBER GOLD & JET BLACK"
-   Jet Black · Vivid Cyber Yellow · High Contrast
+   AI-GRID DESIGN SYSTEM v6.0 — "NEXUS"
+   Jet Black · Cerulean Blue · Neon Yellow
    Space Grotesk + DM Sans + IBM Plex Mono Typography
    Bold Futuristic · Premium Dark-First Design
    ========================================================================== */
+
+#nav-verify,
+#page-verify {
+  display: none !important;
+}
 
 :root {
   /* ========================================================================
@@ -13,8 +18,8 @@
   --bg-sidebar: #FAFBFC;
   --bg-sidebar-text: #5A6270;
   --bg-sidebar-hover: #EDF0F5;
-  --bg-sidebar-active: #FEFCE8;
-  --bg-sidebar-active-text: #CA8A04;
+  --bg-sidebar-active: #E8F4FA;
+  --bg-sidebar-active-text: #007BA7;
   --bg-sidebar-border: #DEE2E8;
 
   --bg-surface: #FFFFFF;
@@ -34,17 +39,17 @@
   --border-subtle: #E8EBF0;
   --border-card: #DEE2E8;
   --border-card-hover: #C0C6D0;
-  --border-highlight: #EAB308;
+  --border-highlight: #007BA7;
 
-  /* Brand Accents — Cyber Gold Yellow & Jet Black */
-  --primary-500: #EAB308;
-  --primary-600: #CA8A04;
-  --primary-400: #FACC15;
-  --primary-bg: #FEFCE8;
-  --primary-border: #FEF08A;
-  --teal-accent: #EAB308;
-  --teal-bg: #FEFCE8;
-  --teal-border: #FDE047;
+  /* Brand Accents — Cerulean Blue & Neon Yellow */
+  --primary-500: #007BA7;
+  --primary-600: #006690;
+  --primary-400: #1A9FD0;
+  --primary-bg: #E8F4FA;
+  --primary-border: #A8D8EE;
+  --teal-accent: #FFE600;
+  --teal-bg: #FFFDE6;
+  --teal-border: #FFE600;
 
   /* Semantic Status Colors */
   --success: #10B981;
@@ -67,17 +72,17 @@
   --critical-bg: #FEF2F2;
   --critical-border: #FECACA;
 
-  --info: #CA8A04;
-  --info-text: #A16207;
-  --info-bg: #FEFCE8;
-  --info-border: #FEF08A;
+  --info: #007BA7;
+  --info-text: #006690;
+  --info-bg: #E8F4FA;
+  --info-border: #A8D8EE;
 
-  /* Shadows — Warm gold tinted */
+  /* Shadows — Cool tinted */
   --shadow-xs: 0 1px 2px 0 rgba(10, 10, 10, 0.05);
   --shadow-sm: 0 1px 3px 0 rgba(10, 10, 10, 0.07), 0 1px 2px -1px rgba(10, 10, 10, 0.05);
   --shadow-md: 0 4px 12px -2px rgba(10, 10, 10, 0.10), 0 2px 4px -2px rgba(10, 10, 10, 0.05);
   --shadow-lg: 0 12px 24px -4px rgba(10, 10, 10, 0.12), 0 4px 8px -4px rgba(10, 10, 10, 0.06);
-  --shadow-glow: 0 0 20px -4px rgba(234, 179, 8, 0.25);
+  --shadow-glow: 0 0 20px -4px rgba(0, 123, 167, 0.20);
 
   /* Fonts */
   --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -96,15 +101,15 @@
 }
 
 /* ==========================================================================
-   SECONDARY THEME: NEXUS DARK — Jet Black + Cyber Gold Yellow
+   SECONDARY THEME: NEXUS DARK — Jet Black + Cerulean + Neon Yellow
    ========================================================================== */
 [data-theme="dark"] {
   --bg-page: #0A0A0A;
   --bg-sidebar: #0E0E10;
   --bg-sidebar-text: #8C93A0;
   --bg-sidebar-hover: #151518;
-  --bg-sidebar-active: #1C190D;
-  --bg-sidebar-active-text: #FACC15;
+  --bg-sidebar-active: #0D1A24;
+  --bg-sidebar-active-text: #1A9FD0;
   --bg-sidebar-border: #1E1E22;
 
   --bg-surface: #111114;
@@ -122,16 +127,16 @@
   --border-subtle: #1E1E22;
   --border-card: #2A2A30;
   --border-card-hover: #3E3E48;
-  --border-highlight: #FACC15;
+  --border-highlight: #007BA7;
 
-  --primary-500: #FACC15;
-  --primary-600: #EAB308;
-  --primary-400: #FDE047;
-  --primary-bg: rgba(250, 204, 21, 0.12);
-  --primary-border: rgba(250, 204, 21, 0.30);
-  --teal-accent: #FACC15;
-  --teal-bg: rgba(250, 204, 21, 0.10);
-  --teal-border: rgba(250, 204, 21, 0.30);
+  --primary-500: #1A9FD0;
+  --primary-600: #007BA7;
+  --primary-400: #40B8E0;
+  --primary-bg: rgba(0, 123, 167, 0.12);
+  --primary-border: rgba(0, 123, 167, 0.30);
+  --teal-accent: #FFE600;
+  --teal-bg: rgba(255, 230, 0, 0.10);
+  --teal-border: rgba(255, 230, 0, 0.30);
 
   --success: #34D399;
   --success-text: #6EE7B7;
@@ -153,16 +158,16 @@
   --critical-bg: rgba(248, 113, 113, 0.10);
   --critical-border: rgba(248, 113, 113, 0.25);
 
-  --info: #FACC15;
-  --info-text: #FDE047;
-  --info-bg: rgba(250, 204, 21, 0.12);
-  --info-border: rgba(250, 204, 21, 0.30);
+  --info: #1A9FD0;
+  --info-text: #40B8E0;
+  --info-bg: rgba(0, 123, 167, 0.12);
+  --info-border: rgba(0, 123, 167, 0.30);
 
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.40);
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.50), 0 1px 2px -1px rgba(0, 0, 0, 0.40);
   --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.40);
   --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.60), 0 4px 8px -4px rgba(0, 0, 0, 0.45);
-  --shadow-glow: 0 0 30px -4px rgba(250, 204, 21, 0.25);
+  --shadow-glow: 0 0 30px -4px rgba(0, 123, 167, 0.20);
 }
 
 /* ==========================================================================
@@ -177,8 +182,8 @@
 body {
   background: var(--bg-page);
   background-image: 
-    radial-gradient(circle at 10% 15%, rgba(250, 204, 21, 0.05) 0%, transparent 45%),
-    radial-gradient(circle at 90% 10%, rgba(250, 204, 21, 0.03) 0%, transparent 45%),
+    radial-gradient(circle at 10% 15%, rgba(0, 123, 167, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(255, 230, 0, 0.03) 0%, transparent 45%),
     radial-gradient(rgba(10, 10, 10, 0.03) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 28px 28px;
   color: var(--text-primary);
@@ -195,9 +200,9 @@ body {
 [data-theme="dark"] body {
   background-color: var(--bg-page);
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(250, 204, 21, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 15%, rgba(250, 204, 21, 0.04) 0%, transparent 40%),
-    radial-gradient(rgba(250, 204, 21, 0.02) 1px, transparent 1px);
+    radial-gradient(circle at 15% 15%, rgba(0, 123, 167, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(255, 230, 0, 0.05) 0%, transparent 40%),
+    radial-gradient(rgba(0, 123, 167, 0.04) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 28px 28px;
 }
 
@@ -291,16 +296,16 @@ body {
   height: 36px;
   border-radius: var(--radius-sm);
   background: linear-gradient(135deg, var(--primary-500), var(--primary-400));
-  color: #0A0A0A;
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 123, 167, 0.30);
 }
 
 [data-theme="dark"] .brand-icon-box {
-  box-shadow: 0 2px 12px rgba(250, 204, 21, 0.30);
+  box-shadow: 0 2px 12px rgba(0, 123, 167, 0.25);
 }
 
 .brand-info {
@@ -712,10 +717,10 @@ body {
    BUTTONS — Warm & Rounded
    ========================================================================== */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-400), var(--primary-500));
-  border: 1px solid var(--primary-500);
-  color: #0A0A0A;
-  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  border: 1px solid var(--primary-600);
+  color: #FFFFFF;
+  font-weight: 600;
   font-size: 13px;
   padding: 7px 16px;
   border-radius: 99px;
@@ -723,13 +728,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 123, 167, 0.30);
   transition: all 0.2s ease;
   text-decoration: none;
   font-family: var(--font-body);
 }
 .btn-primary:hover {
-  box-shadow: 0 4px 16px rgba(250, 204, 21, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 123, 167, 0.40);
   transform: translateY(-1px);
 }
 .btn-primary.sm { padding: 5px 12px; font-size: 12px; }
@@ -999,7 +1004,7 @@ body {
 }
 
 [data-theme="dark"] .kpi-card:hover {
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 16px -2px rgba(250, 204, 21, 0.20);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 16px -2px rgba(0, 123, 167, 0.15);
 }
 
 .kpi-top {
@@ -1055,7 +1060,6 @@ body {
   align-items: center;
   gap: 4px;
   letter-spacing: 0.3px;
-  white-space: nowrap;
 }
 .badge.success,
 .badge.conformant,
@@ -1263,8 +1267,8 @@ body {
 }
 
 .standby-icon-well {
-  background: rgba(250, 204, 21, 0.08);
-  border-color: rgba(250, 204, 21, 0.25);
+  background: rgba(0, 123, 167, 0.08);
+  border-color: rgba(0, 123, 167, 0.2);
 }
 
 .summary-target-strip {
@@ -1493,7 +1497,7 @@ body {
   border-radius: 99px;
   flex-shrink: 0;
 }
-.log-badge.DISCOVERY { background: rgba(250, 204, 21, 0.20); color: #FACC15; }
+.log-badge.DISCOVERY { background: rgba(0, 123, 167, 0.20); color: #1A9FD0; }
 .log-badge.PROBE, .log-badge.AUDIT { background: rgba(255, 230, 0, 0.15); color: #FFE600; }
 .log-badge.WARNING { background: rgba(222, 176, 74, 0.20); color: #F0C86E; }
 .log-badge.DANGER { background: rgba(224, 85, 85, 0.20); color: #F77878; }
@@ -1772,87 +1776,6 @@ body {
   border-bottom: none;
 }
 
-/* 7 Core Trust Dimensions Table — Pixel-Perfect Sizing & Alignment */
-#dimensionsCardSection .data-table {
-  width: 100%;
-  table-layout: auto;
-}
-
-#dimensionsCardSection .data-table th,
-#dimensionsCardSection .data-table td {
-  padding: 14px 18px;
-  vertical-align: middle;
-}
-
-/* Column 1: Trust Dimension Name & Icon */
-#dimensionsCardSection .data-table th:first-child,
-#dimensionsCardSection .data-table td:first-child {
-  white-space: nowrap;
-  min-width: 250px;
-  font-weight: 600;
-  color: var(--text-heading, #f8fafc);
-}
-
-#dimensionsCardSection .data-table td:first-child svg {
-  vertical-align: -2px;
-  margin-right: 10px;
-  flex-shrink: 0;
-  color: var(--primary-400, #FACC15);
-}
-
-/* Column 2: EU AI Act Anchor */
-#dimensionsCardSection .data-table th:nth-child(2),
-#dimensionsCardSection .data-table td:nth-child(2) {
-  white-space: nowrap;
-  min-width: 150px;
-}
-
-#dimensionsCardSection .data-table td:nth-child(2) .badge {
-  font-size: 11px;
-  padding: 4px 10px;
-  letter-spacing: 0.4px;
-  white-space: nowrap;
-}
-
-/* Column 3: NIST AI RMF */
-#dimensionsCardSection .data-table th:nth-child(3),
-#dimensionsCardSection .data-table td:nth-child(3) {
-  white-space: nowrap;
-  min-width: 110px;
-}
-
-/* Column 4: Mandatory Engineering Controls */
-#dimensionsCardSection .data-table th:nth-child(4),
-#dimensionsCardSection .data-table td:nth-child(4) {
-  min-width: 300px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-
-/* Column 5: Score */
-#dimensionsCardSection .data-table th:nth-child(5),
-#dimensionsCardSection .data-table td:nth-child(5) {
-  white-space: nowrap;
-  min-width: 75px;
-  text-align: right;
-}
-
-/* Column 6: Conformity */
-#dimensionsCardSection .data-table th:nth-child(6),
-#dimensionsCardSection .data-table td:nth-child(6) {
-  white-space: nowrap;
-  min-width: 110px;
-  text-align: center;
-}
-
-/* Column 7: Inspect */
-#dimensionsCardSection .data-table th:nth-child(7),
-#dimensionsCardSection .data-table td:nth-child(7) {
-  white-space: nowrap;
-  min-width: 90px;
-  text-align: center;
-}
-
 /* ==========================================================================
    DETAIL DRAWER — Premium Slide-Out
    ========================================================================== */
@@ -2115,9 +2038,8 @@ body {
 .wizard-step-bubble.active {
   background: linear-gradient(135deg, var(--primary-500), var(--primary-400));
   border-color: var(--primary-600);
-  color: #0A0A0A;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.40);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 123, 167, 0.35);
 }
 
 /* ==========================================================================

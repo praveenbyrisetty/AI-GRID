@@ -45,11 +45,11 @@
             </span>
             <span class="nav-text">Governance Questionnaire</span>
           </a>
-          <a class="nav-item" onclick="showPage('page-verify', this)" id="nav-verify" title="Empirical Evidence Verification">
+          <a class="nav-item" onclick="showPage('page-verify', this)" id="nav-verify" title="Empirical Evidence Verification" style="display:none !important;">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
             </span>
-            <span class="nav-text">Evidence Verification</span>
+            <span class="nav-text">Evidence Verification (T1)</span>
           </a>
 
           <div class="nav-section-label">Assurance &amp; Governance</div>
@@ -81,11 +81,11 @@
             </span>
             <span class="nav-text">Remediation Roadmap</span>
           </a>
-          <a class="nav-item" onclick="showPage('page-modelcard', this)" id="nav-modelcard" title="AI Governance Report">
+          <a class="nav-item" onclick="showPage('page-modelcard', this)" id="nav-modelcard" title="AI Governance Passport &amp; Technical Dossier">
             <span class="nav-icon-wrap">
               <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </span>
-            <span class="nav-text">AI Governance Report</span>
+            <span class="nav-text">AI Governance Reports</span>
           </a>
         </nav>
       </div>
@@ -494,11 +494,11 @@
       <!-- ============================================================= -->
       <!-- SCREEN: EMPIRICAL EVIDENCE VERIFICATION (TIER T1)             -->
       <!-- ============================================================= -->
-      <div class="page" id="page-verify">
+      <div class="page" id="page-verify" style="display:none !important;">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
-              <h2 class="page-header-title">Evidence Verification</h2>
+              <h2 class="page-header-title">Empirical Evidence Verification (Tier T1)</h2>
               <p class="page-header-subtitle">Deterministic runtime verification across 5 governance pillars. Replaces self-attestation with checked empirical evidence and computes Attestation Gap.</p>
             </div>
             <div class="page-header-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -514,11 +514,11 @@
           </div>
 
           <!-- Active Verified Evidence Summary Banner -->
-          <div class="card" style="margin-bottom:20px; border-left:4px solid var(--primary-500); background:linear-gradient(135deg, rgba(250, 204, 21, 0.08), rgba(250, 204, 21, 0.02));">
+          <div class="card" style="margin-bottom:20px; border-left:4px solid var(--primary-500); background:linear-gradient(135deg, rgba(0, 123, 167, 0.08), rgba(0, 123, 167, 0.02));">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
               <div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                  <h4 style="margin:0; font-size:16px; font-weight:700;">Verified Evidence</h4>
+                  <h4 style="margin:0; font-size:16px; font-weight:700;">Verified Evidence Dossier</h4>
                   <span class="badge info" id="dossierStatusBadge">READY</span>
                 </div>
                 <p style="margin:0; font-size:13px; color:var(--text-secondary); max-width:680px; line-height:1.5;">
@@ -1043,13 +1043,13 @@
       </div>
 
       <!-- ============================================================= -->
-      <!-- SCREEN 9: AI GOVERNANCE REPORT                                -->
+      <!-- SCREEN 9: AI GOVERNANCE PASSPORT & TECHNICAL DOSSIER          -->
       <!-- ============================================================= -->
       <div class="page" id="page-modelcard">
         <div class="page-inner">
           <div class="page-header-row">
             <div>
-              <h2 class="page-header-title">AI Governance Report</h2>
+              <h2 class="page-header-title">AI Governance Passport &amp; Technical Dossier</h2>
               <p class="page-header-subtitle">Standardized technical passport &amp; compliance dossier (ISO/IEC 42001 &bull; EU AI Act &bull; IEEE P8000.1)</p>
             </div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
