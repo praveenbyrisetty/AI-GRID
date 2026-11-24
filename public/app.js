@@ -698,12 +698,12 @@ function initRadarChart(dims) {
       label: "Regulatory Target (80.0)",
       data: dimLabels.map(() => 80),
       fill: true,
-      backgroundColor: isDark ? "rgba(0, 123, 167, 0.06)" : "rgba(0, 123, 167, 0.05)",
-      borderColor: isDark ? "rgba(0, 123, 167, 0.35)" : "rgba(0, 123, 167, 0.40)",
+      backgroundColor: isDark ? "rgba(250, 204, 21, 0.08)" : "rgba(234, 179, 8, 0.06)",
+      borderColor: isDark ? "rgba(250, 204, 21, 0.45)" : "rgba(234, 179, 8, 0.40)",
       borderWidth: 1.5,
       borderDash: [5, 5],
       pointRadius: 3,
-      pointBackgroundColor: isDark ? "#1A9FD0" : "#007BA7",
+      pointBackgroundColor: isDark ? "#FACC15" : "#EAB308",
       pointBorderColor: "transparent"
     });
   } else {
@@ -711,9 +711,9 @@ function initRadarChart(dims) {
       label: "Assurance Adequacy Score",
       data: dimValues,
       fill: true,
-      backgroundColor: isDark ? "rgba(0, 123, 167, 0.22)" : "rgba(0, 123, 167, 0.16)",
-      borderColor: isDark ? "#1A9FD0" : "#007BA7",
-      pointBackgroundColor: isDark ? "#1A9FD0" : "#007BA7",
+      backgroundColor: isDark ? "rgba(250, 204, 21, 0.22)" : "rgba(234, 179, 8, 0.16)",
+      borderColor: isDark ? "#FACC15" : "#CA8A04",
+      pointBackgroundColor: isDark ? "#FACC15" : "#CA8A04",
       pointBorderColor: isDark ? "#0E0E10" : "#FFFFFF",
       borderWidth: 2.5,
       pointRadius: 4.5,
@@ -751,10 +751,10 @@ function initRadarChart(dims) {
             font: { family: "'IBM Plex Mono', monospace", size: 10 }
           },
           grid: {
-            color: isDark ? "rgba(0, 123, 167, 0.12)" : "rgba(0, 123, 167, 0.12)"
+            color: isDark ? "rgba(250, 204, 21, 0.12)" : "rgba(234, 179, 8, 0.12)"
           },
           angleLines: {
-            color: isDark ? "rgba(0, 123, 167, 0.14)" : "rgba(0, 123, 167, 0.14)"
+            color: isDark ? "rgba(250, 204, 21, 0.14)" : "rgba(234, 179, 8, 0.14)"
           },
           pointLabels: {
             color: isDark ? "#F0F2F5" : "#0A0A0A",
