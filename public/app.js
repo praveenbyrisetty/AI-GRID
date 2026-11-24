@@ -29,7 +29,7 @@ const pageTitles = {
   "page-history": "Audit Records & History",
   "page-question-bank": "Research Question Bank (35 Items)",
   "page-remediation": "Governance Remediation Roadmap",
-  "page-modelcard": "AI Governance Passport"
+  "page-modelcard": "AI Governance Report"
 };
 
 const PILLAR_KEYS = {
@@ -2077,7 +2077,7 @@ ${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}
 - **Legal Notice:** Indicative technical evaluation; not formal CE-mark certification.`;
   }
 
-  return card.markdown || `# AI Governance Passport & Technical Dossier\n**System Name:** ${modelName}\n**Version:** ${version}\n**Score:** ${scoring.aas_score ?? '—'}/100`;
+  return card.markdown || `# AI Governance Report\n**System Name:** ${modelName}\n**Version:** ${version}\n**Score:** ${scoring.aas_score ?? '—'}/100`;
 }
 
 function renderModelCard(data) {
