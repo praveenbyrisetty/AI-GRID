@@ -1055,6 +1055,7 @@ body {
   align-items: center;
   gap: 4px;
   letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 .badge.success,
 .badge.conformant,
@@ -1769,6 +1770,87 @@ body {
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* 7 Core Trust Dimensions Table — Pixel-Perfect Sizing & Alignment */
+#dimensionsCardSection .data-table {
+  width: 100%;
+  table-layout: auto;
+}
+
+#dimensionsCardSection .data-table th,
+#dimensionsCardSection .data-table td {
+  padding: 14px 18px;
+  vertical-align: middle;
+}
+
+/* Column 1: Trust Dimension Name & Icon */
+#dimensionsCardSection .data-table th:first-child,
+#dimensionsCardSection .data-table td:first-child {
+  white-space: nowrap;
+  min-width: 250px;
+  font-weight: 600;
+  color: var(--text-heading, #f8fafc);
+}
+
+#dimensionsCardSection .data-table td:first-child svg {
+  vertical-align: -2px;
+  margin-right: 10px;
+  flex-shrink: 0;
+  color: var(--primary-400, #38bdf8);
+}
+
+/* Column 2: EU AI Act Anchor */
+#dimensionsCardSection .data-table th:nth-child(2),
+#dimensionsCardSection .data-table td:nth-child(2) {
+  white-space: nowrap;
+  min-width: 150px;
+}
+
+#dimensionsCardSection .data-table td:nth-child(2) .badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+/* Column 3: NIST AI RMF */
+#dimensionsCardSection .data-table th:nth-child(3),
+#dimensionsCardSection .data-table td:nth-child(3) {
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+/* Column 4: Mandatory Engineering Controls */
+#dimensionsCardSection .data-table th:nth-child(4),
+#dimensionsCardSection .data-table td:nth-child(4) {
+  min-width: 300px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Column 5: Score */
+#dimensionsCardSection .data-table th:nth-child(5),
+#dimensionsCardSection .data-table td:nth-child(5) {
+  white-space: nowrap;
+  min-width: 75px;
+  text-align: right;
+}
+
+/* Column 6: Conformity */
+#dimensionsCardSection .data-table th:nth-child(6),
+#dimensionsCardSection .data-table td:nth-child(6) {
+  white-space: nowrap;
+  min-width: 110px;
+  text-align: center;
+}
+
+/* Column 7: Inspect */
+#dimensionsCardSection .data-table th:nth-child(7),
+#dimensionsCardSection .data-table td:nth-child(7) {
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: center;
 }
 
 /* ==========================================================================
