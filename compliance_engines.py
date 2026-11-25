@@ -168,10 +168,16 @@ def solve_remediation_priority(current_aas: Optional[float],
         interventions.append({
             "step": idx + 1,
             "target_dimension": dim,
+            "finding": f.get("finding", ""),
             "action": f.get("action", "Implement missing control"),
+            "required_governance_action": f.get("required_governance_action", f.get("action", "Implement missing control")),
+            "owner_role": f.get("owner_role", "AI Risk Manager"),
+            "evidence_expected": f.get("evidence_expected", "Documented evidence of control implementation."),
+            "verification_criteria": f.get("verification_criteria", ""),
             "cost_effort": cost,
             "priority": sev,
             "eu_ai_act_clause": f.get("eu_ai_act_ref", "Articles 9-15"),
+            "nist_ref": f.get("nist_ref", ""),
         })
 
     return {

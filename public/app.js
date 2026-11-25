@@ -1781,7 +1781,9 @@ function renderOverviewRemediationList() {
     priority: (p.priority || 'MEDIUM').toUpperCase(),
     dimension: p.dimension || 'Governance Control',
     finding: p.finding || 'Unspecified compliance finding',
-    action: p.action || 'Remediate control according to AI governance requirements',
+    action: p.required_governance_action || p.action || 'Remediate control according to AI governance requirements',
+    owner_role: p.owner_role || '',
+    evidence_expected: p.evidence_expected || '',
     verification_criteria: p.verification_criteria || '',
     nist_ref: p.nist_ref || '',
     eu_ai_act_ref: p.eu_ai_act_ref || 'Art. 9',
@@ -1904,15 +1906,31 @@ function renderOverviewRemediationList() {
 
 function renderRemediationTable(plan) {
   const tbody = document.getElementById("remediationBody");
-  if (!tbody || !plan || plan.length === 0) return;
+  if (!tbody) return;
+
+  if (!plan || plan.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:28px 16px; color:var(--text-muted);">
+          <div style="font-weight:600; color:var(--success); margin-bottom:6px; font-size:14px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px; margin-right:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            No Non-Conformant Findings Recorded
+          </div>
+          <div style="font-size:12px;">All evaluated governance controls satisfied baseline requirements for this profile.</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
   tbody.innerHTML = plan.map((item, idx) => {
-    const isHighOrCritical = item.priority === 'CRITICAL' || item.priority === 'HIGH';
+    const isCrit = item.priority === 'CRITICAL';
+    const isHigh = item.priority === 'HIGH';
     const isLowOrResolved = item.priority === 'LOW' || item.priority === 'RESOLVED' || item.priority === 'OPTIMAL';
-    const badgeClass = isHighOrCritical ? 'critical' : (isLowOrResolved ? 'success' : 'warning');
+    const badgeClass = isCrit ? 'critical' : (isHigh ? 'warning' : (isLowOrResolved ? 'success' : 'info'));
 
     return `
-      <tr onclick="openFindingDrawer(${idx})">
+      <tr onclick="openFindingDrawer(${idx})" style="cursor:pointer;" title="Click to inspect finding details">
         <td><span class="badge ${badgeClass}">${escapeHtml(item.priority)}</span></td>
         <td><strong>${escapeHtml(item.dimension)}</strong></td>
         <td>${escapeHtml(item.finding)}</td>
@@ -1929,6 +1947,8 @@ function openFindingDrawer(idx) {
   const item = plan[idx];
   if (!item) return;
 
+  const prioClass = item.priority === 'CRITICAL' ? 'critical' : (item.priority === 'HIGH' ? 'warning' : 'info');
+
   const html = `
     <div class="drawer-section">
       <div class="drawer-section-title">Identified Vulnerability</div>
@@ -1936,7 +1956,7 @@ function openFindingDrawer(idx) {
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Severity Level</div>
-      <div><span class="badge ${item.priority === 'CRITICAL' ? 'critical' : 'warning'}">${escapeHtml(item.priority)} Priority</span></div>
+      <div><span class="badge ${prioClass}">${escapeHtml(item.priority)} Priority</span></div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Affected Dimension</div>
@@ -1944,7 +1964,7 @@ function openFindingDrawer(idx) {
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Required Governance Action</div>
-      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600;">${escapeHtml(item.required_governance_action || item.action)}</div>
+      <div class="drawer-section-content" style="color:var(--primary-500); font-weight:600; line-height:1.45;">${escapeHtml(item.required_governance_action || item.action)}</div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Accountable Owner</div>
@@ -1952,18 +1972,19 @@ function openFindingDrawer(idx) {
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Evidence an Auditor Expects</div>
-      <div class="drawer-section-content">${escapeHtml(item.evidence_expected || 'Documented, dated and approved evidence of the control.')}</div>
+      <div class="drawer-section-content" style="line-height:1.45;">${escapeHtml(item.evidence_expected || 'Documented, dated and approved evidence of the control.')}</div>
     </div>
     <div class="drawer-section">
       <div class="drawer-section-title">Verification Criteria</div>
-      <div class="drawer-section-content">
+      <div class="drawer-section-content" style="line-height:1.45;">
         ${escapeHtml(item.verification_criteria || 'Validate that the governance control satisfies the referenced regulatory and standards requirements. Confirm with auditable evidence.')}
       </div>
     </div>
     <div class="drawer-section">
-      <div class="drawer-section-title">Evidence Tier</div>
+      <div class="drawer-section-title">Evidence Tier & Statutory Citations</div>
       <div class="drawer-section-content" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <span class="badge info" style="font-size:10px;">${escapeHtml(item.evidence_tier || 'T3')} Evidence</span>
+        <span class="badge info" style="font-size:10px;">EU AI Act ${escapeHtml(item.eu_ai_act_ref || 'Art. 9')}</span>
         ${item.nist_ref ? `<span class="badge info" style="font-size:10px;">NIST ${escapeHtml(item.nist_ref)}</span>` : ''}
       </div>
     </div>
@@ -2069,8 +2090,8 @@ The target AI system has completed automated governance and cybersecurity evalua
 - **Bottleneck Dimension:** ${scoring.bottleneck_dimension || 'Safety & Reliability'} (${scoring.bottleneck_score ?? '—'}/100)
 - **Board Impact:** This single bottleneck caps the overall trust ceiling. Deployments into mission-critical environments are gated until remediation is complete.
 
-### Priority Action Items for Engineering
-${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}:** ${f.action} *(Ref: ${f.eu_ai_act_ref || 'EU AI Act'})*`).join('\n') || 'All monitored governance controls satisfy regulatory benchmarks.'}
+### Priority Governance Remediation Actions
+${findings.slice(0, 3).map((f, i) => `${i + 1}. **[${f.priority}] ${f.dimension}:** ${f.required_governance_action || f.action} *(Ref: ${f.eu_ai_act_ref || 'EU AI Act'})*`).join('\n') || 'All monitored governance controls satisfy regulatory benchmarks.'}
 
 ### Regulatory Posture
 - **EU AI Act Status:** ${eu.tier || 'HIGH RISK'} (${eu.conformant_articles || '7/7'} Articles Conformant)
